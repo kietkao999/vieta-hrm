@@ -136,7 +136,7 @@ export const createEmployee = async (req, res) => {
   const {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
-    status, contract_type, base_salary, allowance, notes
+    status, contract_type, base_salary, allowance, kpi_bonus, notes
   } = req.body;
 
   try {
@@ -154,15 +154,15 @@ export const createEmployee = async (req, res) => {
       INSERT INTO employees (
         code, fullname, avatar, dob, gender, phone, email, cccd, address,
         join_date, branch_id, department_id, position_id, manager_id,
-        status, contract_type, base_salary, allowance, notes, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        status, contract_type, base_salary, allowance, kpi_bonus, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
       phone || '', email || '', cccd || '', address || '',
       join_date || null, branch_id || null, department_id || null,
       position_id || null, manager_id || null,
       status || 'Thử việc', contract_type || '', base_salary || 0, allowance || 0,
-      notes || '', now, now
+      kpi_bonus || 0, notes || '', now, now
     ]);
 
     return res.status(201).json({ message: 'Tạo hồ sơ nhân viên thành công.', id: result.lastID });
@@ -177,7 +177,7 @@ export const updateEmployee = async (req, res) => {
   const {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
-    status, contract_type, base_salary, allowance, notes
+    status, contract_type, base_salary, allowance, kpi_bonus, notes
   } = req.body;
 
   try {
@@ -198,7 +198,7 @@ export const updateEmployee = async (req, res) => {
         phone = ?, email = ?, cccd = ?, address = ?,
         join_date = ?, branch_id = ?, department_id = ?, position_id = ?,
         manager_id = ?, status = ?, contract_type = ?,
-        base_salary = ?, allowance = ?, notes = ?, updated_at = ?
+        base_salary = ?, allowance = ?, kpi_bonus = ?, notes = ?, updated_at = ?
       WHERE id = ?
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
@@ -206,7 +206,7 @@ export const updateEmployee = async (req, res) => {
       join_date || null, branch_id || null, department_id || null,
       position_id || null, manager_id || null,
       status || 'Thử việc', contract_type || '',
-      base_salary || 0, allowance || 0, notes || '', now, req.params.id
+      base_salary || 0, allowance || 0, kpi_bonus || 0, notes || '', now, req.params.id
     ]);
 
     return res.json({ message: 'Cập nhật hồ sơ nhân viên thành công.' });
@@ -256,6 +256,7 @@ export const exportEmployeesExcel = async (req, res) => {
              e.join_date as 'Ngày vào làm', e.status as 'Trạng thái',
              e.contract_type as 'Loại hợp đồng',
              e.base_salary as 'Lương cơ bản', e.allowance as 'Phụ cấp',
+             e.kpi_bonus as 'Thưởng KPI',
              e.notes as 'Ghi chú'
       FROM employees e
       LEFT JOIN departments d ON e.department_id = d.id

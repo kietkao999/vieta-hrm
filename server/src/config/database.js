@@ -117,6 +117,7 @@ export const initDatabase = async () => {
         contract_type TEXT,
         base_salary REAL DEFAULT 0,
         allowance REAL DEFAULT 0,
+        kpi_bonus REAL DEFAULT 0,
         notes TEXT,
         created_at TEXT,
         updated_at TEXT,

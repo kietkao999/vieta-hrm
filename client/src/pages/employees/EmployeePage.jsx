@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Users, Plus, Download, Edit2, Trash2, Search, Filter } from 'lucide-react';
+import { Users, Plus, Download, Edit2, Trash2, Search, Filter, Eye } from 'lucide-react';
 import EmployeeFormModal from './EmployeeFormModal';
+import EmployeeDetailModal from './EmployeeDetailModal';
 
 const EmployeePage = () => {
   const [employees, setEmployees] = useState([]);
@@ -16,6 +17,8 @@ const EmployeePage = () => {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailEmp, setDetailEmp] = useState(null);
   
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -59,6 +62,11 @@ const EmployeePage = () => {
   const handleOpenEdit = (emp) => {
     setSelectedEmp(emp);
     setModalOpen(true);
+  };
+
+  const handleOpenDetail = (emp) => {
+    setDetailEmp(emp);
+    setDetailOpen(true);
   };
 
   const handleDelete = async (id, name) => {
@@ -163,12 +171,12 @@ const EmployeePage = () => {
               ) : employees.map(e => (
                 <tr key={e.id} className="hover:bg-slate-50">
                   <td className="px-4 py-4 font-mono text-xs text-slate-500">{e.code}</td>
-                  <td className="px-4 py-4 font-semibold text-slate-800 flex items-center space-x-3">
+                  <td className="px-4 py-4 font-semibold text-slate-800 flex items-center space-x-3 cursor-pointer" onClick={() => handleOpenDetail(e)}>
                     <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
                       {e.fullname.charAt(0)}
                     </div>
                     <div>
-                      <div>{e.fullname}</div>
+                      <div className="hover:text-brand-700 transition-colors">{e.fullname}</div>
                       <div className="text-xs text-slate-400 font-normal">{e.email || e.phone}</div>
                     </div>
                   </td>
@@ -184,8 +192,9 @@ const EmployeePage = () => {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-right space-x-2">
-                     <button onClick={() => handleOpenEdit(e)} className="text-slate-500 hover:text-brand-600"><Edit2 size={16}/></button>
-                     <button onClick={() => handleDelete(e.id, e.fullname)} className="text-slate-500 hover:text-red-600"><Trash2 size={16}/></button>
+                     <button onClick={() => handleOpenDetail(e)} className="text-slate-500 hover:text-brand-600 mr-1" title="Xem chi tiết"><Eye size={16}/></button>
+                     <button onClick={() => handleOpenEdit(e)} className="text-slate-500 hover:text-brand-600" title="Sửa"><Edit2 size={16}/></button>
+                     <button onClick={() => handleDelete(e.id, e.fullname)} className="text-slate-500 hover:text-red-600" title="Xóa"><Trash2 size={16}/></button>
                   </td>
                 </tr>
               ))}
@@ -199,6 +208,13 @@ const EmployeePage = () => {
           employee={selectedEmp}
           onClose={() => setModalOpen(false)}
           onSuccess={handleSaveSuccess}
+        />
+      )}
+
+      {detailOpen && (
+        <EmployeeDetailModal 
+          employee={detailEmp}
+          onClose={() => setDetailOpen(false)}
         />
       )}
     </div>

@@ -6,7 +6,7 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
     code: '', fullname: '', email: '', phone: '', cccd: '', 
     dob: '', gender: '', address: '', join_date: '',
     branch_id: '', department_id: '', position_id: '', manager_id: '',
-    status: 'Thử việc', contract_type: '', base_salary: '', allowance: '', notes: ''
+    status: 'Thử việc', contract_type: '', base_salary: '', allowance: '', kpi_bonus: '', notes: ''
   });
 
   const [branches, setBranches] = useState([]);
@@ -54,6 +54,7 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
         contract_type: employee.contract_type || '',
         base_salary: employee.base_salary || '',
         allowance: employee.allowance || '',
+        kpi_bonus: employee.kpi_bonus || '',
         notes: employee.notes || ''
       });
     }
@@ -201,6 +202,10 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
               <div>
                 <label className="text-xs font-semibold text-slate-500">Phụ cấp (VND)</label>
                 <input type="number" name="allowance" value={formData.allowance} onChange={handleChange} className="w-full border rounded-lg p-2 text-sm mt-1" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500">Thưởng KPI (VND)</label>
+                <input type="number" name="kpi_bonus" value={formData.kpi_bonus} onChange={handleChange} className="w-full border rounded-lg p-2 text-sm mt-1" />
               </div>
               <div className="md:col-span-3">
                 <label className="text-xs font-semibold text-slate-500">Ghi chú</label>
