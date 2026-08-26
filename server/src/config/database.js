@@ -149,13 +149,18 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS contracts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         employee_id INTEGER NOT NULL,
+        contract_number TEXT UNIQUE,
         type TEXT NOT NULL,
         sign_date TEXT,
         start_date TEXT,
         end_date TEXT,
         file_url TEXT,
+        document_url TEXT,
+        basic_salary REAL DEFAULT 0,
         status TEXT DEFAULT 'Hiệu lực',
+        notes TEXT,
         created_at TEXT,
+        updated_at TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
       )
     `);

@@ -20,7 +20,15 @@ import innovationRoutes from './routes/innovationRoutes.js';
 import seniorityRoutes from './routes/seniorityRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
 // Cấu hình CORS để frontend truy cập được
 app.use(cors({

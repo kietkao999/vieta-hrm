@@ -5,29 +5,33 @@ export const getContracts = async (req, res) => {
     const { status, employee_id } = req.query;
     
     let sql = `
-      SELECT c.*, e.fullname, e.code as employee_code, d.name as department_name
-      FROM contracts c
-      JOIN employees e ON c.employee_id = e.id
+      SELECT e.id as employee_id, e.code as employee_code, e.fullname, d.name as department_name,
+             c.id as contract_id, c.contract_number, c.type as contract_type, c.start_date, c.end_date, 
+             c.basic_salary, c.status as contract_status, c.notes, c.document_url
+      FROM employees e
+      LEFT JOIN contracts c ON e.id = c.employee_id
       LEFT JOIN departments d ON e.department_id = d.id
       WHERE 1=1
     `;
     const params = [];
-
-    if (status) {
-      sql += ` AND c.status = ?`;
-      params.push(status);
-    }
 
     // Phân quyền
     if (req.user.roleName === 'MANAGER') {
       sql += ` AND e.department_id = ?`;
       params.push(req.user.departmentId);
     } else if (employee_id) {
-      sql += ` AND c.employee_id = ?`;
+      sql += ` AND e.id = ?`;
       params.push(employee_id);
     }
 
-    sql += ` ORDER BY c.created_at DESC`;
+    if (status === 'Chưa có hợp đồng') {
+      sql += ` AND c.id IS NULL`;
+    } else if (status) {
+      sql += ` AND c.status = ?`;
+      params.push(status);
+    }
+
+    sql += ` ORDER BY c.status DESC, e.code ASC`;
     const records = await query.all(sql, params);
     
     return res.json(records);
