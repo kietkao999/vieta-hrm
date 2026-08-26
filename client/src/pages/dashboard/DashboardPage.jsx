@@ -20,9 +20,9 @@ import { Link } from 'react-router-dom';
 const DashboardPage = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
-    totalEmployees: 5,
-    activeContracts: 3,
-    pendingLeaves: 1,
+    totalEmployees: 0,
+    activeContracts: 0,
+    pendingLeaves: 0,
     recentLogs: [],
     recentNotifications: []
   });
@@ -31,24 +31,49 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Chỉ admin mới gọi được api lấy audit-logs
-        if (user.roleName === 'ADMIN') {
-          const logRes = await api.get('/system/audit-logs');
-          setStats(prev => ({ ...prev, recentLogs: logRes.data.slice(0, 5) }));
+        let totalEmployees = 0;
+        let activeContracts = 0;
+        let pendingLeaves = 0;
+        let recentLogs = [];
+
+        // 1. Lấy tổng số nhân viên (tự động phân quyền theo Backend)
+        try {
+          const empRes = await api.get('/employees?limit=1');
+          totalEmployees = empRes.data.pagination?.total || 0;
+        } catch (e) { console.error(e); }
+
+        // 2. Lấy đơn nghỉ phép chờ duyệt (tự động phân quyền theo Backend)
+        try {
+          const leaveRes = await api.get('/leave-requests?status=Chờ duyệt');
+          pendingLeaves = leaveRes.data?.length || 0;
+        } catch (e) { console.error(e); }
+
+        // 3. Lấy số hợp đồng hiệu lực (chỉ admin/HR được xem)
+        if (user.roleName === 'ADMIN' || user.roleName === 'HR') {
+          try {
+            const contractRes = await api.get('/contracts?status=Hiệu lực');
+            activeContracts = contractRes.data?.length || 0;
+          } catch (e) { console.error(e); }
         }
-        
-        // Mock các chỉ số bổ sung cho giao diện phong phú
-        // trong các giai đoạn sau sẽ nạp trực tiếp từ DB
-        setStats(prev => ({
-          ...prev,
-          totalEmployees: 5,
-          activeContracts: 4,
-          pendingLeaves: 2,
+
+        // 4. Lấy audit logs nếu là admin
+        if (user.roleName === 'ADMIN') {
+          try {
+            const logRes = await api.get('/system/audit-logs');
+            recentLogs = logRes.data.slice(0, 5);
+          } catch (e) { console.error(e); }
+        }
+
+        setStats({
+          totalEmployees,
+          activeContracts,
+          pendingLeaves,
+          recentLogs,
           recentNotifications: [
             { id: 1, title: 'Thông báo hệ thống', content: 'Hệ thống Quản lý Nhân sự mới đã đi vào hoạt động chính thức.', date: 'Hôm nay' },
-            { id: 2, title: 'Khen thưởng thâm niên', content: 'Vinh danh Phó Giám Đốc Võ Minh Cường đạt mốc thâm niên 7 năm.', date: 'Hôm qua' }
+            { id: 2, title: 'Thông báo nhân sự', content: 'Vui lòng cập nhật thông tin và thưởng KPI cho nhân viên nếu có thay đổi.', date: 'Hôm nay' }
           ]
-        }));
+        });
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu dashboard:', err);
       } finally {
@@ -70,7 +95,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Grid Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
           <div className="rounded-lg bg-blue-50 p-3 text-blue-600">
             <Users size={24} />
@@ -98,16 +123,6 @@ const DashboardPage = () => {
           <div>
             <p className="text-xs font-semibold text-slate-400">ĐƠN NGHỈ PHÉP CHỜ DUYỆT</p>
             <p className="text-xl font-bold text-slate-800">{stats.pendingLeaves} đơn</p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-purple-50 p-3 text-purple-600">
-            <Award size={24} />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-400">VINH DANH THÂM NIÊN</p>
-            <p className="text-xl font-bold text-slate-800">2 nhân viên</p>
           </div>
         </div>
       </div>
@@ -220,7 +235,7 @@ const DashboardPage = () => {
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-400">NHÂN VIÊN CẤP DƯỚI</p>
-            <p className="text-xl font-bold text-slate-800">4 Nhân sự</p>
+            <p className="text-xl font-bold text-slate-800">{stats.totalEmployees} Nhân sự</p>
           </div>
         </div>
 
@@ -230,7 +245,7 @@ const DashboardPage = () => {
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-400">DUYỆT NGHỈ PHÉP CHỜ</p>
-            <p className="text-xl font-bold text-slate-800">1 đơn chờ duyệt</p>
+            <p className="text-xl font-bold text-slate-800">{stats.pendingLeaves} đơn chờ duyệt</p>
           </div>
         </div>
 
