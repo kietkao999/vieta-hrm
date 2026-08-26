@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Calendar, CheckCircle, XCircle, Plus, Search } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, Plus, Search, Filter, Printer } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LeavePage = () => {
@@ -70,7 +70,240 @@ const LeavePage = () => {
         setTimeout(()=>setError(''), 3000);
       }
     }
-  }
+  };
+
+  const getDepartmentApprover = (deptName) => {
+    switch (deptName) {
+      case 'Ban giám đốc':
+        return { full: 'Ban giám đốc', short: 'Ban giám đốc' };
+      case 'Kho Cần Thơ':
+        return { full: 'Quản lý Kho Cần Thơ và Ban giám đốc', short: 'Quản lý Kho Cần Thơ và Ban giám đốc' };
+      case 'Kho Mỹ Tho':
+        return { full: 'Quản lý Kho Mỹ Tho và Ban giám đốc', short: 'Quản lý Kho Mỹ Tho và Ban giám đốc' };
+      case 'Khối văn phòng':
+        return { full: 'Trưởng phòng Hành chính Nhân sự và Ban giám đốc', short: 'Trưởng phòng HCNS và Ban giám đốc' };
+      case 'Xưởng sản xuất nệm':
+        return { full: 'Quản đốc Xưởng sản xuất nệm và Ban giám đốc', short: 'Quản đốc và Ban giám đốc' };
+      case 'Phòng kinh doanh':
+        return { full: 'Trưởng phòng Kinh doanh và Ban giám đốc', short: 'Trưởng phòng KD và Ban giám đốc' };
+      case 'Phòng Marketing':
+        return { full: 'Trưởng phòng Marketing và Ban giám đốc', short: 'Trưởng phòng MKT và Ban giám đốc' };
+      case 'Xưởng sản xuất gối':
+        return { full: 'Trưởng nhóm Xưởng sản xuất gối và Ban giám đốc', short: 'Trưởng nhóm và Ban giám đốc' };
+      default:
+        return { full: 'Trưởng bộ phận và Ban giám đốc', short: 'Trưởng bộ phận và Ban giám đốc' };
+    }
+  };
+
+  const handlePrintLeaveRequest = (r) => {
+    const approverInfo = getDepartmentApprover(r.department_name);
+    const sDate = new Date(r.start_date);
+    const eDate = new Date(r.end_date);
+    const diffTime = Math.abs(eDate - sDate);
+    const daysCount = r.days_count || Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const today = new Date();
+    const nowDay = String(today.getDate()).padStart(2, '0');
+    const nowMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const nowYear = today.getFullYear();
+
+    const formatDateString = (dateStr) => {
+      if (!dateStr) return '...';
+      const [y, m, d] = dateStr.split('-');
+      return `ngày ${d} tháng ${m} năm ${y}`;
+    };
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+      <head>
+        <title>Đơn xin nghỉ phép - ${r.fullname}</title>
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; }
+            .no-print { display: none; }
+          }
+          body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13pt;
+            line-height: 1.6;
+            color: black;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 30px;
+          }
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.5px solid black;
+            margin-bottom: 25px;
+          }
+          .header-table td {
+            padding: 10px;
+            vertical-align: middle;
+            border: 1.5px solid black;
+          }
+          .logo-container {
+            width: 25%;
+            text-align: center;
+          }
+          .logo-img {
+            max-height: 55px;
+            max-width: 100%;
+            object-fit: contain;
+          }
+          .national-title {
+            width: 75%;
+            text-align: center;
+          }
+          .national-title h3 {
+            margin: 0;
+            font-size: 12pt;
+            font-weight: bold;
+            text-transform: uppercase;
+          }
+          .national-title p {
+            margin: 4px 0 0 0;
+            font-size: 11pt;
+          }
+          .national-motto {
+            font-weight: bold;
+            margin-top: 2px;
+          }
+          .doc-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0000FF;
+            text-transform: uppercase;
+            margin-top: 15px;
+            margin-bottom: 20px;
+          }
+          .content-section {
+            margin-bottom: 20px;
+          }
+          .content-line {
+            margin-bottom: 10px;
+            text-align: justify;
+          }
+          .signatures-container {
+            margin-top: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+          }
+          .signature-box {
+            width: 45%;
+            text-align: center;
+          }
+          .signature-title {
+            font-weight: bold;
+          }
+          .signature-subtitle {
+            font-style: italic;
+            font-size: 10.5pt;
+            margin-top: 2px;
+          }
+          .signature-space {
+            height: 90px;
+          }
+          .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          .btn-print {
+            padding: 8px 16px;
+            background-color: #1e3a8a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="no-print">
+          <button class="btn-print" onclick="window.print()">In Đơn Xin Nghỉ Phép</button>
+        </div>
+
+        <table class="header-table">
+          <tr>
+            <td class="logo-container">
+              <img class="logo-img" src="/logo.jpg" alt="VIET A Logo" />
+            </td>
+            <td class="national-title">
+              <h3>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h3>
+              <p class="national-motto">Độc lập - Tự do - Hạnh phúc</p>
+              <p>-------***-------</p>
+            </td>
+          </tr>
+        </table>
+
+        <div class="doc-title">ĐƠN XIN NGHỈ PHÉP</div>
+
+        <div class="content-section">
+          <div class="content-line" style="text-align: center; margin-bottom: 15px;">
+            Kính gửi : ${approverInfo.full}
+          </div>
+          
+          <div class="content-line">
+            Tên tôi là: ${r.fullname}
+          </div>
+          
+          <div class="content-line">
+            Chức vụ: ${r.position_name || 'Nhân viên'}
+          </div>
+          
+          <div class="content-line">
+            Bộ phận: ${r.department_name || '....................'}
+          </div>
+          
+          <div class="content-line">
+            Nay tôi làm đơn này kính xin ${approverInfo.short} chấp thuận cho tôi được nghỉ phép trong thời gian <strong>${daysCount}</strong> ngày
+          </div>
+          
+          <div class="content-line">
+            Kể từ ngày <strong>${r.start_date}</strong> đến hết ngày <strong>${r.end_date}</strong>
+          </div>
+          
+          <div class="content-line">
+            Lý do xin nghỉ phép: ${r.reason || '.......................................................................................................'}
+          </div>
+          
+          <div class="content-line">
+            Tôi đã bàn giao công việc trong thời gian nghỉ phép lại cho đồng nghiệp của tôi
+          </div>
+          
+          <div class="content-line">
+            Rất mong được sự xem xét và chấp thuận. Tôi xin chân thành cảm ơn!
+          </div>
+        </div>
+
+        <div style="text-align: right; font-style: italic; margin-top: 20px;">
+          ........., ngày ${nowDay} tháng ${nowMonth} năm ${nowYear}
+        </div>
+
+        <div class="signatures-container">
+          <div class="signature-box">
+            <div class="signature-title">Người phê duyệt</div>
+            <div class="signature-subtitle">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-space"></div>
+            <div style="border-bottom: 1px dotted black; width: 80%; margin: 0 auto;"></div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-title">Người làm đơn</div>
+            <div class="signature-subtitle">(Ký, ghi rõ họ tên)</div>
+            <div class="signature-space"></div>
+            <strong style="display: block; margin-top: 10px;">${r.fullname}</strong>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div className="space-y-6">
@@ -143,14 +376,15 @@ const LeavePage = () => {
                     )}
                   </td>
                   <td className="px-4 py-4 text-right space-x-2">
+                     <button onClick={() => handlePrintLeaveRequest(r)} className="text-brand-600 hover:text-brand-800 p-1 bg-brand-50 rounded" title="In đơn xin nghỉ phép"><Printer size={18}/></button>
                      {r.status === 'Chờ duyệt' && user?.roleName !== 'EMPLOYEE' && (
                        <>
-                        <button onClick={() => handleUpdateStatus(r.id, 'Đã duyệt')} className="text-emerald-600 hover:text-emerald-800 p-1 bg-emerald-50 rounded" title="Duyệt"><CheckCircle size={18}/></button>
-                        <button onClick={() => handleUpdateStatus(r.id, 'Từ chối')} className="text-red-600 hover:text-red-800 p-1 bg-red-50 rounded" title="Từ chối"><XCircle size={18}/></button>
+                        <button onClick={() => handleUpdateStatus(r.id, 'Đã duyệt')} className="text-emerald-600 hover:text-emerald-800 p-1 bg-emerald-50 rounded inline-flex items-center" title="Duyệt"><CheckCircle size={18}/></button>
+                        <button onClick={() => handleUpdateStatus(r.id, 'Từ chối')} className="text-red-600 hover:text-red-800 p-1 bg-red-50 rounded inline-flex items-center" title="Từ chối"><XCircle size={18}/></button>
                        </>
                      )}
                      {r.status === 'Chờ duyệt' && (user?.roleName === 'EMPLOYEE' || user?.roleName === 'ADMIN' || user?.roleName === 'HR') && (
-                        <button onClick={() => handleDelete(r.id)} className="text-slate-400 hover:text-red-600 p-1 ml-2 text-xs border rounded">Xóa</button>
+                        <button onClick={() => handleDelete(r.id)} className="text-slate-400 hover:text-red-600 p-1 text-xs border rounded">Xóa</button>
                      )}
                   </td>
                 </tr>
