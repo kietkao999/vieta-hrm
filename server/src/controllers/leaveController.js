@@ -5,7 +5,7 @@ export const getLeaveRequests = async (req, res) => {
     const { status, employee_id } = req.query;
     
     let sql = `
-      SELECT l.*, e.fullname, e.code as employee_code, d.name as department_name,
+      SELECT l.*, l.type as leave_type, e.fullname, e.code as employee_code, d.name as department_name,
              p.name as position_name,
              (SELECT fullname FROM employees WHERE id = l.approver_id) as approver_name
       FROM leave_requests l
@@ -63,7 +63,7 @@ export const createLeaveRequest = async (req, res) => {
 
     const now = new Date().toISOString();
     await query.run(`
-      INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, days_count, reason, status, created_at, updated_at)
+      INSERT INTO leave_requests (employee_id, type, start_date, end_date, days_count, reason, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, 'Chờ duyệt', ?, ?)
     `, [empId, leave_type || 'Phép năm', start_date, end_date, days_count, reason || '', now, now]);
     return res.status(201).json({ message: 'Tạo đơn xin nghỉ phép thành công.' });

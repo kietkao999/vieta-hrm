@@ -192,6 +192,7 @@ export const initDatabase = async () => {
         approver_id INTEGER,
         approver_notes TEXT,
         created_at TEXT,
+        updated_at TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
         FOREIGN KEY (approver_id) REFERENCES employees(id) ON DELETE SET NULL
       )
