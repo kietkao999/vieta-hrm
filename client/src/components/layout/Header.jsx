@@ -17,13 +17,16 @@ const Header = ({ setIsSidebarOpen }) => {
         >
           <Menu size={20} />
         </button>
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 hidden md:block">
-            CÔNG TY TNHH TM SX VIỆT Á
-          </h1>
-          <h1 className="text-sm font-bold text-slate-800 md:hidden">
-            VIỆT Á HRM
-          </h1>
+        <div className="flex items-center space-x-3">
+          <img src="/logo.jpg" alt="Việt Á Logo" className="h-10 object-contain rounded-md" />
+          <div>
+            <h1 className="text-lg font-bold text-slate-800 hidden md:block">
+              CÔNG TY TNHH TM SX VIỆT Á
+            </h1>
+            <h1 className="text-sm font-bold text-slate-800 md:hidden">
+              VIỆT Á HRM
+            </h1>
+          </div>
         </div>
       </div>
 
