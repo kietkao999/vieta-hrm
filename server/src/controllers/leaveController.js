@@ -7,7 +7,7 @@ export const getLeaveRequests = async (req, res) => {
     let sql = `
       SELECT l.*, e.fullname, e.code as employee_code, d.name as department_name,
              p.name as position_name,
-             (SELECT fullname FROM employees WHERE id = l.approved_by) as approver_name
+             (SELECT fullname FROM employees WHERE id = l.approver_id) as approver_name
       FROM leave_requests l
       JOIN employees e ON l.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
@@ -95,7 +95,7 @@ export const updateLeaveStatus = async (req, res) => {
     const now = new Date().toISOString();
     await query.run(`
       UPDATE leave_requests 
-      SET status = ?, approved_by = ?, updated_at = ?
+      SET status = ?, approver_id = ?, updated_at = ?
       WHERE id = ?
     `, [status, req.user.employeeId || null, now, id]);
 
