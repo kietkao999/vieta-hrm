@@ -51,7 +51,7 @@ const DashboardPage = () => {
         // 3. Lấy số hợp đồng hiệu lực (chỉ admin/HR được xem)
         if (user.roleName === 'ADMIN' || user.roleName === 'HR') {
           try {
-            const contractRes = await api.get('/contracts?status=Hiệu lực');
+            const contractRes = await api.get('/contracts?status=Có hiệu lực');
             activeContracts = contractRes.data?.length || 0;
           } catch (e) { console.error(e); }
         }
