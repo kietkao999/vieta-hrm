@@ -4,7 +4,7 @@ import XLSX from 'xlsx';
 // Lấy danh sách nhân viên với lọc, tìm kiếm, phân trang
 export const getEmployees = async (req, res) => {
   try {
-    const { search, department_id, branch_id, status, page = 1, limit = 50 } = req.query;
+    const { search, department_id, branch_id, status, page = 1, limit = 1000 } = req.query;
     let sql = `
       SELECT e.*,
              d.name as department_name,
