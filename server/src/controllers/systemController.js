@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { query, dbPath } from '../config/database.js';
+import db, { query, dbPath } from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,18 +57,30 @@ export const restoreDatabase = async (req, res) => {
 
     const uploadedFilePath = req.file.path;
 
-    // Sao chép đè cơ sở dữ liệu vật lý
-    fs.copyFileSync(uploadedFilePath, dbPath);
-    fs.unlinkSync(uploadedFilePath); // Xóa file upload tạm
+    // Đóng kết nối SQLite đang mở trước khi ghi đè tệp tin
+    db.close((err) => {
+      if (err) {
+        console.error('Lỗi khi đóng kết nối SQLite:', err);
+      }
 
-    console.log('Cơ sở dữ liệu đã được khôi phục thành công. Hệ thống đang khởi động lại...');
+      try {
+        // Sao chép đè tệp tin cơ sở dữ liệu vật lý
+        fs.copyFileSync(uploadedFilePath, dbPath);
+        fs.unlinkSync(uploadedFilePath); // Xóa file upload tạm
+        
+        console.log('Cơ sở dữ liệu đã được khôi phục thành công. Hệ thống đang khởi động lại...');
+        
+        res.json({ message: 'Khôi phục dữ liệu thành công! Hệ thống đang khởi động lại...' });
 
-    res.json({ message: 'Khôi phục dữ liệu thành công! Hệ thống đang khởi động lại...' });
-
-    // Khởi động lại container bằng cách exit 0, Railway sẽ tự khởi chạy lại container mới tải tệp DB này.
-    setTimeout(() => {
-      process.exit(0);
-    }, 1000);
+        // Khởi động lại container bằng cách exit 0 để Railway load lại DB mới hoàn toàn
+        setTimeout(() => {
+          process.exit(0);
+        }, 500);
+      } catch (copyErr) {
+        console.error('Lỗi khi sao chép đè file database:', copyErr);
+        res.status(500).json({ message: 'Lỗi ghi đè file cơ sở dữ liệu.' });
+      }
+    });
 
   } catch (error) {
     console.error('Lỗi khi khôi phục database:', error);
