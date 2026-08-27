@@ -22,6 +22,9 @@ export const auditMiddleware = (req, res, next) => {
 
     // Chỉ log các request làm thay đổi dữ liệu và thành công (2xx)
     if (['POST', 'PUT', 'DELETE'].includes(req.method) && res.statusCode >= 200 && res.statusCode < 300) {
+      if (req.originalUrl.includes('/system/restore')) {
+        return;
+      }
       const username = req.user ? req.user.username : 'Khách';
       const userId = req.user ? req.user.userId : null;
       const action = `${req.method} ${req.originalUrl}`;

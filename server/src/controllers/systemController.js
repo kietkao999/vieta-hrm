@@ -72,9 +72,9 @@ export const restoreDatabase = async (req, res) => {
         
         res.json({ message: 'Khôi phục dữ liệu thành công! Hệ thống đang khởi động lại...' });
 
-        // Khởi động lại container bằng cách exit 0 để Railway load lại DB mới hoàn toàn
+        // Khởi động lại container bằng cách exit 1 để Railway coi là sự cố và tự động kích hoạt tự phục hồi (auto-restart)
         setTimeout(() => {
-          process.exit(0);
+          process.exit(1);
         }, 500);
       } catch (copyErr) {
         console.error('Lỗi khi sao chép đè file database:', copyErr);
