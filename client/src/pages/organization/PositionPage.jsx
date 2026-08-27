@@ -115,11 +115,11 @@ const PositionPage = () => {
         <input type="text" placeholder="Tìm kiếm chức vụ..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="outline-none text-sm w-full bg-transparent" />
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
         {loading ? (
            <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse">
+          <table className="w-full text-left text-sm border-collapse min-w-[700px]">
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
               <tr>
                 <th className="px-6 py-3">Tên Chức vụ</th>
