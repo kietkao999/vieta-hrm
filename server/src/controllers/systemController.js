@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { query } from '../config/database.js';
+import { query, dbPath } from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,8 +22,6 @@ export const getAuditLogs = async (req, res) => {
 
 export const backupDatabase = async (req, res) => {
   try {
-    const dbPath = path.resolve(__dirname, '../../hrm.db');
-
     if (!fs.existsSync(dbPath)) {
       return res.status(404).json({ message: 'Không tìm thấy file cơ sở dữ liệu.' });
     }
@@ -43,5 +41,37 @@ export const backupDatabase = async (req, res) => {
   } catch (error) {
     console.error('Lỗi khi thực hiện backup:', error);
     return res.status(500).json({ message: 'Lỗi máy chủ khi sao lưu dữ liệu.' });
+  }
+};
+
+export const restoreDatabase = async (req, res) => {
+  try {
+    const secret = req.headers['x-restore-secret'];
+    if (secret !== 'vieta-hrm-restore-secret-key-2026') {
+      return res.status(403).json({ message: 'Không có quyền thực hiện thao tác này.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp file database (.db) để khôi phục.' });
+    }
+
+    const uploadedFilePath = req.file.path;
+
+    // Sao chép đè cơ sở dữ liệu vật lý
+    fs.copyFileSync(uploadedFilePath, dbPath);
+    fs.unlinkSync(uploadedFilePath); // Xóa file upload tạm
+
+    console.log('Cơ sở dữ liệu đã được khôi phục thành công. Hệ thống đang khởi động lại...');
+
+    res.json({ message: 'Khôi phục dữ liệu thành công! Hệ thống đang khởi động lại...' });
+
+    // Khởi động lại container bằng cách exit 0, Railway sẽ tự khởi chạy lại container mới tải tệp DB này.
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+
+  } catch (error) {
+    console.error('Lỗi khi khôi phục database:', error);
+    return res.status(500).json({ message: 'Lỗi máy chủ khi khôi phục dữ liệu.' });
   }
 };

@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Lưu file db trong thư mục server hoặc lấy từ cấu hình Cloud (như Railway Volume)
-const dbPath = process.env.DB_PATH || path.resolve(__dirname, '../../hrm.db');
+export const dbPath = process.env.DB_PATH || path.resolve(__dirname, '../../hrm.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
