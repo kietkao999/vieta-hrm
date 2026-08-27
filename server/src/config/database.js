@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -377,6 +378,75 @@ export const initDatabase = async () => {
     `);
 
     console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ.');
+
+    // Tự động nạp dữ liệu cơ bản nếu bảng roles trống
+    const roleCount = await query.get('SELECT COUNT(*) as total FROM roles');
+    if (roleCount.total === 0) {
+      console.log('Cơ sở dữ liệu mới phát hiện. Đang tự động nạp dữ liệu mặc định...');
+      
+      // 1. Seed Roles
+      const roles = [
+        { id: 1, name: 'ADMIN', display_name: 'Quản trị hệ thống' },
+        { id: 2, name: 'HR', display_name: 'Phòng Nhân sự' },
+        { id: 3, name: 'MANAGER', display_name: 'Trưởng phòng / Quản lý' },
+        { id: 4, name: 'EMPLOYEE', display_name: 'Nhân viên' }
+      ];
+      for (const role of roles) {
+        await query.run(
+          'INSERT OR IGNORE INTO roles (id, name, display_name) VALUES (?, ?, ?)',
+          [role.id, role.name, role.display_name]
+        );
+      }
+
+      // 2. Seed Branches
+      const branches = [
+        { id: 1, name: 'Văn phòng Trụ sở chính', address: 'Số 12, Đường số 5, KDC Trung Sơn, TP.HCM' },
+        { id: 2, name: 'Nhà máy Sản xuất Việt Á', address: 'Lô C-4, Khu Công nghiệp Tân Tạo, TP.HCM' }
+      ];
+      for (const b of branches) {
+        await query.run(
+          'INSERT OR IGNORE INTO branches (id, name, address) VALUES (?, ?, ?)',
+          [b.id, b.name, b.address]
+        );
+      }
+
+      // 3. Seed Departments
+      const depts = [
+        'Ban giám đốc',
+        'Kho Cần Thơ',
+        'Khối văn phòng',
+        'Xưởng sản xuất nệm',
+        'Kho Mỹ Tho',
+        'Phòng kinh doanh',
+        'Phòng Marketing',
+        'Xưởng sản xuất gối'
+      ];
+      for (const name of depts) {
+        await query.run('INSERT OR IGNORE INTO departments (name, branch_id) VALUES (?, 1)', [name]);
+      }
+
+      // 4. Seed Users
+      const salt = bcrypt.genSaltSync(10);
+      const hashAdmin = bcrypt.hashSync('Admin@123', salt);
+      const hashHR = bcrypt.hashSync('Hr@123', salt);
+      const hashMgr = bcrypt.hashSync('Manager@123', salt);
+      const hashEmp = bcrypt.hashSync('Emp@123', salt);
+
+      const users = [
+        { username: 'admin', password: hashAdmin, role_id: 1, employee_id: null },
+        { username: 'hr_manager', password: hashHR, role_id: 2, employee_id: null },
+        { username: 'dept_manager', password: hashMgr, role_id: 3, employee_id: null },
+        { username: 'employee1', password: hashEmp, role_id: 4, employee_id: null }
+      ];
+
+      for (const u of users) {
+        await query.run(
+          'INSERT OR IGNORE INTO users (username, password, role_id, employee_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)',
+          [u.username, u.password, u.role_id, u.employee_id, new Date().toISOString(), new Date().toISOString()]
+        );
+      }
+      console.log('Đã nạp thành công các vai trò và tài khoản đăng nhập mặc định.');
+    }
   } catch (error) {
     console.error('Lỗi khởi tạo cơ sở dữ liệu:', error);
     throw error;
