@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAuditLogs, backupDatabase, restoreDatabase } from '../controllers/systemController.js';
+import { getAuditLogs, backupDatabase, restoreDatabase, checkDatabase } from '../controllers/systemController.js';
 import { authMiddleware, requireRoles } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
@@ -28,6 +28,7 @@ const upload = multer({ storage });
 
 // Endpoint phục hồi database dùng secret key riêng (không cần token JWT của user)
 router.post('/restore', upload.single('file'), restoreDatabase);
+router.get('/check-db', checkDatabase);
 
 // Các endpoint hệ thống khác yêu cầu quyền đăng nhập admin
 router.use(authMiddleware);

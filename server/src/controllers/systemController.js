@@ -75,3 +75,45 @@ export const restoreDatabase = async (req, res) => {
     return res.status(500).json({ message: 'Lỗi máy chủ khi khôi phục dữ liệu.' });
   }
 };
+
+export const checkDatabase = async (req, res) => {
+  try {
+    const secret = req.headers['x-restore-secret'];
+    if (secret !== 'vieta-hrm-restore-secret-key-2026') {
+      return res.status(403).json({ message: 'Không có quyền thực hiện.' });
+    }
+
+    const exists = fs.existsSync(dbPath);
+    let size = 0;
+    if (exists) {
+      size = fs.statSync(dbPath).size;
+    }
+
+    let employeeCount = 0;
+    let tableError = null;
+    try {
+      const result = await query.get('SELECT COUNT(*) as total FROM employees');
+      employeeCount = result ? result.total : 0;
+    } catch (e) {
+      tableError = e.message;
+    }
+
+    let rolesCount = 0;
+    try {
+      const result = await query.get('SELECT COUNT(*) as total FROM roles');
+      rolesCount = result ? result.total : 0;
+    } catch (e) {}
+
+    return res.json({
+      dbPath,
+      exists,
+      sizeBytes: size,
+      employeeCount,
+      rolesCount,
+      tableError,
+      envDbPath: process.env.DB_PATH || 'NOT_SET'
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
