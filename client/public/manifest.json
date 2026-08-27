@@ -1,0 +1,16 @@
+{
+  "short_name": "Việt Á HR",
+  "name": "Việt Á HR - Hệ thống Quản lý Nhân sự",
+  "icons": [
+    {
+      "src": "/viet_a_hr_icon.png",
+      "type": "image/png",
+      "sizes": "1024x1024"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0056b3",
+  "theme_color": "#0056b3",
+  "display": "standalone",
+  "orientation": "portrait"
+}
