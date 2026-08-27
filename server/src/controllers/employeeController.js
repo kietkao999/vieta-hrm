@@ -63,7 +63,7 @@ export const getEmployees = async (req, res) => {
 
     // Phân trang
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    sql += ' ORDER BY e.id DESC LIMIT ? OFFSET ?';
+    sql += ' ORDER BY e.code ASC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
     const employees = await query.all(sql, params);
