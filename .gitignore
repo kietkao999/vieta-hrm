@@ -6,3 +6,5 @@ build/
 hrm.db-journal
 hrm.db-wal
 hrm.db-shm
+*.db
+server/hrm.db
