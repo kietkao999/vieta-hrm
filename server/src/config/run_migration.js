@@ -22,7 +22,7 @@ const POSITIONS = {
     "Trưởng phòng HCNS",
     "Trợ lý Giám đốc",
     "Kế toán thu mua",
-    "Kế toán thuế",
+    "Kế toán viên",
     "Trưởng phòng R&D",
     "Nhân viên phòng tổ chức"
   ],
@@ -98,7 +98,7 @@ const EMPLOYEES_DATA = [
   { code: "VietA 031", name: "Nguyễn Quốc Hùng", dept: "Khối văn phòng", pos: "Trưởng phòng kế toán" },
   { code: "VietA 032", name: "Huỳnh Thị Trúc Xinh", dept: "Khối văn phòng", pos: "Trưởng phòng HCNS" },
   { code: "VietA 033", name: "Nguyễn Quốc Huy", dept: "Khối văn phòng", pos: "Trợ lý Giám đốc" },
-  { code: "VietA 034", name: "Lê Thị Mỹ Phúc", dept: "Khối văn phòng", pos: "Kế toán thuế" },
+  { code: "VietA 034", name: "Lê Thị Mỹ Phúc", dept: "Khối văn phòng", pos: "Kế toán viên" },
   { code: "VietA 035", name: "Lê Huy Hoàng", dept: "Khối văn phòng", pos: "Trưởng phòng R&D" },
   { code: "VietA 036", name: "Phạm Tấn Hưng", dept: "Phòng kinh doanh", pos: "Trưởng phòng kinh doanh" },
   { code: "VietA 037", name: "Nguyễn Thị Kim Hoàng", dept: "Phòng kinh doanh", pos: "Kế toán kinh doanh" },
