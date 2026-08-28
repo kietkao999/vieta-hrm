@@ -29,6 +29,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const [expandedGroups, setExpandedGroups] = useState({
     tochuc: true,
+    caidathrm: true,
     nhansu: true,
     phattrien: false,
     ghinhan: false,
@@ -51,9 +52,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: 'TỔ CHỨC',
       roles: ['ADMIN', 'HR'],
       items: [
-        { name: 'Chi nhánh', path: '/branches', icon: Building, roles: ['ADMIN', 'HR'] },
-        { name: 'Phòng ban', path: '/departments', icon: Layers, roles: ['ADMIN', 'HR'] },
-        { name: 'Chức vụ', path: '/positions', icon: Briefcase, roles: ['ADMIN', 'HR'] }
+        { name: 'Chi nhánh', path: '/branches', icon: Building, roles: ['ADMIN', 'HR'] }
+      ]
+    },
+    {
+      id: 'caidathrm',
+      title: 'CÀI ĐẶT HRM',
+      roles: ['ADMIN', 'HR'],
+      items: [
+        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'HR'] }
       ]
     },
     {

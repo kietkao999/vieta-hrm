@@ -47,7 +47,7 @@ export const createDepartment = async (req, res) => {
 };
 
 export const updateDepartment = async (req, res) => {
-  const { name, branch_id } = req.body;
+  const { name, branch_id, is_active } = req.body;
   try {
     const dept = await query.get('SELECT id FROM departments WHERE id = ?', [req.params.id]);
     if (!dept) return res.status(404).json({ message: 'Phòng ban không tồn tại.' });
@@ -55,8 +55,8 @@ export const updateDepartment = async (req, res) => {
     const dup = await query.get('SELECT id FROM departments WHERE name = ? AND id != ?', [name.trim(), req.params.id]);
     if (dup) return res.status(400).json({ message: 'Tên phòng ban đã tồn tại.' });
     await query.run(
-      'UPDATE departments SET name = ?, branch_id = ? WHERE id = ?',
-      [name.trim(), branch_id || null, req.params.id]
+      'UPDATE departments SET name = ?, branch_id = ?, is_active = ? WHERE id = ?',
+      [name.trim(), branch_id || null, is_active !== undefined ? is_active : 1, req.params.id]
     );
     return res.json({ message: 'Cập nhật phòng ban thành công.' });
   } catch (error) {

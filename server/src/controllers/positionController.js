@@ -47,7 +47,7 @@ export const createPosition = async (req, res) => {
 };
 
 export const updatePosition = async (req, res) => {
-  const { name, department_id } = req.body;
+  const { name, department_id, is_active } = req.body;
   try {
     const pos = await query.get('SELECT id FROM positions WHERE id = ?', [req.params.id]);
     if (!pos) return res.status(404).json({ message: 'Chức vụ không tồn tại.' });
@@ -55,8 +55,8 @@ export const updatePosition = async (req, res) => {
     const dup = await query.get('SELECT id FROM positions WHERE name = ? AND id != ?', [name.trim(), req.params.id]);
     if (dup) return res.status(400).json({ message: 'Tên chức vụ đã tồn tại.' });
     await query.run(
-      'UPDATE positions SET name = ?, department_id = ? WHERE id = ?',
-      [name.trim(), department_id || null, req.params.id]
+      'UPDATE positions SET name = ?, department_id = ?, is_active = ? WHERE id = ?',
+      [name.trim(), department_id || null, is_active !== undefined ? is_active : 1, req.params.id]
     );
     return res.json({ message: 'Cập nhật chức vụ thành công.' });
   } catch (error) {

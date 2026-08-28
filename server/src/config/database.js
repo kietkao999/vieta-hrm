@@ -82,6 +82,7 @@ export const initDatabase = async () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
         branch_id INTEGER,
+        is_active INTEGER DEFAULT 1,
         FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
       )
     `);
@@ -92,9 +93,25 @@ export const initDatabase = async () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
         department_id INTEGER,
+        is_active INTEGER DEFAULT 1,
         FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
       )
     `);
+
+    // Migrate existing DBs:
+    try {
+      await query.run('ALTER TABLE departments ADD COLUMN is_active INTEGER DEFAULT 1');
+      console.log('Đã thêm cột is_active vào bảng departments.');
+    } catch (e) {
+      // Ignored if column already exists
+    }
+
+    try {
+      await query.run('ALTER TABLE positions ADD COLUMN is_active INTEGER DEFAULT 1');
+      console.log('Đã thêm cột is_active vào bảng positions.');
+    } catch (e) {
+      // Ignored if column already exists
+    }
 
     // 5. Employees
     await query.exec(`

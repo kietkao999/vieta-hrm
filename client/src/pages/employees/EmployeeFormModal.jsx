@@ -15,6 +15,20 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [filterByDept, setFilterByDept] = useState(true);
+
+  const filteredDepartmentsOptions = departments.filter(d => {
+    return d.is_active !== 0 || (employee && Number(employee.department_id) === Number(d.id));
+  });
+
+  const filteredPositionsOptions = positions.filter(p => {
+    const isAllowedStatus = p.is_active !== 0 || (employee && Number(employee.position_id) === Number(p.id));
+    if (!isAllowedStatus) return false;
+    if (formData.department_id && filterByDept) {
+      return Number(p.department_id) === Number(formData.department_id);
+    }
+    return true;
+  });
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -154,14 +168,27 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
                 <label className="text-xs font-semibold text-slate-500">Phòng ban</label>
                 <select name="department_id" value={formData.department_id} onChange={handleChange} className="w-full border rounded-lg p-2 text-sm mt-1 bg-white">
                   <option value="">-- Chọn phòng ban --</option>
-                  {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {filteredDepartmentsOptions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500">Chức vụ</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-semibold text-slate-500">Chức vụ</label>
+                  {formData.department_id && (
+                    <label className="flex items-center space-x-1 text-[10px] text-slate-500 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={filterByDept} 
+                        onChange={(e) => setFilterByDept(e.target.checked)} 
+                        className="rounded text-brand-700" 
+                      />
+                      <span>Lọc theo phòng ban</span>
+                    </label>
+                  )}
+                </div>
                 <select name="position_id" value={formData.position_id} onChange={handleChange} className="w-full border rounded-lg p-2 text-sm mt-1 bg-white">
                   <option value="">-- Chọn chức vụ --</option>
-                  {positions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {filteredPositionsOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div>

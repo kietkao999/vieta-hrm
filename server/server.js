@@ -8,6 +8,14 @@ const startServer = async () => {
     // Đảm bảo database đã được khởi tạo
     await initDatabase();
     
+    // Tự động chạy migration đồng bộ nhân sự & phòng ban khi khởi động
+    try {
+      const { runMigration } = await import('./src/config/run_migration.js');
+      await runMigration();
+    } catch (migError) {
+      console.error('Lỗi chạy tự động migration:', migError);
+    }
+    
     app.listen(PORT, () => {
       console.log(`==================================================`);
       console.log(` Máy chủ HRM Việt Á đang chạy tại cổng: ${PORT}`);

@@ -13,6 +13,7 @@ import BackupPage from './pages/admin/BackupPage';
 import BranchPage from './pages/organization/BranchPage';
 import DepartmentPage from './pages/organization/DepartmentPage';
 import PositionPage from './pages/organization/PositionPage';
+import DeptPosSettingsPage from './pages/organization/DeptPosSettingsPage';
 import EmployeePage from './pages/employees/EmployeePage';
 
 // Giai đoạn 3
@@ -59,6 +60,7 @@ function App() {
             <Route path="branches" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><BranchPage /></ProtectedRoute>} />
             <Route path="departments" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><DepartmentPage /></ProtectedRoute>} />
             <Route path="positions" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><PositionPage /></ProtectedRoute>} />
+            <Route path="settings/departments-positions" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><DeptPosSettingsPage /></ProtectedRoute>} />
 
             {/* NHÂN SỰ Module */}
             <Route
