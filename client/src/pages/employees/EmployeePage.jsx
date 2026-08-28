@@ -155,7 +155,7 @@ const EmployeePage = () => {
            <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
         ) : (
           <table className="w-full text-left text-sm border-collapse min-w-[800px]">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
+            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs whitespace-nowrap">
               <tr>
                 <th className="px-4 py-3">Mã NV</th>
                 <th className="px-4 py-3">Họ và Tên</th>
@@ -165,14 +165,14 @@ const EmployeePage = () => {
                 <th className="px-4 py-3 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 whitespace-nowrap">
               {employees.length === 0 ? (
                 <tr><td colSpan="6" className="text-center py-8 text-slate-500">Không tìm thấy nhân viên nào</td></tr>
               ) : employees.map(e => (
                 <tr key={e.id} className="hover:bg-slate-50">
                   <td className="px-4 py-4 font-mono text-xs text-slate-500">{e.code}</td>
                   <td className="px-4 py-4 font-semibold text-slate-800 flex items-center space-x-3 cursor-pointer" onClick={() => handleOpenDetail(e)}>
-                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold flex-shrink-0">
                       {e.fullname.charAt(0)}
                     </div>
                     <div>
@@ -183,7 +183,7 @@ const EmployeePage = () => {
                   <td className="px-4 py-4">{e.department_name}</td>
                   <td className="px-4 py-4">{e.position_name}</td>
                   <td className="px-4 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    <span className={`px-2 py-1 rounded text-xs font-bold inline-block ${
                       e.status === 'Đang làm việc' ? 'bg-emerald-100 text-emerald-700' :
                       e.status === 'Thử việc' ? 'bg-amber-100 text-amber-700' :
                       e.status === 'Đã nghỉ việc' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'

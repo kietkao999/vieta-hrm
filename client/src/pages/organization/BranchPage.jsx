@@ -115,7 +115,7 @@ const BranchPage = () => {
            <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
         ) : (
           <table className="w-full text-left text-sm border-collapse min-w-[700px]">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
+            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs whitespace-nowrap">
               <tr>
                 <th className="px-6 py-3">ID</th>
                 <th className="px-6 py-3">Tên Chi nhánh</th>
@@ -123,7 +123,7 @@ const BranchPage = () => {
                 <th className="px-6 py-3 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 whitespace-nowrap">
               {filtered.map(b => (
                 <tr key={b.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4">{b.id}</td>

@@ -278,7 +278,7 @@ const DeptPosSettingsPage = () => {
                 <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
               ) : (
                 <table className="w-full text-left text-sm border-collapse min-w-[600px]">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs border-b">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs border-b whitespace-nowrap">
                     <tr>
                       <th className="px-6 py-3.5">Tên Phòng ban</th>
                       <th className="px-6 py-3.5">Chi nhánh liên kết</th>
@@ -287,10 +287,10 @@ const DeptPosSettingsPage = () => {
                       <th className="px-6 py-3.5 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 whitespace-nowrap">
                     {filteredDepts.map(d => (
                       <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center space-x-2">
+                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center space-x-2 whitespace-nowrap">
                           <Layers size={16} className="text-brand-500" />
                           <span>{d.name}</span>
                         </td>
@@ -380,7 +380,7 @@ const DeptPosSettingsPage = () => {
                 <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
               ) : (
                 <table className="w-full text-left text-sm border-collapse min-w-[600px]">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs border-b">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs border-b whitespace-nowrap">
                     <tr>
                       <th className="px-6 py-3.5">Tên Chức vụ</th>
                       <th className="px-6 py-3.5">Thuộc Phòng ban</th>
@@ -389,10 +389,10 @@ const DeptPosSettingsPage = () => {
                       <th className="px-6 py-3.5 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 whitespace-nowrap">
                     {filteredPositions.map(p => (
                       <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center space-x-2">
+                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center space-x-2 whitespace-nowrap">
                           <Briefcase size={16} className="text-brand-500" />
                           <span>{p.name}</span>
                         </td>

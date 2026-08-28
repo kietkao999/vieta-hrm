@@ -207,7 +207,7 @@ const ContractPage = () => {
            <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
         ) : (
           <table className="w-full text-left text-sm border-collapse min-w-[900px]">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
+            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs whitespace-nowrap">
               <tr>
                 <th className="px-4 py-3">Số HĐ</th>
                 <th className="px-4 py-3">Nhân viên</th>
@@ -218,7 +218,7 @@ const ContractPage = () => {
                 {(user?.roleName === 'ADMIN' || user?.roleName === 'HR') && <th className="px-4 py-3 text-right">Thao tác</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 whitespace-nowrap">
               {contracts.length === 0 ? (
                 <tr><td colSpan="7" className="text-center py-8 text-slate-500">Không có dữ liệu hợp đồng</td></tr>
               ) : contracts.map(c => {
