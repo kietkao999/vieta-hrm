@@ -149,9 +149,36 @@ export async function runMigration() {
       }
     }
 
+    // 1.5. Hợp nhất các Phòng ban trùng tên không phân biệt hoa thường
+    console.log('Hợp nhất các Phòng ban trùng tên không phân biệt hoa thường...');
+    const allDeptRows = await query.all('SELECT id, name FROM departments');
+    const deptGroups = {};
+    for (const d of allDeptRows) {
+      const lower = d.name.trim().toLowerCase();
+      if (!deptGroups[lower]) deptGroups[lower] = [];
+      deptGroups[lower].push(d);
+    }
+
+    for (const [lowerName, group] of Object.entries(deptGroups)) {
+      if (group.length > 1) {
+        let officialMatch = group.find(d => DEPARTMENTS.includes(d.name));
+        const target = officialMatch || group[0];
+        console.log(`Hợp nhất nhóm phòng ban "${lowerName}": Giữ lại "${target.name}" (ID: ${target.id})`);
+
+        for (const duplicate of group) {
+          if (duplicate.id !== target.id) {
+            console.log(`  -> Gộp "${duplicate.name}" (ID: ${duplicate.id}) vào "${target.name}" (ID: ${target.id})`);
+            await query.run('UPDATE employees SET department_id = ? WHERE department_id = ?', [target.id, duplicate.id]);
+            await query.run('UPDATE work_history SET department_id = ? WHERE department_id = ?', [target.id, duplicate.id]);
+            await query.run('DELETE FROM departments WHERE id = ?', [duplicate.id]);
+          }
+        }
+      }
+    }
+
     // Các phòng ban khác không nằm trong danh sách chính thức
-    const allDepts = await query.all('SELECT id, name FROM departments');
-    for (const d of allDepts) {
+    const allDeptsAfterMerge = await query.all('SELECT id, name FROM departments');
+    for (const d of allDeptsAfterMerge) {
       if (!DEPARTMENTS.includes(d.name)) {
         // Kiểm tra xem có nhân viên đang sử dụng không
         const usage = await query.get('SELECT COUNT(*) as count FROM employees WHERE department_id = ?', [d.id]);
@@ -188,10 +215,45 @@ export async function runMigration() {
       }
     }
 
+    // 2.5. Hợp nhất các Chức vụ trùng tên không phân biệt hoa thường
+    console.log('Hợp nhất các Chức vụ trùng tên không phân biệt hoa thường...');
+    const allPosRows = await query.all('SELECT id, name, department_id FROM positions');
+    const posGroups = {};
+    for (const p of allPosRows) {
+      const lower = p.name.trim().toLowerCase();
+      if (!posGroups[lower]) posGroups[lower] = [];
+      posGroups[lower].push(p);
+    }
+
+    for (const [lowerName, group] of Object.entries(posGroups)) {
+      if (group.length > 1) {
+        let officialMatch = group.find(p => {
+          for (const posList of Object.values(POSITIONS)) {
+            if (posList.includes(p.name)) return true;
+          }
+          return false;
+        });
+
+        const target = officialMatch || group[0];
+        console.log(`Hợp nhất nhóm chức vụ "${lowerName}": Giữ lại "${target.name}" (ID: ${target.id})`);
+
+        for (const duplicate of group) {
+          if (duplicate.id !== target.id) {
+            console.log(`  -> Gộp "${duplicate.name}" (ID: ${duplicate.id}) vào "${target.name}" (ID: ${target.id})`);
+            await query.run('UPDATE employees SET position_id = ? WHERE position_id = ?', [target.id, duplicate.id]);
+            await query.run('UPDATE work_history SET position_id = ? WHERE position_id = ?', [target.id, duplicate.id]);
+            await query.run('UPDATE career_paths SET current_position_id = ? WHERE current_position_id = ?', [target.id, duplicate.id]);
+            await query.run('UPDATE career_paths SET target_position_id = ? WHERE target_position_id = ?', [target.id, duplicate.id]);
+            await query.run('DELETE FROM positions WHERE id = ?', [duplicate.id]);
+          }
+        }
+      }
+    }
+
     // Các chức vụ khác không nằm trong danh sách chính thức
-    const allPositions = await query.all('SELECT id, name FROM positions');
+    const allPositionsAfterMerge = await query.all('SELECT id, name FROM positions');
     const officialPosNames = officialPositionsList.map(p => p.name);
-    for (const p of allPositions) {
+    for (const p of allPositionsAfterMerge) {
       if (!officialPosNames.includes(p.name)) {
         const usage = await query.get('SELECT COUNT(*) as count FROM employees WHERE position_id = ?', [p.id]);
         if (usage.count > 0) {
