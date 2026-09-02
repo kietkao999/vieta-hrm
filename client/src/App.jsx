@@ -121,7 +121,7 @@ function App() {
             />
             <Route
               path="discipline"
-              element={<DisciplinePage />}
+              element={<Navigate to="/rewards?tab=discipline" replace />}
             />
             <Route
               path="innovations"
