@@ -267,6 +267,7 @@ export const initDatabase = async () => {
         performance_bonus REAL DEFAULT 0,
         discipline_deduction REAL DEFAULT 0,
         performance_net REAL DEFAULT 0,
+        other_deductions REAL DEFAULT 0,
         net_salary REAL DEFAULT 0,
         status TEXT DEFAULT 'Dự thảo',
         created_at TEXT,
@@ -315,6 +316,10 @@ export const initDatabase = async () => {
     `);
 
     // Migration for existing tables:
+    try {
+      await query.run('ALTER TABLE payrolls ADD COLUMN other_deductions REAL DEFAULT 0');
+    } catch (e) {}
+
     try {
       await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN responsibility_rate REAL DEFAULT 1.0');
     } catch (e) {}

@@ -148,7 +148,7 @@ export const createPayroll = async (req, res) => {
 
 export const updatePayroll = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, tier_salary, grade_salary, responsibility_deduction_rate, performance_bonus, discipline_deduction, other_deductions } = req.body;
   
   try {
     const payroll = await query.get('SELECT * FROM payrolls WHERE id = ?', [id]);
@@ -156,12 +156,44 @@ export const updatePayroll = async (req, res) => {
 
     const now = new Date().toISOString();
 
-    await query.run(`
-      UPDATE payrolls SET status = ?, updated_at = ? WHERE id = ?
-    `, [status || 'Dự thảo', now, id]);
+    // If only status is provided (for approve/pay actions)
+    if (status && tier_salary === undefined) {
+      await query.run(`
+        UPDATE payrolls SET status = ?, updated_at = ? WHERE id = ?
+      `, [status, now, id]);
+      return res.json({ message: 'Cập nhật trạng thái thành công.' });
+    }
 
-    return res.json({ message: 'Cập nhật trạng thái thành công.' });
+    // If updating salary details
+    const tSalary = parseFloat(tier_salary || 0);
+    const gSalary = parseFloat(grade_salary || 0);
+    const respQuota = parseFloat(payroll.responsibility_quota || 0);
+    const respDeductRate = parseFloat(responsibility_deduction_rate !== undefined ? responsibility_deduction_rate : payroll.responsibility_deduction_rate);
+    const perfBonus = parseFloat(performance_bonus || 0);
+    const discDeduct = parseFloat(discipline_deduction || 0);
+    const otherDeduct = parseFloat(other_deductions || 0);
+
+    const respNet = respQuota * (1 - respDeductRate);
+    const perfNet = Math.max(0, perfBonus - discDeduct);
+    const netSalary = tSalary + gSalary + respNet + perfNet - otherDeduct;
+
+    await query.run(`
+      UPDATE payrolls 
+      SET tier_salary = ?, grade_salary = ?, 
+          responsibility_deduction_rate = ?, responsibility_net = ?,
+          performance_bonus = ?, discipline_deduction = ?, performance_net = ?,
+          other_deductions = ?, net_salary = ?, updated_at = ?
+      WHERE id = ?
+    `, [
+      tSalary, gSalary, 
+      respDeductRate, respNet,
+      perfBonus, discDeduct, perfNet,
+      otherDeduct, netSalary, now, id
+    ]);
+
+    return res.json({ message: 'Cập nhật phiếu lương thành công.' });
   } catch (error) {
+    console.error('Lỗi cập nhật phiếu lương:', error);
     return res.status(500).json({ message: 'Lỗi cập nhật phiếu lương.' });
   }
 };
