@@ -47,7 +47,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: 'TỔ CHỨC',
       roles: ['ADMIN', 'HR'],
       items: [
-        { name: 'Phòng ban & Chức danh', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'HR'] }
+        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'HR'] }
       ]
     },
     {

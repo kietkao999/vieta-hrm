@@ -416,7 +416,7 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
                       <span className="font-bold text-slate-900 text-base block mt-0.5">{employee.department_name || 'Chưa phân bổ'}</span>
                     </div>
                     <div>
-                      <span className="text-sm font-semibold text-slate-500 block">Chức danh / Chức vụ</span>
+                      <span className="text-sm font-semibold text-slate-500 block">Chức vụ</span>
                       <span className="font-bold text-blue-900 text-base block mt-0.5">{employee.position_name || 'Chưa thiết lập'}</span>
                     </div>
                   </div>
