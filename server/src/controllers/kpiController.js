@@ -29,6 +29,8 @@ export const getKpis = async (req, res) => {
         ? as year,
         COALESCE(k.responsibility_bonus, e.kpi_bonus, 0) as responsibility_bonus,
         COALESCE(k.responsibility_penalty, 0) as responsibility_penalty,
+        COALESCE(k.responsibility_rate, 1.0) as responsibility_rate,
+        COALESCE(k.responsibility_amount, 0) as responsibility_amount,
         COALESCE(k.performance_bonus, 0) as performance_bonus,
         COALESCE(k.discipline_deduction, 0) as discipline_deduction,
         COALESCE(k.note, '') as note,
@@ -79,22 +81,26 @@ export const getKpis = async (req, res) => {
     // Tính toán công thức thực nhận cho từng bản ghi
     const records = rawRecords.map(item => {
       const respBonus = parseFloat(item.responsibility_bonus) || 0;
-      const respPenalty = parseFloat(item.responsibility_penalty) || 0;
+      const respRate = item.responsibility_rate !== undefined && item.responsibility_rate !== null 
+        ? parseFloat(item.responsibility_rate) 
+        : 1.0;
+      const respAmount = Math.round(respBonus * respRate);
+      
       const perfBonus = parseFloat(item.performance_bonus) || 0;
       const discDeduction = parseFloat(item.discipline_deduction) || 0;
 
-      const netResponsibility = Math.max(0, respBonus - respPenalty);
       const netPerformance = Math.max(0, perfBonus - discDeduction);
-      const totalKpi = netResponsibility + netPerformance;
+      const totalKpi = respAmount + netPerformance;
 
       return {
         ...item,
         id: item.kpi_id,
         responsibility_bonus: respBonus,
-        responsibility_penalty: respPenalty,
+        responsibility_rate: respRate,
+        responsibility_amount: respAmount,
+        net_responsibility: respAmount,
         performance_bonus: perfBonus,
         discipline_deduction: discDeduction,
-        net_responsibility: netResponsibility,
         net_performance: netPerformance,
         total_kpi: totalKpi,
         has_saved_record: !!item.kpi_id
@@ -135,12 +141,14 @@ export const initMonthlyKpis = async (req, res) => {
         [emp.id, month.toString(), targetMonth, targetYear]
       );
 
+      const defaultBonus = emp.kpi_bonus || 0;
+
       if (!existing) {
         await query.run(
           `INSERT INTO employee_monthly_kpis (
-            employee_id, month, year, responsibility_bonus, responsibility_penalty, performance_bonus, discipline_deduction, note, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, 0, 0, 0, '', ?, ?)`,
-          [emp.id, targetMonth, targetYear, emp.kpi_bonus || 0, now, now]
+            employee_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, 0, 1.0, ?, 0, 0, '', ?, ?)`,
+          [emp.id, targetMonth, targetYear, defaultBonus, defaultBonus, now, now]
         );
         createdCount++;
       }
@@ -158,7 +166,7 @@ export const initMonthlyKpis = async (req, res) => {
 
 /**
  * Lưu / Cập nhật hàng loạt KPI tháng
- * Body: { month, year, items: [ { employee_id, responsibility_bonus, responsibility_penalty, performance_bonus, discipline_deduction, note } ] }
+ * Body: { month, year, items: [ { employee_id, responsibility_bonus, responsibility_rate, performance_bonus, discipline_deduction, note } ] }
  */
 export const saveBulkKpis = async (req, res) => {
   const { month, year, items } = req.body;
@@ -176,7 +184,11 @@ export const saveBulkKpis = async (req, res) => {
       if (!empId) continue;
 
       const respBonus = parseFloat(item.responsibility_bonus) || 0;
-      const respPenalty = parseFloat(item.responsibility_penalty) || 0;
+      const respRate = item.responsibility_rate !== undefined && item.responsibility_rate !== null 
+        ? parseFloat(item.responsibility_rate) 
+        : 1.0;
+      const respAmount = Math.round(respBonus * respRate);
+
       const perfBonus = parseFloat(item.performance_bonus) || 0;
       const discDeduction = parseFloat(item.discipline_deduction) || 0;
       const note = item.note || '';
@@ -189,16 +201,16 @@ export const saveBulkKpis = async (req, res) => {
       if (existing) {
         await query.run(
           `UPDATE employee_monthly_kpis
-           SET responsibility_bonus = ?, responsibility_penalty = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
+           SET responsibility_bonus = ?, responsibility_rate = ?, responsibility_amount = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
            WHERE id = ?`,
-          [respBonus, respPenalty, perfBonus, discDeduction, note, now, existing.id]
+          [respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, existing.id]
         );
       } else {
         await query.run(
           `INSERT INTO employee_monthly_kpis (
-            employee_id, month, year, responsibility_bonus, responsibility_penalty, performance_bonus, discipline_deduction, note, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [empId, targetMonth, targetYear, respBonus, respPenalty, perfBonus, discDeduction, note, now, now]
+            employee_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+          [empId, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, now]
         );
       }
     }
@@ -215,11 +227,15 @@ export const saveBulkKpis = async (req, res) => {
  */
 export const createOrUpdateKpi = async (req, res) => {
   const { id } = req.params;
-  const { employee_id, month, year, responsibility_bonus, responsibility_penalty, performance_bonus, discipline_deduction, note } = req.body;
+  const { employee_id, month, year, responsibility_bonus, responsibility_rate, performance_bonus, discipline_deduction, note } = req.body;
 
   const now = new Date().toISOString();
   const respBonus = parseFloat(responsibility_bonus) || 0;
-  const respPenalty = parseFloat(responsibility_penalty) || 0;
+  const respRate = responsibility_rate !== undefined && responsibility_rate !== null 
+    ? parseFloat(responsibility_rate) 
+    : 1.0;
+  const respAmount = Math.round(respBonus * respRate);
+
   const perfBonus = parseFloat(performance_bonus) || 0;
   const discDeduction = parseFloat(discipline_deduction) || 0;
 
@@ -230,9 +246,9 @@ export const createOrUpdateKpi = async (req, res) => {
 
       await query.run(
         `UPDATE employee_monthly_kpis
-         SET responsibility_bonus = ?, responsibility_penalty = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
+         SET responsibility_bonus = ?, responsibility_rate = ?, responsibility_amount = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
          WHERE id = ?`,
-        [respBonus, respPenalty, perfBonus, discDeduction, note || '', now, id]
+        [respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, id]
       );
       return res.json({ message: 'Cập nhật KPI thành công.' });
     }
@@ -252,17 +268,17 @@ export const createOrUpdateKpi = async (req, res) => {
     if (existing) {
       await query.run(
         `UPDATE employee_monthly_kpis
-         SET responsibility_bonus = ?, responsibility_penalty = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
+         SET responsibility_bonus = ?, responsibility_rate = ?, responsibility_amount = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
          WHERE id = ?`,
-        [respBonus, respPenalty, perfBonus, discDeduction, note || '', now, existing.id]
+        [respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, existing.id]
       );
       return res.json({ message: 'Cập nhật KPI thành công.' });
     } else {
       const result = await query.run(
         `INSERT INTO employee_monthly_kpis (
-          employee_id, month, year, responsibility_bonus, responsibility_penalty, performance_bonus, discipline_deduction, note, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [employee_id, targetMonth, targetYear, respBonus, respPenalty, perfBonus, discDeduction, note || '', now, now]
+          employee_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+        [employee_id, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, now]
       );
       return res.status(201).json({ message: 'Thêm KPI thành công.', id: result.lastID });
     }

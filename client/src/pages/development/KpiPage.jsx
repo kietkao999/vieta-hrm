@@ -16,7 +16,8 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  Percent
 } from 'lucide-react';
 
 const formatCurrency = (val) => {
@@ -26,6 +27,14 @@ const formatCurrency = (val) => {
 const formatNumber = (val) => {
   return new Intl.NumberFormat('vi-VN').format(val || 0);
 };
+
+const RESPONSIBILITY_RATE_OPTIONS = [
+  { value: 1.0, label: '100% (Đạt 4/4 KPI)', shortLabel: '100% (4/4 KPI)', color: 'text-emerald-700' },
+  { value: 0.75, label: '75% (Đạt 3/4 KPI)', shortLabel: '75% (3/4 KPI)', color: 'text-blue-700' },
+  { value: 0.50, label: '50% (Đạt 2/4 KPI)', shortLabel: '50% (2/4 KPI)', color: 'text-amber-700' },
+  { value: 0.25, label: '25% (Đạt 1/4 KPI)', shortLabel: '25% (1/4 KPI)', color: 'text-orange-700' },
+  { value: 0.0, label: '0% (Đạt 0/4 KPI)', shortLabel: '0% (0/4 KPI)', color: 'text-red-700' }
+];
 
 const KpiPage = () => {
   const { user } = useAuth();
@@ -57,7 +66,7 @@ const KpiPage = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [modalForm, setModalForm] = useState({
     responsibility_bonus: 0,
-    responsibility_penalty: 0,
+    responsibility_rate: 1.0,
     performance_bonus: 0,
     discipline_deduction: 0,
     note: ''
@@ -125,7 +134,36 @@ const KpiPage = () => {
     setYear(y.toString());
   };
 
-  // Inline edit handler
+  // Change Responsibility Rate dropdown handler
+  const handleRateChange = (employeeId, rateValue) => {
+    const numericRate = parseFloat(rateValue);
+
+    setKpiList(prev =>
+      prev.map(item => {
+        if (item.employee_id !== employeeId) return item;
+
+        const respBonus = parseFloat(item.responsibility_bonus) || 0;
+        const respAmount = Math.round(respBonus * numericRate);
+        const netPerformance = Math.max(0, (parseFloat(item.performance_bonus) || 0) - (parseFloat(item.discipline_deduction) || 0));
+        const totalKpi = respAmount + netPerformance;
+
+        return {
+          ...item,
+          responsibility_rate: numericRate,
+          responsibility_amount: respAmount,
+          net_responsibility: respAmount,
+          total_kpi: totalKpi
+        };
+      })
+    );
+
+    setModifiedMap(prev => ({
+      ...prev,
+      [employeeId]: true
+    }));
+  };
+
+  // Inline numeric input change handler
   const handleInlineChange = (employeeId, field, rawValue) => {
     const numericValue = Math.max(0, parseFloat(rawValue) || 0);
 
@@ -139,13 +177,17 @@ const KpiPage = () => {
         };
 
         const respBonus = parseFloat(field === 'responsibility_bonus' ? numericValue : updated.responsibility_bonus) || 0;
-        const respPenalty = parseFloat(field === 'responsibility_penalty' ? numericValue : updated.responsibility_penalty) || 0;
+        const respRate = updated.responsibility_rate !== undefined ? parseFloat(updated.responsibility_rate) : 1.0;
+        const respAmount = Math.round(respBonus * respRate);
+
         const perfBonus = parseFloat(field === 'performance_bonus' ? numericValue : updated.performance_bonus) || 0;
         const discDeduction = parseFloat(field === 'discipline_deduction' ? numericValue : updated.discipline_deduction) || 0;
+        const netPerformance = Math.max(0, perfBonus - discDeduction);
 
-        updated.net_responsibility = Math.max(0, respBonus - respPenalty);
-        updated.net_performance = Math.max(0, perfBonus - discDeduction);
-        updated.total_kpi = updated.net_responsibility + updated.net_performance;
+        updated.responsibility_amount = respAmount;
+        updated.net_responsibility = respAmount;
+        updated.net_performance = netPerformance;
+        updated.total_kpi = respAmount + netPerformance;
 
         return updated;
       })
@@ -165,7 +207,7 @@ const KpiPage = () => {
       const itemsToSave = kpiList.map(item => ({
         employee_id: item.employee_id,
         responsibility_bonus: item.responsibility_bonus,
-        responsibility_penalty: item.responsibility_penalty,
+        responsibility_rate: item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0,
         performance_bonus: item.performance_bonus,
         discipline_deduction: item.discipline_deduction,
         note: item.note || ''
@@ -194,7 +236,7 @@ const KpiPage = () => {
     if (
       kpiList.length > 0 &&
       !window.confirm(
-        `Thao tác này sẽ đảm bảo toàn bộ nhân sự đang làm việc được khởi tạo định mức Thưởng trách nhiệm theo Tầng trong tháng ${month}/${year}. Bạn có muốn tiếp tục?`
+        `Thao tác này sẽ đảm bảo toàn bộ nhân sự đang làm việc được khởi tạo định mức Thưởng trách nhiệm theo Tầng (mặc định 100% - 4/4 KPI) trong tháng ${month}/${year}. Bạn có muốn tiếp tục?`
       )
     ) {
       return;
@@ -218,7 +260,7 @@ const KpiPage = () => {
     setEditingItem(item);
     setModalForm({
       responsibility_bonus: item.responsibility_bonus || 0,
-      responsibility_penalty: item.responsibility_penalty || 0,
+      responsibility_rate: item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0,
       performance_bonus: item.performance_bonus || 0,
       discipline_deduction: item.discipline_deduction || 0,
       note: item.note || ''
@@ -238,7 +280,7 @@ const KpiPage = () => {
         month,
         year,
         responsibility_bonus: modalForm.responsibility_bonus,
-        responsibility_penalty: modalForm.responsibility_penalty,
+        responsibility_rate: modalForm.responsibility_rate,
         performance_bonus: modalForm.performance_bonus,
         discipline_deduction: modalForm.discipline_deduction,
         note: modalForm.note
@@ -293,7 +335,7 @@ const KpiPage = () => {
     let totalKpiSum = 0;
 
     kpiList.forEach(item => {
-      totalRespNet += item.net_responsibility || 0;
+      totalRespNet += item.responsibility_amount || 0;
       totalPerfNet += item.net_performance || 0;
       totalKpiSum += item.total_kpi || 0;
     });
@@ -338,7 +380,7 @@ const KpiPage = () => {
             <div>
               <h2 className="text-xl font-bold text-slate-800">Quản lý KPI Tháng</h2>
               <p className="text-xs text-slate-500">
-                Quản lý thưởng trách nhiệm theo tầng và thưởng hiệu quả phục vụ tính lương
+                Quản lý tỷ lệ đạt KPI trách nhiệm và thưởng hiệu quả phục vụ tính lương
               </p>
             </div>
           </div>
@@ -351,7 +393,7 @@ const KpiPage = () => {
               onClick={handleInitMonth}
               disabled={initializing || loading}
               className="inline-flex items-center space-x-2 rounded-lg bg-white border border-slate-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm transition-all disabled:opacity-50"
-              title="Tải toàn bộ nhân viên đang làm việc và gán định mức Thưởng trách nhiệm theo Tầng"
+              title="Tải toàn bộ nhân viên đang làm việc và gán mặc định 100% KPI Trách nhiệm theo Tầng"
             >
               <RefreshCw size={15} className={initializing ? 'animate-spin text-brand-600' : 'text-slate-500'} />
               <span>{initializing ? 'Đang khởi tạo...' : 'Khởi tạo dữ liệu tháng này'}</span>
@@ -527,13 +569,13 @@ const KpiPage = () => {
           <div className="flex items-center space-x-2 text-amber-800 text-xs font-semibold">
             <AlertCircle size={16} className="text-amber-600 flex-shrink-0" />
             <span>
-              Bạn có <strong>{modifiedCount}</strong> nhân viên đang được chỉnh sửa trực tiếp. Hãy nhấn "Lưu thay đổi" để cập nhật vào cơ sở dữ liệu.
+              Bạn có <strong>{modifiedCount}</strong> nhân viên đang được thay đổi đánh giá KPI. Hãy nhấn "Lưu thay đổi" để cập nhật vào cơ sở dữ liệu.
             </span>
           </div>
           <button
             onClick={handleSaveBulk}
             disabled={saving}
-            className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 text-xs font-bold shadow-sm transition"
+            className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-sm transition"
           >
             {saving ? 'Đang lưu...' : 'Lưu ngay'}
           </button>
@@ -548,22 +590,22 @@ const KpiPage = () => {
             <p className="text-xs text-slate-500 font-medium">Đang tải bảng KPI tháng {month}/{year}...</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse min-w-[1080px]">
+          <table className="w-full text-left text-sm border-collapse min-w-[1100px]">
             <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3.5">Mã NV</th>
                 <th className="px-4 py-3.5">Họ và Tên</th>
                 <th className="px-4 py-3.5">Chức vụ / Tầng</th>
-                <th className="px-3 py-3.5 text-right bg-blue-50/40 text-blue-800">
+                <th className="px-3 py-3.5 text-right bg-blue-50/40 text-blue-900">
                   <div className="flex flex-col items-end">
                     <span>Thưởng trách nhiệm</span>
                     <span className="text-[9px] font-normal text-blue-600">Định mức theo Tầng</span>
                   </div>
                 </th>
-                <th className="px-3 py-3.5 text-right bg-blue-50/40 text-blue-800">
-                  <div className="flex flex-col items-end">
-                    <span>Vi phạm trách nhiệm</span>
-                    <span className="text-[9px] font-normal text-red-500">Trừ trách nhiệm</span>
+                <th className="px-3 py-3.5 text-center bg-blue-50/70 text-blue-950 font-bold">
+                  <div className="flex flex-col items-center">
+                    <span>TỶ LỆ ĐẠT TRÁCH NHIỆM</span>
+                    <span className="text-[9px] font-normal text-blue-700">Đánh giá 4 KPI (100% - 0%)</span>
                   </div>
                 </th>
                 <th className="px-3 py-3.5 text-right bg-amber-50/40 text-amber-800">
@@ -605,11 +647,13 @@ const KpiPage = () => {
               ) : (
                 filteredList.map(item => {
                   const isModified = !!modifiedMap[item.employee_id];
+                  const currentRate = item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0;
+
                   return (
                     <tr
                       key={item.employee_id}
                       className={`hover:bg-slate-50/80 transition-colors ${
-                        isModified ? 'bg-amber-50/30 font-medium' : ''
+                        isModified ? 'bg-amber-50/35 font-medium' : ''
                       }`}
                     >
                       {/* Mã NV */}
@@ -637,7 +681,7 @@ const KpiPage = () => {
                         </span>
                       </td>
 
-                      {/* Thưởng trách nhiệm */}
+                      {/* Thưởng trách nhiệm định mức */}
                       <td className="px-3 py-2 text-right bg-blue-50/20">
                         {canEdit ? (
                           <input
@@ -655,21 +699,45 @@ const KpiPage = () => {
                         )}
                       </td>
 
-                      {/* Vi phạm trách nhiệm */}
-                      <td className="px-3 py-2 text-right bg-blue-50/20">
+                      {/* Tỷ lệ đạt KPI Trách nhiệm (Select Dropdown) */}
+                      <td className="px-3 py-2 text-center bg-blue-50/30">
                         {canEdit ? (
-                          <input
-                            type="number"
-                            min="0"
-                            step="50000"
-                            value={item.responsibility_penalty ?? 0}
-                            onChange={e => handleInlineChange(item.employee_id, 'responsibility_penalty', e.target.value)}
-                            className="w-24 text-right font-semibold text-red-600 border border-slate-200 focus:border-red-400 focus:ring-1 focus:ring-red-300 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
-                          />
+                          <div className="flex flex-col items-center space-y-1">
+                            <select
+                              value={currentRate}
+                              onChange={e => handleRateChange(item.employee_id, e.target.value)}
+                              className={`text-xs font-bold rounded-lg px-2 py-1 border outline-none bg-white shadow-sm cursor-pointer transition-all ${
+                                currentRate === 1.0
+                                  ? 'border-emerald-300 text-emerald-800 bg-emerald-50/50'
+                                  : currentRate >= 0.75
+                                  ? 'border-blue-300 text-blue-800 bg-blue-50/50'
+                                  : currentRate >= 0.5
+                                  ? 'border-amber-300 text-amber-800 bg-amber-50/50'
+                                  : currentRate >= 0.25
+                                  ? 'border-orange-300 text-orange-800 bg-orange-50/50'
+                                  : 'border-red-300 text-red-800 bg-red-50/50'
+                              }`}
+                            >
+                              {RESPONSIBILITY_RATE_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-[11px] font-bold text-blue-800 tracking-tight">
+                              ➜ {formatNumber(item.responsibility_amount)} đ
+                            </span>
+                          </div>
                         ) : (
-                          <span className="font-semibold text-red-600 text-xs">
-                            {formatNumber(item.responsibility_penalty)}
-                          </span>
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs font-bold text-slate-800">
+                              {RESPONSIBILITY_RATE_OPTIONS.find(o => Math.abs(o.value - currentRate) < 0.01)?.shortLabel ||
+                                `${Math.round(currentRate * 100)}%`}
+                            </span>
+                            <span className="text-[11px] font-bold text-blue-800">
+                              {formatCurrency(item.responsibility_amount)}
+                            </span>
+                          </div>
                         )}
                       </td>
 
@@ -714,7 +782,7 @@ const KpiPage = () => {
                         <div className="flex flex-col items-end">
                           <span>{formatCurrency(item.total_kpi)}</span>
                           <span className="text-[10px] font-medium text-emerald-600">
-                            (TN: {formatNumber(item.net_responsibility)} | HQ: {formatNumber(item.net_performance)})
+                            (TN: {formatNumber(item.responsibility_amount)} | HQ: {formatNumber(item.net_performance)})
                           </span>
                         </div>
                       </td>
@@ -793,25 +861,28 @@ const KpiPage = () => {
 
                   <div>
                     <label className="text-xs font-semibold text-slate-600 block mb-1">
-                      Vi phạm trách nhiệm / Điểm trừ (VND)
+                      Tỷ lệ đạt KPI Trách nhiệm (4 tiêu chí)
                     </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="50000"
-                      value={modalForm.responsibility_penalty}
+                    <select
+                      value={modalForm.responsibility_rate}
                       onChange={e =>
-                        setModalForm({ ...modalForm, responsibility_penalty: Math.max(0, parseFloat(e.target.value) || 0) })
+                        setModalForm({ ...modalForm, responsibility_rate: parseFloat(e.target.value) })
                       }
-                      className="w-full border border-red-200 rounded-lg p-2.5 text-sm font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                    />
+                      className="w-full border border-blue-300 rounded-lg p-2.5 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    >
+                      {RESPONSIBILITY_RATE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center text-xs font-semibold text-blue-800 pt-1 border-t border-blue-100">
-                  <span>Thực nhận KPI Trách nhiệm:</span>
-                  <span className="font-bold text-sm">
-                    {formatCurrency(Math.max(0, modalForm.responsibility_bonus - modalForm.responsibility_penalty))}
+                <div className="flex justify-between items-center text-xs font-semibold text-blue-900 pt-1 border-t border-blue-100">
+                  <span>Tiền KPI Trách nhiệm thực nhận:</span>
+                  <span className="font-bold text-sm text-blue-800">
+                    {formatCurrency(Math.round(modalForm.responsibility_bonus * modalForm.responsibility_rate))}
                   </span>
                 </div>
               </div>
@@ -884,12 +955,12 @@ const KpiPage = () => {
                     Tổng KPI thực nhận tháng {month}/{year}
                   </span>
                   <span className="text-[11px] text-emerald-600">
-                    Max(0, Thưởng TN - Vi phạm TN) + Max(0, Thưởng HQ - Trừ VP)
+                    [Thưởng TN × Tỷ lệ %] + Max(0, Thưởng HQ - Trừ VP)
                   </span>
                 </div>
                 <span className="text-xl font-black text-emerald-700">
                   {formatCurrency(
-                    Math.max(0, modalForm.responsibility_bonus - modalForm.responsibility_penalty) +
+                    Math.round(modalForm.responsibility_bonus * modalForm.responsibility_rate) +
                       Math.max(0, modalForm.performance_bonus - modalForm.discipline_deduction)
                   )}
                 </span>

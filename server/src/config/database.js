@@ -268,6 +268,8 @@ export const initDatabase = async () => {
         year INTEGER NOT NULL,
         responsibility_bonus REAL DEFAULT 0,
         responsibility_penalty REAL DEFAULT 0,
+        responsibility_rate REAL DEFAULT 1.0,
+        responsibility_amount REAL DEFAULT 0,
         performance_bonus REAL DEFAULT 0,
         discipline_deduction REAL DEFAULT 0,
         note TEXT DEFAULT '',
@@ -277,6 +279,15 @@ export const initDatabase = async () => {
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
       )
     `);
+
+    // Migration for existing tables:
+    try {
+      await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN responsibility_rate REAL DEFAULT 1.0');
+    } catch (e) {}
+
+    try {
+      await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN responsibility_amount REAL DEFAULT 0');
+    } catch (e) {}
 
     // 12. Training Courses
     await query.exec(`
