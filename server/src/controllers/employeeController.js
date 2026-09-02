@@ -136,7 +136,8 @@ export const createEmployee = async (req, res) => {
   const {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
-    status, contract_type, base_salary, allowance, kpi_bonus, notes
+    status, contract_type, base_salary, allowance, kpi_bonus, notes,
+    tier, grade, tier_salary, grade_salary
   } = req.body;
 
   try {
@@ -149,20 +150,26 @@ export const createEmployee = async (req, res) => {
       return res.status(400).json({ message: 'Mã nhân viên đã tồn tại trong hệ thống.' });
     }
 
+    const tSalary = parseFloat(tier_salary) || 0;
+    const gSalary = parseFloat(grade_salary) || 0;
+    const bSalary = parseFloat(base_salary) || (tSalary + gSalary);
+
     const now = new Date().toISOString();
     const result = await query.run(`
       INSERT INTO employees (
         code, fullname, avatar, dob, gender, phone, email, cccd, address,
         join_date, branch_id, department_id, position_id, manager_id,
-        status, contract_type, base_salary, allowance, kpi_bonus, notes, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        status, contract_type, base_salary, allowance, kpi_bonus, notes,
+        tier, grade, tier_salary, grade_salary, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
       phone || '', email || '', cccd || '', address || '',
       join_date || null, branch_id || null, department_id || null,
       position_id || null, manager_id || null,
-      status || 'Thử việc', contract_type || '', base_salary || 0, allowance || 0,
-      kpi_bonus || 0, notes || '', now, now
+      status || 'Thử việc', contract_type || '', bSalary, allowance || 0,
+      kpi_bonus || 0, notes || '',
+      tier || '', grade || '', tSalary, gSalary, now, now
     ]);
 
     return res.status(201).json({ message: 'Tạo hồ sơ nhân viên thành công.', id: result.lastID });
@@ -177,7 +184,8 @@ export const updateEmployee = async (req, res) => {
   const {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
-    status, contract_type, base_salary, allowance, kpi_bonus, notes
+    status, contract_type, base_salary, allowance, kpi_bonus, notes,
+    tier, grade, tier_salary, grade_salary
   } = req.body;
 
   try {
@@ -191,6 +199,10 @@ export const updateEmployee = async (req, res) => {
     const dup = await query.get('SELECT id FROM employees WHERE code = ? AND id != ?', [code.trim(), req.params.id]);
     if (dup) return res.status(400).json({ message: 'Mã nhân viên đã tồn tại.' });
 
+    const tSalary = tier_salary !== undefined ? (parseFloat(tier_salary) || 0) : (emp.tier_salary || 0);
+    const gSalary = grade_salary !== undefined ? (parseFloat(grade_salary) || 0) : (emp.grade_salary || 0);
+    const bSalary = base_salary !== undefined ? (parseFloat(base_salary) || 0) : (tSalary + gSalary || emp.base_salary || 0);
+
     const now = new Date().toISOString();
     await query.run(`
       UPDATE employees SET
@@ -198,7 +210,8 @@ export const updateEmployee = async (req, res) => {
         phone = ?, email = ?, cccd = ?, address = ?,
         join_date = ?, branch_id = ?, department_id = ?, position_id = ?,
         manager_id = ?, status = ?, contract_type = ?,
-        base_salary = ?, allowance = ?, kpi_bonus = ?, notes = ?, updated_at = ?
+        base_salary = ?, allowance = ?, kpi_bonus = ?, notes = ?,
+        tier = ?, grade = ?, tier_salary = ?, grade_salary = ?, updated_at = ?
       WHERE id = ?
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
@@ -206,7 +219,10 @@ export const updateEmployee = async (req, res) => {
       join_date || null, branch_id || null, department_id || null,
       position_id || null, manager_id || null,
       status || 'Thử việc', contract_type || '',
-      base_salary || 0, allowance || 0, kpi_bonus || 0, notes || '', now, req.params.id
+      bSalary, allowance || 0, kpi_bonus || 0, notes || '',
+      tier !== undefined ? tier : (emp.tier || ''),
+      grade !== undefined ? grade : (emp.grade || ''),
+      tSalary, gSalary, now, req.params.id
     ]);
 
     return res.json({ message: 'Cập nhật hồ sơ nhân viên thành công.' });

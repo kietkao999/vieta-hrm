@@ -215,6 +215,10 @@ const EmployeePage = () => {
         <EmployeeDetailModal 
           employee={detailEmp}
           onClose={() => setDetailOpen(false)}
+          onEdit={(emp) => {
+            setDetailOpen(false);
+            handleOpenEdit(emp);
+          }}
         />
       )}
     </div>

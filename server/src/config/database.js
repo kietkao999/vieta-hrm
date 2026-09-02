@@ -137,6 +137,10 @@ export const initDatabase = async () => {
         allowance REAL DEFAULT 0,
         kpi_bonus REAL DEFAULT 0,
         notes TEXT,
+        tier TEXT,
+        grade TEXT,
+        tier_salary REAL DEFAULT 0,
+        grade_salary REAL DEFAULT 0,
         created_at TEXT,
         updated_at TEXT,
         FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL,
@@ -145,6 +149,12 @@ export const initDatabase = async () => {
         FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL
       )
     `);
+
+    // Migrate employees columns:
+    try { await query.run('ALTER TABLE employees ADD COLUMN tier TEXT'); } catch (e) {}
+    try { await query.run('ALTER TABLE employees ADD COLUMN grade TEXT'); } catch (e) {}
+    try { await query.run('ALTER TABLE employees ADD COLUMN tier_salary REAL DEFAULT 0'); } catch (e) {}
+    try { await query.run('ALTER TABLE employees ADD COLUMN grade_salary REAL DEFAULT 0'); } catch (e) {}
 
     // 6. Users
     await query.exec(`
