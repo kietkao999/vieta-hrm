@@ -242,7 +242,7 @@ export const initDatabase = async () => {
       )
     `);
 
-    // 11. KPI
+    // 11. KPI (Legacy & Monthly KPI)
     await query.exec(`
       CREATE TABLE IF NOT EXISTS kpi (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -255,6 +255,25 @@ export const initDatabase = async () => {
         manager_comment TEXT,
         classification TEXT,
         created_at TEXT,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 11b. Monthly KPI (Quản lý KPI Tháng)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS employee_monthly_kpis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        month TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        responsibility_bonus REAL DEFAULT 0,
+        responsibility_penalty REAL DEFAULT 0,
+        performance_bonus REAL DEFAULT 0,
+        discipline_deduction REAL DEFAULT 0,
+        note TEXT DEFAULT '',
+        created_at TEXT,
+        updated_at TEXT,
+        UNIQUE(employee_id, month, year),
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
       )
     `);

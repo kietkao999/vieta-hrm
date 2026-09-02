@@ -81,7 +81,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: 'PHÁT TRIỂN NHÂN VIÊN',
       roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'KPI & Đánh giá', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
         { name: 'Đào tạo', path: '/training', icon: GraduationCap, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
         { name: 'Lộ trình nghề nghiệp', path: '/career', icon: Compass, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] }
       ]

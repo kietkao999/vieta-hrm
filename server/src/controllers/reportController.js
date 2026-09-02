@@ -183,48 +183,68 @@ export const getKpiReport = async (req, res) => {
   try {
     const { month, year } = req.query;
     const now = new Date();
-    const targetMonth = month || (now.getMonth() + 1).toString().padStart(2, '0');
-    const targetYear = year || now.getFullYear().toString();
+    const targetMonth = month ? month.toString() : (now.getMonth() + 1).toString();
+    const targetMonthPadded = targetMonth.padStart(2, '0');
+    const targetYear = parseInt(year || now.getFullYear().toString(), 10);
 
-    // Phân loại KPI
-    const kpiSummary = await query.all(`
-      SELECT status, COUNT(*) as count, 
-             AVG(achieved_score) as avg_score,
-             AVG(CASE WHEN target_score > 0 THEN (achieved_score * 100.0 / target_score) ELSE 0 END) as avg_percent
-      FROM kpi
-      WHERE month = ? AND year = ?
-      GROUP BY status
-    `, [targetMonth.padStart(2, '0'), targetYear]);
+    // Thống kê tổng hợp KPI
+    const totalActive = await query.get(
+      `SELECT COUNT(*) as count FROM employees WHERE status != 'Đã nghỉ việc'`
+    );
+
+    const savedKpis = await query.all(
+      `SELECT k.*, e.fullname, e.code, d.name as department_name,
+              (MAX(0, k.responsibility_bonus - k.responsibility_penalty) + MAX(0, k.performance_bonus - k.discipline_deduction)) as total_payout
+       FROM employee_monthly_kpis k
+       JOIN employees e ON k.employee_id = e.id
+       LEFT JOIN departments d ON e.department_id = d.id
+       WHERE (k.month = ? OR k.month = ?) AND k.year = ?
+       ORDER BY total_payout DESC`,
+      [targetMonth, targetMonthPadded, targetYear]
+    );
+
+    const recordedCount = savedKpis.length;
+    const totalPayout = savedKpis.reduce((acc, k) => acc + (k.total_payout || 0), 0);
+    const avgPayout = recordedCount > 0 ? Math.round(totalPayout / recordedCount) : 0;
+
+    const kpiSummary = [
+      { status: 'Đã thiết lập', count: recordedCount, avg_score: avgPayout, avg_percent: recordedCount > 0 ? 100 : 0 },
+      { status: 'Chưa có dữ liệu', count: Math.max(0, (totalActive?.count || 0) - recordedCount), avg_score: 0, avg_percent: 0 }
+    ];
 
     // KPI theo phòng ban
     const deptKpi = await query.all(`
-      SELECT d.name as department_name,
+      SELECT COALESCE(d.name, 'Chưa phân bổ') as department_name,
              COUNT(k.id) as kpi_count,
-             AVG(k.achieved_score) as avg_score,
-             AVG(CASE WHEN k.target_score > 0 THEN (k.achieved_score * 100.0 / k.target_score) ELSE 0 END) as avg_percent
-      FROM kpi k
+             AVG(MAX(0, k.responsibility_bonus - k.responsibility_penalty) + MAX(0, k.performance_bonus - k.discipline_deduction)) as avg_score,
+             100 as avg_percent
+      FROM employee_monthly_kpis k
       JOIN employees e ON k.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
-      WHERE k.month = ? AND k.year = ?
+      WHERE (k.month = ? OR k.month = ?) AND k.year = ?
       GROUP BY d.id, d.name
-      ORDER BY avg_percent DESC
-    `, [targetMonth.padStart(2, '0'), targetYear]);
+      ORDER BY kpi_count DESC
+    `, [targetMonth, targetMonthPadded, targetYear]);
 
-    // Top performers
-    const topPerformers = await query.all(`
-      SELECT e.fullname, e.code, k.achieved_score, k.target_score, k.criteria, d.name as department_name,
-             CASE WHEN k.target_score > 0 THEN ROUND(k.achieved_score * 100.0 / k.target_score, 1) ELSE 0 END as percent
-      FROM kpi k
-      JOIN employees e ON k.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      WHERE k.month = ? AND k.year = ? AND k.status = 'Đã đánh giá'
-      ORDER BY percent DESC
-      LIMIT 5
-    `, [targetMonth.padStart(2, '0'), targetYear]);
+    // Top performers (nhân viên có tổng KPI thực nhận cao nhất)
+    const topPerformers = savedKpis.slice(0, 5).map(k => ({
+      fullname: k.fullname,
+      code: k.code,
+      achieved_score: k.total_payout,
+      target_score: k.responsibility_bonus + k.performance_bonus,
+      criteria: 'Tổng KPI thực nhận',
+      department_name: k.department_name,
+      percent: k.responsibility_bonus + k.performance_bonus > 0 
+        ? Math.round((k.total_payout / (k.responsibility_bonus + k.performance_bonus)) * 100) 
+        : 100
+    }));
 
     return res.json({
-      month: targetMonth,
+      month: targetMonthPadded,
       year: targetYear,
+      totalActive: totalActive?.count || 0,
+      recordedCount,
+      totalPayout,
       kpiSummary,
       deptKpi,
       topPerformers
