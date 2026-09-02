@@ -73,7 +73,11 @@ function App() {
             />
             <Route
               path="leave"
-              element={<LeavePage />}
+              element={<Navigate to="/attendance?tab=leaves" replace />}
+            />
+            <Route
+              path="leave-requests"
+              element={<Navigate to="/attendance?tab=leaves" replace />}
             />
             <Route
               path="contracts"
