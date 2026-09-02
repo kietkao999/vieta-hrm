@@ -347,6 +347,23 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
             </div>
           </div>
 
+          {/* Nhóm 4: Ghi nhận nhanh Khen thưởng / Kỷ luật (Chỉ hiển thị khi chỉnh sửa nhân viên) */}
+          {employee && (
+            <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70 space-y-3">
+              <div className="flex items-center justify-between border-b pb-2">
+                <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm">
+                  <span>4. Quyết định Khen thưởng & Kỷ luật</span>
+                </div>
+                <span className="text-[11px] text-slate-500">
+                  Dữ liệu được lưu độc lập vào hồ sơ thi đua & kỷ luật của nhân sự
+                </span>
+              </div>
+              <div className="flex items-center space-x-3 text-xs">
+                <span className="text-slate-600 font-medium">Bạn có thể thêm trực tiếp quyết định khen thưởng / kỷ luật từ Modal Chi tiết hoặc các menu chức năng riêng.</span>
+              </div>
+            </div>
+          )}
+
           {/* Footer Buttons */}
           <div className="flex justify-end space-x-3 pt-3 border-t">
             <button type="button" onClick={onClose} className="px-5 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">

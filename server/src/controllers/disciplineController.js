@@ -52,7 +52,7 @@ export const getDisciplines = async (req, res) => {
 
 // Thêm kỷ luật mới
 export const createDiscipline = async (req, res) => {
-  const { employee_id, content, form, date } = req.body;
+  const { employee_id, content, form, date, value } = req.body;
 
   if (!employee_id || !content || !form) {
     return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (Nhân viên, Nội dung, Hình thức).' });
@@ -64,9 +64,9 @@ export const createDiscipline = async (req, res) => {
 
     const now = new Date().toISOString();
     const result = await query.run(`
-      INSERT INTO discipline (employee_id, content, form, date, decision_maker_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [employee_id, content, form, date || now.split('T')[0], req.user.employeeId || null, now]);
+      INSERT INTO discipline (employee_id, content, form, date, value, decision_maker_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [employee_id, content, form, date || now.split('T')[0], parseFloat(value) || 0, req.user.employeeId || null, now]);
 
     return res.status(201).json({ message: 'Thêm quyết định kỷ luật thành công.', id: result.lastID });
   } catch (error) {
@@ -78,7 +78,7 @@ export const createDiscipline = async (req, res) => {
 // Cập nhật kỷ luật
 export const updateDiscipline = async (req, res) => {
   const { id } = req.params;
-  const { employee_id, content, form, date } = req.body;
+  const { employee_id, content, form, date, value } = req.body;
 
   try {
     const disc = await query.get('SELECT * FROM discipline WHERE id = ?', [id]);
@@ -86,13 +86,14 @@ export const updateDiscipline = async (req, res) => {
 
     await query.run(`
       UPDATE discipline 
-      SET employee_id = ?, content = ?, form = ?, date = ?, decision_maker_id = ?
+      SET employee_id = ?, content = ?, form = ?, date = ?, value = ?, decision_maker_id = ?
       WHERE id = ?
     `, [
       employee_id || disc.employee_id,
       content || disc.content,
       form || disc.form,
       date || disc.date,
+      value !== undefined ? (parseFloat(value) || 0) : (disc.value || 0),
       req.user.employeeId || disc.decision_maker_id,
       id
     ]);

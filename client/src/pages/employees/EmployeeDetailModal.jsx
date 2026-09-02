@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   User,
   Briefcase,
@@ -17,12 +19,21 @@ import {
   Layers,
   TrendingUp,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle,
+  History,
+  Gift,
+  Plus,
+  TrendingDown
 } from 'lucide-react';
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === '') return '0 ₫';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+};
+
+const formatNumber = (value) => {
+  return new Intl.NumberFormat('vi-VN').format(value || 0);
 };
 
 const formatDate = (dateStr) => {
@@ -61,6 +72,56 @@ const calculateSeniority = (joinDateStr) => {
 };
 
 const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
+  const { user } = useAuth();
+  const canManage = user?.roleName === 'ADMIN' || user?.roleName === 'HR' || user?.roleName === 'MANAGER';
+
+  const [activeTab, setActiveTab] = useState('info'); // 'info' | 'salary' | 'kpi' | 'recognition'
+
+  // Data states
+  const [kpiHistory, setKpiHistory] = useState([]);
+  const [rewards, setRewards] = useState([]);
+  const [disciplines, setDisciplines] = useState([]);
+  const [loadingExtra, setLoadingExtra] = useState(false);
+
+  // Quick Action State inside Recognition Tab
+  const [recognitionSubTab, setRecognitionSubTab] = useState('reward'); // 'reward' | 'discipline'
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addFormType, setAddFormType] = useState('reward'); // 'reward' | 'discipline'
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const [quickFormData, setQuickFormData] = useState({
+    title: '',
+    content: '',
+    date: new Date().toISOString().split('T')[0],
+    reward_type: 'Tiền mặt',
+    form: 'Nhắc nhở',
+    value: 0
+  });
+
+  const fetchData = async () => {
+    if (!employee?.id) return;
+    setLoadingExtra(true);
+    try {
+      const [kpiRes, rewardRes, discRes] = await Promise.all([
+        api.get(`/kpi/history/${employee.id}`).catch(() => ({ data: [] })),
+        api.get(`/rewards?employee_id=${employee.id}`).catch(() => ({ data: [] })),
+        api.get(`/discipline?employee_id=${employee.id}`).catch(() => ({ data: [] }))
+      ]);
+      setKpiHistory(kpiRes.data || []);
+      setRewards(rewardRes.data || []);
+      setDisciplines(discRes.data || []);
+    } catch (err) {
+      console.error('Lỗi tải dữ liệu bổ sung:', err);
+    } finally {
+      setLoadingExtra(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [employee?.id]);
+
   if (!employee) return null;
 
   const seniority = calculateSeniority(employee.join_date);
@@ -80,12 +141,67 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
     }
   };
 
+  const getRateBadge = (rate) => {
+    const numRate = parseFloat(rate) || 1.0;
+    if (numRate >= 1.0) {
+      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">100% (4/4 KPI)</span>;
+    } else if (numRate >= 0.75) {
+      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">75% (3/4 KPI)</span>;
+    } else if (numRate >= 0.50) {
+      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">50% (2/4 KPI)</span>;
+    } else if (numRate >= 0.25) {
+      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">25% (1/4 KPI)</span>;
+    } else {
+      return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">0% (0/4 KPI)</span>;
+    }
+  };
+
+  const handleQuickSubmit = async (e) => {
+    e.preventDefault();
+    setFormSubmitting(true);
+    setFormError('');
+    try {
+      if (addFormType === 'reward') {
+        await api.post('/rewards', {
+          employee_id: employee.id,
+          title: quickFormData.title,
+          content: quickFormData.content,
+          date: quickFormData.date,
+          reward_type: quickFormData.reward_type,
+          value: parseFloat(quickFormData.value) || 0
+        });
+      } else {
+        await api.post('/discipline', {
+          employee_id: employee.id,
+          content: quickFormData.content || quickFormData.title,
+          form: quickFormData.form,
+          date: quickFormData.date,
+          value: parseFloat(quickFormData.value) || 0
+        });
+      }
+      setShowAddForm(false);
+      setQuickFormData({
+        title: '',
+        content: '',
+        date: new Date().toISOString().split('T')[0],
+        reward_type: 'Tiền mặt',
+        form: 'Nhắc nhở',
+        value: 0
+      });
+      fetchData();
+    } catch (err) {
+      setFormError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu ghi nhận.');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 overflow-y-auto py-8">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 overflow-y-auto py-6">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 transform transition-all animate-in fade-in zoom-in-95 my-auto flex flex-col max-h-[90vh]">
         
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800">
+        <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white px-6 py-3.5 flex justify-between items-center border-b border-slate-800 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-brand-600/30 border border-brand-500/40 flex items-center justify-center text-brand-300 font-bold">
               <User size={20} />
@@ -105,261 +221,609 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-          
-          {/* Hero Profile Card */}
-          <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 rounded-2xl p-5 border border-slate-200/80 flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-700 to-blue-600 text-white flex items-center justify-center font-bold text-3xl shadow-md border-2 border-white flex-shrink-0">
-                {employee.fullname ? employee.fullname.charAt(0).toUpperCase() : '?'}
-              </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h4 className="text-xl font-extrabold text-slate-900">{employee.fullname}</h4>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadge(employee.status)}`}>
-                    {employee.status || 'Đang làm việc'}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-600">
-                  <span className="font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                    {employee.position_name || 'Chức vụ chưa đặt'}
-                  </span>
-                  <span>•</span>
-                  <span className="font-medium text-slate-700">
-                    {employee.department_name || 'Chưa phân bổ phòng ban'}
-                  </span>
-                  <span>•</span>
-                  <span className="text-slate-500">
-                    {employee.branch_name || 'Công ty Nệm Việt Á'}
-                  </span>
-                </div>
-                <div className="pt-1 flex items-center justify-center sm:justify-start space-x-2 text-xs text-slate-500">
-                  <Clock size={13} className="text-blue-600" />
-                  <span>Thâm niên công tác: <strong className="text-blue-800 font-bold">{seniority}</strong></span>
-                </div>
-              </div>
+        {/* Hero Profile Bar */}
+        <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 px-6 py-4 border-b border-slate-200/80 flex flex-col md:flex-row items-center md:items-start justify-between gap-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3.5 text-center sm:text-left">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-700 to-blue-600 text-white flex items-center justify-center font-bold text-2xl shadow border-2 border-white flex-shrink-0">
+              {employee.fullname ? employee.fullname.charAt(0).toUpperCase() : '?'}
             </div>
-
-            {/* Quick KPI Badge */}
-            <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-slate-200/70 shadow-sm text-right min-w-[170px] self-stretch md:self-auto flex flex-col justify-center">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Thưởng KPI Trách nhiệm
-              </span>
-              <span className="text-lg font-black text-brand-700">
-                {formatCurrency(employee.kpi_bonus)}
-              </span>
-              {employee.tier && (
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded mt-1 inline-block text-center border border-blue-200">
-                  {employee.tier}
+            <div className="space-y-0.5">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h4 className="text-lg font-extrabold text-slate-900">{employee.fullname}</h4>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadge(employee.status)}`}>
+                  {employee.status || 'Đang làm việc'}
                 </span>
-              )}
+              </div>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-600">
+                <span className="font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                  {employee.position_name || 'Chưa thiết lập chức vụ'}
+                </span>
+                <span>•</span>
+                <span className="font-medium text-slate-700">
+                  {employee.department_name || 'Chưa phân bổ phòng ban'}
+                </span>
+                <span>•</span>
+                <span className="text-slate-500">
+                  {employee.branch_name || 'Chi nhánh Chính'}
+                </span>
+              </div>
+              <div className="flex items-center justify-center sm:justify-start space-x-1 text-xs text-slate-500 pt-0.5">
+                <Clock size={12} className="text-blue-600" />
+                <span>Thâm niên: <strong className="text-blue-800 font-bold">{seniority}</strong></span>
+              </div>
             </div>
           </div>
 
-          {/* 3 Main Information Groups */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            
-            {/* NHÓM 1: Thông tin cơ bản & Cá nhân */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4.5 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-2.5 border-b border-slate-100 text-brand-800 font-bold text-sm">
-                <User size={17} className="text-brand-600" />
-                <span>1. Thông tin cá nhân</span>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Mã nhân sự</span>
-                  <span className="font-mono font-bold text-slate-800 text-sm">{employee.code}</span>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Họ và tên</span>
-                  <span className="font-bold text-slate-800 text-sm">{employee.fullname}</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Giới tính</span>
-                    <span className="font-semibold text-slate-700">{employee.gender || 'Chưa cập nhật'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Ngày sinh</span>
-                    <span className="font-semibold text-slate-700">{formatDate(employee.dob)}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Số CMND / CCCD</span>
-                  <div className="flex items-center space-x-1.5 text-slate-700 font-mono font-medium">
-                    <CreditCard size={13} className="text-slate-400 flex-shrink-0" />
-                    <span>{employee.cccd || 'Chưa cập nhật'}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Số điện thoại</span>
-                  <div className="flex items-center space-x-1.5 text-slate-700 font-medium">
-                    <Phone size={13} className="text-slate-400 flex-shrink-0" />
-                    <span>{employee.phone || 'Chưa cập nhật'}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Email liên hệ</span>
-                  <div className="flex items-center space-x-1.5 text-slate-700 font-medium break-all">
-                    <Mail size={13} className="text-slate-400 flex-shrink-0" />
-                    <span>{employee.email || 'Chưa cập nhật'}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Địa chỉ thường trú / Nơi ở</span>
-                  <div className="flex items-start space-x-1.5 text-slate-700 font-medium mt-0.5">
-                    <MapPin size={13} className="text-slate-400 flex-shrink-0 mt-0.5" />
-                    <span className="leading-snug">{employee.address || 'Chưa cập nhật'}</span>
-                  </div>
-                </div>
-              </div>
+          {/* Quick Metrics */}
+          <div className="flex items-center space-x-3 self-stretch md:self-auto justify-center">
+            <div className="bg-white/90 rounded-xl px-3 py-2 border border-slate-200 shadow-sm text-right">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Thưởng KPI Trách nhiệm</span>
+              <span className="text-sm font-black text-brand-700">{formatCurrency(employee.kpi_bonus)}</span>
+              {employee.tier && (
+                <span className="text-[10px] font-semibold text-blue-700 block">{employee.tier}</span>
+              )}
             </div>
+          </div>
+        </div>
 
-            {/* NHÓM 2: Công việc & Vị trí */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4.5 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-2.5 border-b border-slate-100 text-blue-900 font-bold text-sm">
-                <Briefcase size={17} className="text-blue-600" />
-                <span>2. Công việc & Vị trí</span>
+        {/* Tab Navigation Bar */}
+        <div className="flex items-center px-6 bg-slate-100/80 border-b border-slate-200 space-x-1 flex-shrink-0 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`flex items-center space-x-2 py-3 px-3.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'info'
+                ? 'border-brand-700 text-brand-800 bg-white rounded-t-lg shadow-sm'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <User size={15} />
+            <span>1. Thông tin & Công việc</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('salary')}
+            className={`flex items-center space-x-2 py-3 px-3.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'salary'
+                ? 'border-brand-700 text-brand-800 bg-white rounded-t-lg shadow-sm'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <DollarSign size={15} />
+            <span>2. Lương & Đãi ngộ</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('kpi')}
+            className={`flex items-center space-x-2 py-3 px-3.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'kpi'
+                ? 'border-brand-700 text-brand-800 bg-white rounded-t-lg shadow-sm'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <History size={15} />
+            <span>3. Lịch sử KPI ({kpiHistory.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('recognition')}
+            className={`flex items-center space-x-2 py-3 px-3.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === 'recognition'
+                ? 'border-brand-700 text-brand-800 bg-white rounded-t-lg shadow-sm'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Award size={15} />
+            <span>4. Khen thưởng & Kỷ luật ({rewards.length + disciplines.length})</span>
+          </button>
+        </div>
+
+        {/* Modal Body Scroll Area */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          
+          {/* TAB 1: THÔNG TIN & CÔNG VIỆC */}
+          {activeTab === 'info' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-in fade-in duration-200">
+              
+              {/* Nhóm Thông tin cá nhân */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4.5 shadow-sm space-y-3.5">
+                <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 text-brand-800 font-bold text-sm">
+                  <User size={16} className="text-brand-600" />
+                  <span>Thông tin cá nhân</span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Mã nhân sự</span>
+                      <span className="font-mono font-bold text-slate-800 text-sm">{employee.code}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Giới tính</span>
+                      <span className="font-semibold text-slate-800">{employee.gender || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Ngày sinh</span>
+                      <span className="font-semibold text-slate-800">{formatDate(employee.dob)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Số CMND / CCCD</span>
+                      <div className="flex items-center space-x-1 text-slate-800 font-mono font-semibold">
+                        <CreditCard size={12} className="text-slate-400" />
+                        <span>{employee.cccd || 'Chưa cập nhật'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Số điện thoại</span>
+                    <div className="flex items-center space-x-1.5 text-slate-800 font-medium">
+                      <Phone size={13} className="text-slate-400" />
+                      <span>{employee.phone || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Email</span>
+                    <div className="flex items-center space-x-1.5 text-slate-800 font-medium break-all">
+                      <Mail size={13} className="text-slate-400" />
+                      <span>{employee.email || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Địa chỉ thường trú / Nơi ở</span>
+                    <div className="flex items-start space-x-1.5 text-slate-800 font-medium mt-0.5">
+                      <MapPin size={13} className="text-slate-400 mt-0.5 flex-shrink-0" />
+                      <span className="leading-snug">{employee.address || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Chi nhánh công tác</span>
-                  <div className="flex items-center space-x-1.5 text-slate-800 font-semibold mt-0.5">
-                    <Building2 size={13} className="text-slate-400 flex-shrink-0" />
-                    <span>{employee.branch_name || 'Chi nhánh Chính'}</span>
-                  </div>
+              {/* Nhóm Vị trí & Công việc */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4.5 shadow-sm space-y-3.5">
+                <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 text-blue-900 font-bold text-sm">
+                  <Briefcase size={16} className="text-blue-600" />
+                  <span>Vị trí & Công việc</span>
                 </div>
 
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Phòng ban</span>
-                  <span className="font-bold text-slate-800 text-sm block mt-0.5">
-                    {employee.department_name || 'Chưa phân bổ'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Chức danh / Chức vụ</span>
-                  <span className="font-bold text-blue-800 text-sm block mt-0.5">
-                    {employee.position_name || 'Chưa thiết lập'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
+                <div className="space-y-3 text-xs">
                   <div>
-                    <span className="text-[10px] font-bold text-blue-900 block uppercase">Tầng nhân sự</span>
-                    <span className="font-bold text-blue-800 text-xs">
-                      {employee.tier || 'Chưa phân tầng'}
-                    </span>
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Chi nhánh</span>
+                    <div className="flex items-center space-x-1.5 text-slate-800 font-semibold mt-0.5">
+                      <Building2 size={13} className="text-slate-400" />
+                      <span>{employee.branch_name || 'Chi nhánh Chính'}</span>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Phòng ban</span>
+                      <span className="font-bold text-slate-800 block mt-0.5">{employee.department_name || 'Chưa phân bổ'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Chức danh</span>
+                      <span className="font-bold text-blue-800 block mt-0.5">{employee.position_name || 'Chưa thiết lập'}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-blue-50/60 p-2.5 rounded-lg border border-blue-100">
+                    <div>
+                      <span className="text-[10px] font-bold text-blue-900 block uppercase">Tầng nhân sự</span>
+                      <span className="font-bold text-blue-800 text-xs">{employee.tier || 'Chưa phân tầng'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-blue-900 block uppercase">Bậc chuyên môn</span>
+                      <span className="font-bold text-blue-800 text-xs">{employee.grade || 'Bậc 1'}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Ngày vào làm</span>
+                      <span className="font-semibold text-slate-800 block mt-0.5">{formatDate(employee.join_date)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 block uppercase">Thâm niên</span>
+                      <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                        {seniority}
+                      </span>
+                    </div>
+                  </div>
+
                   <div>
-                    <span className="text-[10px] font-bold text-blue-900 block uppercase">Bậc chuyên môn</span>
-                    <span className="font-bold text-blue-800 text-xs">
-                      {employee.grade || 'Bậc 1'}
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Loại hợp đồng</span>
+                    <div className="flex items-center space-x-1.5 text-slate-800 font-semibold mt-0.5">
+                      <FileText size={13} className="text-slate-400" />
+                      <span>{employee.contract_type || 'Hợp đồng lao động'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 block uppercase">Quản lý trực tiếp</span>
+                    <span className="font-medium text-slate-800 block mt-0.5">
+                      {employee.manager_name || 'Không có / Ban Giám đốc'}
                     </span>
                   </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Ngày vào làm</span>
-                  <div className="flex items-center justify-between text-slate-700 font-semibold mt-0.5">
-                    <span>{formatDate(employee.join_date)}</span>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      {seniority}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Loại hợp đồng lao động</span>
-                  <div className="flex items-center space-x-1.5 text-slate-700 font-semibold mt-0.5">
-                    <FileText size={13} className="text-slate-400 flex-shrink-0" />
-                    <span>{employee.contract_type || 'Hợp đồng lao động'}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase">Quản lý trực tiếp</span>
-                  <span className="font-medium text-slate-700 block mt-0.5">
-                    {employee.manager_name || 'Không có / Ban Giám đốc'}
-                  </span>
                 </div>
               </div>
+
             </div>
+          )}
 
-            {/* NHÓM 3: Chế độ Lương & KPI */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4.5 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-2.5 border-b border-slate-100 text-emerald-900 font-bold text-sm">
-                <DollarSign size={17} className="text-emerald-600" />
-                <span>3. Chế độ Lương & KPI</span>
-              </div>
+          {/* TAB 2: LƯƠNG & ĐÃI NGỘ */}
+          {activeTab === 'salary' && (
+            <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 text-emerald-900 font-bold text-sm">
+                  <DollarSign size={17} className="text-emerald-600" />
+                  <span>Chế độ Lương & KPI (Theo cơ chế công ty)</span>
+                </div>
 
-              <div className="space-y-3 text-xs">
-                {/* Lương theo tầng */}
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex justify-between items-center">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Lương theo tầng</span>
-                    <span className="text-xs text-slate-600">{employee.tier || 'Mức lương tầng vị trí'}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block">Lương theo tầng</span>
+                    <span className="text-xs text-slate-600 font-medium">{employee.tier || 'Tầng chức vụ'}</span>
+                    <div className="text-base font-black text-slate-800 mt-1">
+                      {formatCurrency(employee.tier_salary || employee.base_salary)}
+                    </div>
                   </div>
-                  <span className="font-bold text-slate-800 text-sm">
-                    {formatCurrency(employee.tier_salary || employee.base_salary)}
+
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase block">Lương theo bậc</span>
+                    <span className="text-xs text-slate-600 font-medium">{employee.grade || 'Bậc chuyên môn'}</span>
+                    <div className="text-base font-black text-slate-800 mt-1">
+                      {formatCurrency(employee.grade_salary || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200 flex justify-between items-center">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 uppercase block">Tổng Lương Cơ Bản</span>
+                    <span className="text-[11px] text-emerald-700">Lương tầng + Lương bậc</span>
+                  </div>
+                  <span className="text-xl font-black text-emerald-800">
+                    {formatCurrency((employee.tier_salary || 0) + (employee.grade_salary || 0) || employee.base_salary)}
                   </span>
                 </div>
 
-                {/* Lương theo bậc */}
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex justify-between items-center">
+                <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-200 flex justify-between items-center">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Lương theo bậc</span>
-                    <span className="text-xs text-slate-600">{employee.grade || 'Mức bậc hiện tại'}</span>
+                    <span className="text-xs font-bold text-blue-900 uppercase block">Định mức Thưởng KPI Trách nhiệm</span>
+                    <span className="text-[11px] text-blue-700">Theo Tầng nhân sự</span>
                   </div>
-                  <span className="font-bold text-slate-800 text-sm">
-                    {formatCurrency(employee.grade_salary || 0)}
-                  </span>
-                </div>
-
-                {/* Thưởng KPI trách nhiệm định mức */}
-                <div className="bg-blue-50/60 p-2.5 rounded-lg border border-blue-200 flex justify-between items-center">
-                  <div>
-                    <span className="text-[10px] font-bold text-blue-900 uppercase block">Thưởng KPI Trách nhiệm</span>
-                    <span className="text-[11px] text-blue-700 font-medium">Định mức theo Tầng</span>
-                  </div>
-                  <span className="font-extrabold text-blue-800 text-sm">
+                  <span className="text-lg font-black text-blue-800">
                     {formatCurrency(employee.kpi_bonus)}
                   </span>
                 </div>
 
-                {/* Phụ cấp khác */}
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-slate-500 font-medium">Phụ cấp khác:</span>
-                  <span className="font-bold text-slate-800">
-                    {formatCurrency(employee.allowance || 0)}
-                  </span>
+                <div className="flex justify-between items-center px-2 py-1 text-xs">
+                  <span className="text-slate-500 font-semibold">Phụ cấp khác:</span>
+                  <span className="font-bold text-slate-800">{formatCurrency(employee.allowance || 0)}</span>
                 </div>
 
-                {/* Ghi chú */}
                 <div className="pt-2 border-t border-slate-100">
-                  <span className="text-[11px] font-semibold text-slate-400 block uppercase mb-1">Ghi chú</span>
-                  <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-h-[44px]">
+                  <span className="text-[11px] font-semibold text-slate-400 block uppercase mb-1">Ghi chú bổ sung</span>
+                  <p className="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
                     {employee.notes || 'Không có ghi chú bổ sung.'}
                   </p>
                 </div>
               </div>
             </div>
+          )}
 
-          </div>
+          {/* TAB 3: LỊCH SỬ KPI CÁC THÁNG */}
+          {activeTab === 'kpi' && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Lịch sử Đạt KPI các tháng</h4>
+                  <p className="text-xs text-slate-500">Kết quả đánh giá KPI Trách nhiệm và Thưởng hiệu quả qua các tháng</p>
+                </div>
+                <span className="text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1 rounded-full">
+                  Tổng {kpiHistory.length} tháng ghi nhận
+                </span>
+              </div>
+
+              {kpiHistory.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200 text-slate-500">
+                  <History size={32} className="mx-auto text-slate-300 mb-2" />
+                  <p className="font-semibold text-sm">Chưa có dữ liệu KPI tháng nào được ghi nhận</p>
+                  <p className="text-xs text-slate-400 mt-1">Dữ liệu sẽ hiển thị khi nhân viên được chấm KPI tại màn hình Quản lý KPI Tháng.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="px-3.5 py-3">Tháng/Năm</th>
+                        <th className="px-3 py-3 text-center">Tỷ lệ đạt KPI Trách nhiệm</th>
+                        <th className="px-3.5 py-3 text-right">KPI Trách nhiệm</th>
+                        <th className="px-3.5 py-3 text-right">Thưởng hiệu quả</th>
+                        <th className="px-3.5 py-3 text-right">Trừ vi phạm</th>
+                        <th className="px-4 py-3 text-right bg-emerald-50 text-emerald-900 font-black">Tổng KPI tháng</th>
+                        <th className="px-3.5 py-3">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {kpiHistory.map((kpi, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/80 transition">
+                          <td className="px-3.5 py-2.5 font-bold text-slate-800">
+                            Tháng {kpi.month}/{kpi.year}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {getRateBadge(kpi.responsibility_rate)}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right font-semibold text-blue-900">
+                            {formatNumber(kpi.responsibility_amount)} đ
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right font-semibold text-amber-700">
+                            {formatNumber(kpi.performance_bonus)} đ
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right font-semibold text-red-600">
+                            {kpi.discipline_deduction > 0 ? `-${formatNumber(kpi.discipline_deduction)} đ` : '0 đ'}
+                          </td>
+                          <td className="px-4 py-2.5 text-right bg-emerald-50/50 font-black text-emerald-800">
+                            {formatCurrency(kpi.total_kpi)}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-slate-500 italic max-w-xs truncate">
+                            {kpi.note || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: KHEN THƯỞNG & KỶ LUẬT */}
+          {activeTab === 'recognition' && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              
+              {/* Header with Sub-tabs and Quick Add button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setRecognitionSubTab('reward')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      recognitionSubTab === 'reward'
+                        ? 'bg-emerald-700 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    🏆 Khen thưởng ({rewards.length})
+                  </button>
+                  <button
+                    onClick={() => setRecognitionSubTab('discipline')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      recognitionSubTab === 'discipline'
+                        ? 'bg-rose-700 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    ⚠️ Kỷ luật / Vi phạm ({disciplines.length})
+                  </button>
+                </div>
+
+                {canManage && (
+                  <button
+                    onClick={() => {
+                      setAddFormType(recognitionSubTab);
+                      setShowAddForm(!showAddForm);
+                    }}
+                    className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold shadow-sm transition"
+                  >
+                    <Plus size={14} />
+                    <span>+ Thêm ghi nhận nhanh</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Add Form Drawer / Card */}
+              {showAddForm && (
+                <div className="p-4 rounded-xl border border-brand-200 bg-brand-50/30 space-y-3 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-bold text-brand-900 uppercase">
+                      Thêm ghi nhận {addFormType === 'reward' ? 'Khen thưởng' : 'Kỷ luật'} mới
+                    </h5>
+                    <div className="flex space-x-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setAddFormType('reward')}
+                        className={`px-2 py-0.5 rounded font-semibold ${addFormType === 'reward' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}
+                      >
+                        Khen thưởng
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAddFormType('discipline')}
+                        className={`px-2 py-0.5 rounded font-semibold ${addFormType === 'discipline' ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-700'}`}
+                      >
+                        Kỷ luật
+                      </button>
+                    </div>
+                  </div>
+
+                  {formError && <div className="text-xs font-bold text-red-600">{formError}</div>}
+
+                  <form onSubmit={handleQuickSubmit} className="space-y-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="font-semibold text-slate-600 block mb-1">Ngày ghi nhận</label>
+                        <input
+                          type="date"
+                          required
+                          value={quickFormData.date}
+                          onChange={e => setQuickFormData({ ...quickFormData, date: e.target.value })}
+                          className="w-full border rounded-lg p-2 bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-600 block mb-1">
+                          {addFormType === 'reward' ? 'Hình thức khen thưởng' : 'Hình thức kỷ luật'}
+                        </label>
+                        {addFormType === 'reward' ? (
+                          <select
+                            value={quickFormData.reward_type}
+                            onChange={e => setQuickFormData({ ...quickFormData, reward_type: e.target.value })}
+                            className="w-full border rounded-lg p-2 bg-white"
+                          >
+                            <option value="Tiền mặt">Tiền mặt</option>
+                            <option value="Bằng khen / Giấy khen">Bằng khen / Giấy khen</option>
+                            <option value="Hiện vật / Quà tặng">Hiện vật / Quà tặng</option>
+                            <option value="Thăng chức / Tăng bậc">Thăng chức / Tăng bậc</option>
+                          </select>
+                        ) : (
+                          <select
+                            value={quickFormData.form}
+                            onChange={e => setQuickFormData({ ...quickFormData, form: e.target.value })}
+                            className="w-full border rounded-lg p-2 bg-white font-semibold text-red-800"
+                          >
+                            <option value="Nhắc nhở">Nhắc nhở</option>
+                            <option value="Khiển trách">Khiển trách</option>
+                            <option value="Phạt tiền">Phạt tiền</option>
+                            <option value="Kéo dài thời hạn nâng bậc">Kéo dài thời hạn nâng bậc</option>
+                            <option value="Cách chức">Cách chức</option>
+                            <option value="Sa thải">Sa thải</option>
+                          </select>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-600 block mb-1">
+                          {addFormType === 'reward' ? 'Số tiền thưởng (nếu có)' : 'Mức phạt tiền (nếu có)'}
+                        </label>
+                        <input
+                          type="number"
+                          step="50000"
+                          value={quickFormData.value}
+                          onChange={e => setQuickFormData({ ...quickFormData, value: e.target.value })}
+                          className="w-full border rounded-lg p-2 bg-white font-bold"
+                          placeholder="0 đ"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-semibold text-slate-600 block mb-1">
+                        {addFormType === 'reward' ? 'Tiêu đề / Lý do khen thưởng (*)' : 'Nội dung vi phạm / Lý do kỷ luật (*)'}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={quickFormData.title || quickFormData.content}
+                        onChange={e => setQuickFormData({ ...quickFormData, title: e.target.value, content: e.target.value })}
+                        placeholder={addFormType === 'reward' ? 'VD: Hoàn thành xuất sắc nhiệm vụ quý 3' : 'VD: Đi làm muộn quá 3 lần trong tháng'}
+                        className="w-full border rounded-lg p-2 bg-white"
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddForm(false)}
+                        className="px-3 py-1.5 border rounded-lg hover:bg-slate-100"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={formSubmitting}
+                        className="px-4 py-1.5 bg-brand-700 hover:bg-brand-800 text-white font-bold rounded-lg shadow-sm"
+                      >
+                        {formSubmitting ? 'Đang lưu...' : 'Lưu ghi nhận'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Sub-tab 1: Khen thưởng */}
+              {recognitionSubTab === 'reward' && (
+                <div className="space-y-3">
+                  {rewards.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-xs">
+                      <Gift size={28} className="mx-auto text-slate-300 mb-1.5" />
+                      <p className="font-semibold text-slate-600">Chưa có quyết định khen thưởng nào</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {rewards.map(r => (
+                        <div key={r.id} className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/30 flex items-center justify-between text-xs">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-slate-800 text-sm">{r.title}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                {r.reward_type || 'Khen thưởng'}
+                              </span>
+                            </div>
+                            {r.content && <p className="text-slate-600">{r.content}</p>}
+                            <div className="text-[11px] text-slate-400">Ngày ghi nhận: {formatDate(r.date)}</div>
+                          </div>
+                          {r.value > 0 && (
+                            <div className="text-right pl-3 flex-shrink-0">
+                              <span className="text-[10px] font-bold text-emerald-800 block uppercase">Thưởng tiền</span>
+                              <span className="text-sm font-black text-emerald-700">+{formatCurrency(r.value)}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sub-tab 2: Kỷ luật */}
+              {recognitionSubTab === 'discipline' && (
+                <div className="space-y-3">
+                  {disciplines.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-xs">
+                      <ShieldCheck size={28} className="mx-auto text-emerald-400 mb-1.5" />
+                      <p className="font-semibold text-slate-600">Không có vi phạm / kỷ luật nào</p>
+                      <p className="text-slate-400 text-[11px] mt-0.5">Nhân sự chấp hành tốt nội quy và quy chế công ty.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {disciplines.map(d => (
+                        <div key={d.id} className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/30 flex items-center justify-between text-xs">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-slate-800 text-sm">{d.content}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                {d.form}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              Ngày ghi nhận: {formatDate(d.date)} {d.decision_maker_name && `• Người duyệt: ${d.decision_maker_name}`}
+                            </div>
+                          </div>
+                          {d.value > 0 && (
+                            <div className="text-right pl-3 flex-shrink-0">
+                              <span className="text-[10px] font-bold text-rose-800 block uppercase">Phạt tiền</span>
+                              <span className="text-sm font-black text-rose-700">-{formatCurrency(d.value)}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          )}
 
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between">
+        <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
           <div className="text-xs text-slate-400 font-mono">
             Hồ sơ cập nhật: {formatDate(employee.updated_at || employee.created_at)}
           </div>

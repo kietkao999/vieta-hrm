@@ -289,6 +289,64 @@ export const createOrUpdateKpi = async (req, res) => {
 };
 
 /**
+ * Lấy lịch sử KPI các tháng của 1 nhân viên
+ */
+export const getEmployeeKpiHistory = async (req, res) => {
+  try {
+    const { employee_id } = req.params;
+    if (!employee_id) return res.status(400).json({ message: 'Thiếu mã nhân viên.' });
+
+    // Phân quyền
+    if (req.user.roleName === 'EMPLOYEE' && req.user.employeeId !== parseInt(employee_id, 10)) {
+      return res.status(403).json({ message: 'Bạn không có quyền xem lịch sử KPI này.' });
+    }
+
+    const sql = `
+      SELECT 
+        k.*,
+        e.code as employee_code,
+        e.fullname,
+        COALESCE(k.responsibility_bonus, e.kpi_bonus, 0) as responsibility_bonus,
+        COALESCE(k.responsibility_rate, 1.0) as responsibility_rate,
+        COALESCE(k.responsibility_amount, 0) as responsibility_amount,
+        COALESCE(k.performance_bonus, 0) as performance_bonus,
+        COALESCE(k.discipline_deduction, 0) as discipline_deduction,
+        COALESCE(k.note, '') as note
+      FROM employee_monthly_kpis k
+      JOIN employees e ON k.employee_id = e.id
+      WHERE k.employee_id = ?
+      ORDER BY k.year DESC, CAST(k.month AS INTEGER) DESC
+    `;
+
+    const raw = await query.all(sql, [employee_id]);
+    const records = raw.map(item => {
+      const respBonus = parseFloat(item.responsibility_bonus) || 0;
+      const respRate = item.responsibility_rate !== undefined && item.responsibility_rate !== null ? parseFloat(item.responsibility_rate) : 1.0;
+      const respAmount = Math.round(respBonus * respRate);
+      const perfBonus = parseFloat(item.performance_bonus) || 0;
+      const discDeduction = parseFloat(item.discipline_deduction) || 0;
+      const netPerf = Math.max(0, perfBonus - discDeduction);
+      const totalKpi = respAmount + netPerf;
+
+      return {
+        ...item,
+        responsibility_bonus: respBonus,
+        responsibility_rate: respRate,
+        responsibility_amount: respAmount,
+        net_responsibility: respAmount,
+        net_performance: netPerf,
+        total_kpi: totalKpi
+      };
+    });
+
+    return res.json(records);
+  } catch (error) {
+    console.error('Lỗi lấy lịch sử KPI nhân viên:', error);
+    return res.status(500).json({ message: 'Lỗi tải lịch sử KPI.' });
+  }
+};
+
+/**
  * Xóa bản ghi KPI
  */
 export const deleteKpi = async (req, res) => {

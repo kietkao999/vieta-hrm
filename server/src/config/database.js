@@ -365,12 +365,17 @@ export const initDatabase = async () => {
         content TEXT NOT NULL,
         form TEXT NOT NULL,
         date TEXT,
+        value REAL DEFAULT 0,
         decision_maker_id INTEGER,
         created_at TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
         FOREIGN KEY (decision_maker_id) REFERENCES employees(id) ON DELETE SET NULL
       )
     `);
+
+    try {
+      await query.run('ALTER TABLE discipline ADD COLUMN value REAL DEFAULT 0');
+    } catch (e) {}
 
     // 16. Innovations
     await query.exec(`
