@@ -5,8 +5,8 @@ export const getPayroll = async (req, res) => {
     const { month, year, employee_id } = req.query;
     
     let sql = `
-      SELECT p.*, e.fullname, e.code as employee_code, d.name as department_name, p.status as payment_status
-      FROM payroll p
+      SELECT p.*, e.fullname, e.code as employee_code, d.name as department_name
+      FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
       WHERE 1=1
@@ -33,65 +33,134 @@ export const getPayroll = async (req, res) => {
     sql += ` ORDER BY p.year DESC, p.month DESC, e.fullname ASC`;
     const records = await query.all(sql, params);
     
-    return res.json(records);
+    // Luôn trả về mảng, nếu trống thì trả về [] thay vì throw lỗi
+    return res.json(records || []);
   } catch (error) {
     console.error('Lỗi lấy dữ liệu bảng lương:', error);
-    return res.status(500).json({ message: 'Lỗi hệ thống.' });
+    // Vẫn trả về mảng rỗng nếu có lỗi nghiêm trọng để UI không bị văng
+    return res.json([]);
+  }
+};
+
+export const generatePayroll = async (req, res) => {
+  const { month, year } = req.body;
+  
+  if (!month || !year) {
+    return res.status(400).json({ message: 'Vui lòng cung cấp tháng và năm.' });
+  }
+
+  try {
+    // 1. Lấy danh sách nhân viên đang làm việc
+    const employees = await query.all(`
+      SELECT id, tier_salary, grade_salary
+      FROM employees 
+      WHERE status = 'Đang làm việc' OR status = 'Thử việc'
+    `);
+
+    if (!employees || employees.length === 0) {
+      return res.status(400).json({ message: 'Không có nhân viên nào đang làm việc.' });
+    }
+
+    let successCount = 0;
+    const now = new Date().toISOString();
+    const padMonth = month.toString().padStart(2, '0');
+
+    // 2. Với mỗi nhân viên, tính lương
+    for (const emp of employees) {
+      // 2.1 Lấy KPI tháng của nhân viên
+      const kpi = await query.get(`
+        SELECT responsibility_bonus, responsibility_rate, performance_bonus, discipline_deduction
+        FROM employee_monthly_kpis
+        WHERE employee_id = ? AND month = ? AND year = ?
+      `, [emp.id, padMonth, year]);
+
+      // Các giá trị mặc định nếu chưa có KPI tháng này
+      const respQuota = kpi ? parseFloat(kpi.responsibility_bonus || 0) : 0;
+      const respRate = kpi ? parseFloat(kpi.responsibility_rate || 1.0) : 1.0;
+      const perfBonus = kpi ? parseFloat(kpi.performance_bonus || 0) : 0;
+      const discDeduct = kpi ? parseFloat(kpi.discipline_deduction || 0) : 0;
+
+      // 2.2 Tính toán theo công thức
+      const tierSalary = parseFloat(emp.tier_salary || 0);
+      const gradeSalary = parseFloat(emp.grade_salary || 0);
+
+      // Trách nhiệm: Tiền phạt = Định mức * (1 - Tỷ lệ đạt)
+      // Tỷ lệ bị trừ
+      const deductRate = 1.0 - respRate;
+      const respNet = respQuota * respRate;
+
+      // Hiệu quả: Max(0, Thưởng - Phạt)
+      const perfNet = Math.max(0, perfBonus - discDeduct);
+
+      // Tổng
+      const netSalary = tierSalary + gradeSalary + respNet + perfNet;
+
+      // 2.3 Lưu vào bảng payrolls (nếu có rồi thì cập nhật, chưa thì insert)
+      const exist = await query.get(`
+        SELECT id FROM payrolls WHERE employee_id = ? AND month = ? AND year = ?
+      `, [emp.id, padMonth, year]);
+
+      if (exist) {
+        await query.run(`
+          UPDATE payrolls 
+          SET tier_salary=?, grade_salary=?, 
+              responsibility_quota=?, responsibility_deduction_rate=?, responsibility_net=?,
+              performance_bonus=?, discipline_deduction=?, performance_net=?,
+              net_salary=?, updated_at=?
+          WHERE id = ?
+        `, [
+          tierSalary, gradeSalary,
+          respQuota, deductRate, respNet,
+          perfBonus, discDeduct, perfNet,
+          netSalary, now,
+          exist.id
+        ]);
+      } else {
+        await query.run(`
+          INSERT INTO payrolls (
+            employee_id, month, year, 
+            tier_salary, grade_salary, 
+            responsibility_quota, responsibility_deduction_rate, responsibility_net,
+            performance_bonus, discipline_deduction, performance_net,
+            net_salary, status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
+        `, [
+          emp.id, padMonth, year,
+          tierSalary, gradeSalary,
+          respQuota, deductRate, respNet,
+          perfBonus, discDeduct, perfNet,
+          netSalary, now, now
+        ]);
+      }
+      successCount++;
+    }
+
+    return res.json({ message: `Đã tính lương thành công cho ${successCount} nhân sự.` });
+  } catch (error) {
+    console.error('Lỗi tính lương:', error);
+    return res.status(500).json({ message: 'Lỗi hệ thống khi tính lương.' });
   }
 };
 
 export const createPayroll = async (req, res) => {
-  const { employee_id, month, year, base_salary, allowance, bonus, deductions, status, notes } = req.body;
-  
-  if (!employee_id || !month || !year) {
-    return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (Nhân viên, Tháng, Năm).' });
-  }
-
-  try {
-    const exist = await query.get('SELECT id FROM payroll WHERE employee_id = ? AND month = ? AND year = ?', [employee_id, month.padStart(2, '0'), year]);
-    if (exist) return res.status(400).json({ message: 'Phiếu lương tháng này của nhân viên đã tồn tại.' });
-
-    const total_salary = (parseFloat(base_salary) || 0) + (parseFloat(allowance) || 0) + (parseFloat(bonus) || 0) - (parseFloat(deductions) || 0);
-    const now = new Date().toISOString();
-
-    const result = await query.run(`
-      INSERT INTO payroll (
-        employee_id, month, year, base_salary, allowance, bonus, deductions, total_salary, status, notes, created_at, updated_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      employee_id, month.padStart(2, '0'), year,
-      base_salary || 0, allowance || 0, bonus || 0, deductions || 0,
-      total_salary, status || 'Chưa thanh toán', notes || '', now, now
-    ]);
-
-    return res.status(201).json({ message: 'Tạo phiếu lương thành công.', id: result.lastID });
-  } catch (error) {
-    return res.status(500).json({ message: 'Lỗi tạo phiếu lương.' });
-  }
+  return res.status(400).json({ message: 'API cũ không còn sử dụng. Vui lòng dùng Tính Lương Tự Động.' });
 };
 
 export const updatePayroll = async (req, res) => {
   const { id } = req.params;
-  const { base_salary, allowance, bonus, deductions, status, notes } = req.body;
+  const { status } = req.body;
   
   try {
-    const payroll = await query.get('SELECT * FROM payroll WHERE id = ?', [id]);
+    const payroll = await query.get('SELECT * FROM payrolls WHERE id = ?', [id]);
     if (!payroll) return res.status(404).json({ message: 'Không tìm thấy phiếu lương.' });
 
-    const total_salary = (parseFloat(base_salary) || 0) + (parseFloat(allowance) || 0) + (parseFloat(bonus) || 0) - (parseFloat(deductions) || 0);
     const now = new Date().toISOString();
 
     await query.run(`
-      UPDATE payroll 
-      SET base_salary = ?, allowance = ?, bonus = ?, deductions = ?, total_salary = ?, status = ?, notes = ?, updated_at = ?
-      WHERE id = ?
-    `, [
-      base_salary || 0, allowance || 0, bonus || 0, deductions || 0,
-      total_salary, status || 'Chưa thanh toán', notes || '', now, id
-    ]);
+      UPDATE payrolls SET status = ?, updated_at = ? WHERE id = ?
+    `, [status || 'Dự thảo', now, id]);
 
-    return res.json({ message: 'Cập nhật phiếu lương thành công.' });
+    return res.json({ message: 'Cập nhật trạng thái thành công.' });
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi cập nhật phiếu lương.' });
   }
@@ -100,10 +169,10 @@ export const updatePayroll = async (req, res) => {
 export const deletePayroll = async (req, res) => {
   const { id } = req.params;
   try {
-    const payroll = await query.get('SELECT * FROM payroll WHERE id = ?', [id]);
+    const payroll = await query.get('SELECT * FROM payrolls WHERE id = ?', [id]);
     if (!payroll) return res.status(404).json({ message: 'Không tìm thấy phiếu lương.' });
 
-    await query.run('DELETE FROM payroll WHERE id = ?', [id]);
+    await query.run('DELETE FROM payrolls WHERE id = ?', [id]);
     return res.json({ message: 'Đã xóa phiếu lương.' });
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi xóa phiếu lương.' });

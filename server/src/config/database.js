@@ -231,7 +231,7 @@ export const initDatabase = async () => {
       )
     `);
 
-    // 10. Payroll
+    // 10. Payroll (Old)
     await query.exec(`
       CREATE TABLE IF NOT EXISTS payroll (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -248,6 +248,30 @@ export const initDatabase = async () => {
         is_locked INTEGER DEFAULT 0,
         created_at TEXT,
         UNIQUE(employee_id, month),
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 10b. Payrolls (New Schema)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS payrolls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        month TEXT NOT NULL,
+        year INTEGER NOT NULL,
+        tier_salary REAL DEFAULT 0,
+        grade_salary REAL DEFAULT 0,
+        responsibility_quota REAL DEFAULT 0,
+        responsibility_deduction_rate REAL DEFAULT 0,
+        responsibility_net REAL DEFAULT 0,
+        performance_bonus REAL DEFAULT 0,
+        discipline_deduction REAL DEFAULT 0,
+        performance_net REAL DEFAULT 0,
+        net_salary REAL DEFAULT 0,
+        status TEXT DEFAULT 'Dự thảo',
+        created_at TEXT,
+        updated_at TEXT,
+        UNIQUE(employee_id, month, year),
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
       )
     `);
