@@ -750,7 +750,7 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
                     className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-bold shadow transition"
                   >
                     <Plus size={16} />
-                    <span>+ Thêm ghi nhận nhanh</span>
+                    <span>Thêm ghi nhận nhanh</span>
                   </button>
                 )}
               </div>

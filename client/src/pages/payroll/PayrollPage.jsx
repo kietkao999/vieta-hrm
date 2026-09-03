@@ -178,7 +178,7 @@ const PayrollPage = () => {
               ) : (
                 <Plus size={16} />
               )}
-              <span>+ Tính Lương Tháng Này</span>
+              <span>Tính Lương Tháng Này</span>
             </button>
           )}
         </div>

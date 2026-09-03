@@ -280,12 +280,12 @@ const RewardPage = () => {
             {activeTab === 'rewards' ? (
               <button onClick={handleRewardOpenCreate} className="inline-flex items-center space-x-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 shadow">
                 <Plus size={16} />
-                <span>+ Thêm Khen thưởng</span>
+                <span>Thêm Khen thưởng</span>
               </button>
             ) : (
               <button onClick={handleDiscOpenCreate} className="inline-flex items-center space-x-2 rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800 shadow">
                 <Plus size={16} />
-                <span>+ Ghi nhận Vi phạm / Kỷ luật</span>
+                <span>Ghi nhận Vi phạm / Kỷ luật</span>
               </button>
             )}
           </div>

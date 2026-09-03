@@ -358,7 +358,7 @@ const AttendancePage = () => {
               className="inline-flex items-center space-x-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 shadow"
             >
               <Plus size={16} />
-              <span>+ Tạo đơn nghỉ phép</span>
+              <span>Tạo đơn nghỉ phép</span>
             </button>
           )}
         </div>
