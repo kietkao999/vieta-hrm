@@ -13,6 +13,7 @@ const TIER_OPTIONS = [
 ];
 
 const GRADE_OPTIONS = [
+  'Bậc 0',
   'Bậc 1',
   'Bậc 2',
   'Bậc 3',
