@@ -1,381 +1,221 @@
 import { query } from './database.js';
 
-const DEPARTMENTS = [
-  "Ban giám đốc",
-  "Khối văn phòng",
-  "Phòng kinh doanh",
-  "Phòng Marketing",
-  "Xưởng sản xuất nệm",
-  "Xưởng sản xuất gối",
-  "Kho Mỹ Tho",
-  "Kho Cần Thơ"
+export const SEED_EMPLOYEES_RAW = [
+  "VietA 002 | Võ Minh Cường | Nam | 1996-09-15 | 0379479666 | 083096001605 | 45/21 Lý Thường Kiệt – Phường Đạo Thạnh – Đồng Tháp | Ban giám đốc | Phó Giám đốc | Văn phòng Trụ sở chính | 2019-01-01 | Đang làm việc | Không xác định thời hạn | 8000000 | 0 | 2500000",
+  "VietA 003 | Nguyễn Thị Thu Tâm | Nữ | 2000-12-20 | 0865384481 | 089300010599 | 30/3, Tổ 6 - Tân Huề 1 - Phường Long Xuyên - An Giang | Kho Cần Thơ | Quản lý kho Cần Thơ | Văn phòng Trụ sở chính | 2021-12-17 | Đang làm việc | Không xác định thời hạn | 8500000 | 0 | 2000000",
+  "VietA 004 | Nguyễn Thị Thúy Vy | Nữ | 1998-02-14 | 0398637799 | 072198006365 | 27/14, Ấp Thiện Mỹ - Xã Vĩnh Thành - Vĩnh Long | Khối văn phòng | Kế toán thu mua | Văn phòng Trụ sở chính | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6600000 | 0 | 1000000",
+  "VietA 006 | Phạm Thanh Phong | Nam | 2002-12-13 | 0799679148 | 086202008451 | Ấp Hòa An - Xã Mỹ Thuận - Vĩnh Long | Kho Cần Thơ | Kế toán kho Cần Thơ | Văn phòng Trụ sở chính | 2026-01-26 | Đang làm việc | Xác định thời hạn 1 năm | 5300000 | 0 | 1000000",
+  "VietA 007 | Trần Thanh Hoài | Nam | 1990-11-11 | 0858841184 | 089090012814 | 30/3, Tổ 6 - Tân Huề 1 - Phường Long Xuyên - An Giang | Kho Cần Thơ | Tài xế Cần Thơ | Văn phòng Trụ sở chính | 2021-12-17 | Đang làm việc | Không xác định thời hạn | 6300000 | 0 | 1000000",
+  "VietA 009 | Huỳnh Ngọc Dư | Nam | 1988-01-06 | 0345027879 | 083088008321 | Ấp Long Khánh , Xã Vĩnh Thành , Tỉnh Vĩnh Long | Kho Cần Thơ | Nhân viên kho Cần Thơ | Văn phòng Trụ sở chính | 2026-03-07 | Đang làm việc | Không xác định thời hạn | 4500000 | 0 | 1000000",
+  "VietA 010 | Nguyễn Hải Duy | Nam | 2005-08-18 | 0775342500 | 092205002672 | An Thạnh - Cần Thơ | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | Văn phòng Trụ sở chính | 2025-08-27 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 011 | Lý Minh Trung | Nam | 2005-12-16 | 0763759714 | 092205007693 | 41/4 Võ Trường Toản - P Cái Khế - Tp Cần Thơ | Kho Cần Thơ | Nhân viên kho Cần Thơ | Văn phòng Trụ sở chính | 2026-03-02 | Đang làm việc | Không xác định thời hạn | 4900000 | 0 | 1000000",
+  "VietA 012 | Võ Huỳnh Đông Nghi | Nam | 1998-12-20 | 0378378826 | 083098005420 | 27/14, Ấp Thiện Mỹ - Xã Vĩnh Thành - Vĩnh Long | Xưởng sản xuất nệm | Phó quản lý xưởng | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1500000",
+  "VietA 013 | Hồ Minh Thuận | Nam | 1997-04-08 | 0778881115 | 083097004832 | 30/72, Ấp Quân Bình - Xã Vĩnh Thành - Vĩnh Long | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | Văn phòng Trụ sở chính | 2024-07-15 | Đang làm việc | Không xác định thời hạn | 4950000 | 0 | 1000000",
+  "VietA 015 | Dương Thị Tuyết Hường | Nữ | 1996-03-24 | 0899047240 | 089196014882 | 30/3, Tổ 6 - Tân Huề 1 - Phường Long Xuyên - An Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2024-06-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 016 | Nguyễn Thị Quỳnh Như | Nữ | 2003-06-02 | 0702868212 | 089303001288 | 30/3, Tổ 6 - Tân Huề 1 - Phường Long Xuyên - An Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2022-05-15 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 017 | Trần Lương Ngọc Khánh | Nữ | 2002-09-17 | 0947690623 | 082302015629 | Ấp 1 - Xã Trung An - Mỹ Tho - Tiền Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 018 | Nguyễn Thị Ngọc Trâm | Nữ | 2002-08-16 | 0337077992 | 083302012510 | Ấp Hưng Điền - Xã Long Hưng - Châu Thành - Tiền Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2026-04-18 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 019 | Đoàn Hoài Linh | Nam | 1996-08-25 | 0352197368 | 082096004363 | Ấp Hưng Điền - Xã Long Hưng - Châu Thành - Tiền Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2026-06-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 020 | Đặng Hoàng Tuấn | Nam | 1994-06-25 | 0989397943 | 082094003192 | 87/15 Thủ Khoa Huân - Phường Tân Lập - Đồng Tháp | Kho Mỹ Tho | Kế toán kho Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 022 | Nguyễn Tuấn Kiệt | Nam | 1994-11-20 | 0846505705 | 082094005378 | 175/7 Trần Hưng Đạo - Phường Trung An - Đồng Tháp | Kho Mỹ Tho | Quản lý kho Mỹ Tho | Văn phòng Trụ sở chính | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 7000000 | 0 | 1500000",
+  "VietA 023 | Nguyễn Hoàng Quân | Nam | 1985-05-18 | 0917226488 | 082085007094 | 202/2 Ấp Trung - Xã Long Định - Đồng Tháp | Kho Mỹ Tho | Tài xế Mỹ Tho | Văn phòng Trụ sở chính | 2025-06-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 024 | Nguyễn Hữu Tài | Nam | 2006-01-16 | 0929283756 | 082206001657 | 104, Ấp Tây 1 - Xã Long Định - Đồng Tháp | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2022-08-01 | Đang làm việc | Không xác định thời hạn | 5100000 | 0 | 1000000",
+  "VietA 026 | Phạm Minh Phúc | Nam | 2008-10-29 | 0926868670 | 082208008216 | 23/1 Ấp Hưng Điền - Long Hưng - Châu Thành - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2025-12-22 | Đang làm việc | Không xác định thời hạn | 4700000 | 0 | 1000000",
+  "VietA 027 | Phạm Ngọc Hiển | Nam | 1993-01-08 | 0855219412 | 074193003288 | 15/4 Ấp Phước Thuận - Xã Phước Lập - Tân Phước - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2025-09-08 | Đang làm việc | Không xác định thời hạn | 4800000 | 0 | 1000000",
+  "VietA 028 | Trần Hữu Lộc | Nam | 2003-09-08 | 0352220364 | 082203007627 | Ấp Hội Gia - Xã Mỹ Hạnh Đông - Cai Lậy - Tiền Giang | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 029 | Nguyễn Thị Thanh Tú | Nữ | 1996-03-08 | 0372138096 | 082196016147 | 120/19 Ấp 4 - Xã Trung An - Mỹ Tho - Tiền Giang | Khối văn phòng | Kế toán kho Mỹ Tho | Văn phòng Trụ sở chính | 2025-07-28 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 031 | Nguyễn Quốc Hùng | Nam | 1995-09-09 | 0948924042 | 082095014572 | Lê Thị Hồng Gấm - Phường Thới Sơn - Đồng Tháp | Khối văn phòng | Trưởng phòng kế toán | Văn phòng Trụ sở chính | 2025-08-01 | Đang làm việc | Không xác định thời hạn | 9000000 | 0 | 2000000",
+  "VietA 032 | Huỳnh Thị Trúc Xinh | Nữ | 1989-11-20 | 0976527504 | 082189011901 | 150/1 Ấp Mỹ Thạnh - Xã Mỹ Phong - Mỹ Tho - Tiền Giang | Khối văn phòng | Kế toán công nợ | Văn phòng Trụ sở chính | 2025-08-01 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 033 | Nguyễn Quốc Huy | Nam | 1999-04-14 | 0846505704 | 087099006078 | Tổ 2 - Ấp Tân Hòa - Xã Tân Phú - Châu Thành - Đồng Tháp | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2025-09-08 | Đang làm việc | Không xác định thời hạn | 4800000 | 0 | 1000000",
+  "VietA 034 | Lê Thị Mỹ Phúc | Nữ | 2000-06-17 | 0793976378 | 089300015823 | Khóm Long Hưng 1- Phường Tân Châu - Tỉnh An Giang | Khối văn phòng | Kế toán viên | Văn phòng Trụ sở chính | 2025-09-08 | Đang làm việc | Không xác định thời hạn | 5800000 | 0 | 1000000",
+  "VietA 035 | Lê Huy Hoàng | Nam | 1983-11-17 | 0975618456 | 089083017196 | Tổ 12 - Khóm Long Thạnh D - Phường Long Thạnh - Tân Châu - An Giang | Kho Mỹ Tho | Tài xế Mỹ Tho | Văn phòng Trụ sở chính | 2025-10-06 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 036 | Phạm Tấn Hưng | Nam | 1993-01-20 | 0774640498 | 052093004263 | Thôn Đắc Lộc - Xã Vĩnh Phương - Nha Trang - Khánh Hòa | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | Văn phòng Trụ sở chính | 2025-10-06 | Đang làm việc | Không xác định thời hạn | 5100000 | 0 | 1000000",
+  "VietA 037 | Nguyễn Thị Kim Hoàng | Nữ | 1995-10-18 | 0339598858 | 083195009137 | Ấp 1 - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Khối văn phòng | Kế toán thanh toán | Văn phòng Trụ sở chính | 2025-11-03 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 038 | Phạm Thị Xuân Khoa | Nữ | 2001-02-14 | 0939527581 | 091301005661 | Ấp An Nghiệp - Xã An Thạnh Thủy - Huyện Chợ Gạo - Tiền Giang | Phòng kinh doanh | Nhân viên kinh doanh | Văn phòng Trụ sở chính | 2025-11-17 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 040 | Võ Thanh Sơn | Nam | 1996-03-24 | 0969542034 | 087096002724 | Ấp Mỹ Thạnh - Xã Mỹ Xương - Huyện Cao Lãnh - Đồng Tháp | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 5100000 | 0 | 1000000",
+  "VietA 041 | Phạm Phước Lành | Nam | 1992-06-03 | 0939023447 | 082092001757 | Ấp Phú Hưng - Xã Long Khánh - TX Cai Lậy - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 5100000 | 0 | 1000000",
+  "VietA 042 | Ngô Thanh Tín | Nam | 2002-10-21 | 0964720977 | 082202014833 | Ấp Mỹ Hòa - Xã Mỹ Hạnh Trung - TX Cai Lậy - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-01 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 043 | Phan Tuấn Kiệt | Nam | 1998-03-08 | 0961817448 | 083098005220 | Tổ 8 - Ấp Vĩnh Hưng - Xã Vĩnh Thành - Huyện Chợ Lách - Bến Tre | Phòng Marketing | Trưởng phòng Marketing | Văn phòng Trụ sở chính | 2026-03-10 | Đang làm việc | Không xác định thời hạn | 8000000 | 0 | 1000000",
+  "VietA 046 | Nguyễn Thái Cần | Nam | 1991-03-20 | 0979434863 | 089091017399 | Khóm Tân Hòa - Phường An Hòa - Thị xã Sa Đéc - Đồng Tháp | Kho Mỹ Tho | Tài xế Mỹ Tho | Văn phòng Trụ sở chính | 2026-03-16 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 1000000",
+  "VietA 047 | Nguyễn Thành Lợi | Nam | 2005-12-30 | 0379479668 | 087205006463 | Ấp Hưng Điền - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2023-12-03 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 049 | Nguyễn Thị Ngọc | Nữ | 1971-10-20 | 0398637792 | 082171016635 | Ấp Hòa Lược - Xã Hòa Khánh - Huyện Cái Bè - Tiền Giang | Xưởng sản xuất nệm | Nhân viên may viền | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 050 | Trần Minh Lý | Nam | 1988-02-14 | 0799679142 | 089088005931 | Khóm Tân Thuận - Phường An Hòa - TP Sa Đéc - Đồng Tháp | Xưởng sản xuất nệm | Quản lý xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 8000000 | 0 | 2500000",
+  "VietA 052 | Nguyễn Minh Văn | Nam | 2002-11-11 | 0858841182 | 082202008284 | Ấp Hưng Điền - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6500000 | 0 | 1000000",
+  "VietA 053 | Trịnh Dương Minh Nhựt | Nam | 2006-01-06 | 0345027872 | 091206010923 | Ấp Hòa Ninh - Xã An Thạnh Thủy - Huyện Chợ Gạo - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 5350000 | 0 | 1000000",
+  "VietA 054 | Võ Hoàng Tín | Nam | 2003-08-18 | 0775342502 | 083203013845 | Xã Lương Hòa - Huyện Giồng Trôm - Tỉnh Bến Tre | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6400000 | 0 | 1000000",
+  "VietA 055 | Phan Quốc Khôi | Nam | 1986-12-16 | 0763759712 | 082086007613 | Xã Long Định - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên dán tem | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6200000 | 0 | 1000000",
+  "VietA 056 | Trần Thị Bảo Châu | Nữ | 2000-12-20 | 0378378822 | 082300005556 | Ấp Vĩnh Hòa - Xã Vĩnh Kim - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất gối | Quản lý xưởng gối | Nhà máy Sản xuất Việt Á | 2024-04-15 | Đang làm việc | Không xác định thời hạn | 6000000 | 0 | 2500000",
+  "VietA 058 | Nguyễn Thị Kim Hòa | Nữ | 1969-06-04 | 0961102922 | 083169010649 | Ấp Long Quới - Xã Chợ Lách - Tỉnh Vĩnh Long | Xưởng sản xuất nệm | Nhân viên may tay | Nhà máy Sản xuất Việt Á | 2024-05-13 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 060 | Trần Thị Kim Quyên | Nữ | 1978-05-14 | 0865384482 | 086178001153 | Ấp Hưng Điền - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất gối | Nhân viên dán tem | Nhà máy Sản xuất Việt Á | 2024-05-20 | Đang làm việc | Không xác định thời hạn | 5050000 | 0 | 1500000",
+  "VietA 061 | Lê Thanh Hồng | Nữ | 1970-07-15 | 0398637793 | 082170017036 | Ấp Hòa - Xã Nhị Bình - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên may viền | Nhà máy Sản xuất Việt Á | 2024-06-03 | Đang làm việc | Không xác định thời hạn | 5450000 | 0 | 1500000",
+  "VietA 063 | Lê Ngọc Tuấn | Nam | 1990-09-17 | 0799679143 | 082090015113 | Ấp Đông - Xã Kim Sơn - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-06-25 | Đang làm việc | Không xác định thời hạn | 6500000 | 0 | 1500000",
+  "VietA 066 | Nguyễn Thị Thùy Trang | Nữ | 1990-08-16 | 0858841183 | 082190005160 | Ấp Hưng Điền - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên may viền | Nhà máy Sản xuất Việt Á | 2024-07-25 | Đang làm việc | Không xác định thời hạn | 5500000 | 0 | 1500000",
+  "VietA 069 | Trương Hồng Quân | Nam | 1989-08-25 | 0345027873 | 082089004283 | Ấp Bắc A - Xã Điềm Hy - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-11-20 | Đang làm việc | Không xác định thời hạn | 6200000 | 0 | 1000000",
+  "VietA 070 | Nguyễn Thanh Hải | Nam | 2005-06-25 | 0775342503 | 079205036773 | 29/18 Đường số 2 - Phường Linh Chiểu - TP Thủ Đức - TP Hồ Chí Minh | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-11-20 | Đang làm việc | Không xác định thời hạn | 5200000 | 0 | 1000000",
+  "VietA 071 | Nguyễn Dương Tiển | Nam | 1986-11-20 | 0763759713 | 082086008618 | Ấp Bình Tây - Xã Thạnh Phú - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2024-11-20 | Đang làm việc | Không xác định thời hạn | 5200000 | 0 | 1000000",
+  "VietA 074 | Nguyễn Thị Ngọc Huệ | Nữ | 1997-05-18 | 0378378823 | 083197004360 | Ấp Long Thuận - Xã Long Thới - Huyện Chợ Lách - Bến Tre | Xưởng sản xuất nệm | Nhân viên may viền | Nhà máy Sản xuất Việt Á | 2024-12-16 | Đang làm việc | Không xác định thời hạn | 5700000 | 0 | 1500000",
+  "VietA 078 | Cổ Hoàn Lâm | Nam | 1983-01-16 | 0778881113 | 082083019173 | Ấp Hưng Điền - Xã Long Hưng - Huyện Châu Thành - Tiền Giang | Xưởng sản xuất nệm | Nhân viên xưởng nệm | Nhà máy Sản xuất Việt Á | 2025-06-03 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 080 | Nguyễn Minh Tấn Phát | Nam | 2009-11-26 | 0899047243 | 082209003205 | Ấp Hưng Điền - Long Hưng - Châu Thành - Tiền Giang | Xưởng sản xuất gối | Nhân viên dán tem | Nhà máy Sản xuất Việt Á | 2026-07-13 | Đang làm việc | Không xác định thời hạn | 5000000 | 0 | 1000000",
+  "VietA 081 | Trần Gia Khải | Nam | 2004-09-08 | 0702868213 | 080204011302 | Ấp Kinh Mới - Xã Vĩnh Hòa - Huyện Ba Tri - Bến Tre | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2026-08-10 | Đang làm việc | Không xác định thời hạn | 4800000 | 0 | 1000000",
+  "VietA 082 | Nguyễn Huỳnh Trung Tín | Nam | 2005-02-12 | | 082205012978 | Ấp Long Phước - Long Định - Châu Thành - Tiền Giang | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | Văn phòng Trụ sở chính | 2026-08-17 | Đang làm việc | Không xác định thời hạn | 4900000 | 0 | 1000000"
 ];
 
-const POSITIONS = {
-  "Ban giám đốc": [
-    "Giám đốc",
-    "Phó Giám đốc",
-    "Trợ lý Giám đốc"
-  ],
-  "Khối văn phòng": [
-    "Trưởng phòng kế toán",
-    "Trưởng phòng HCNS",
-    "Trợ lý Giám đốc",
-    "Kế toán thu mua",
-    "Kế toán viên",
-    "Trưởng phòng R&D",
-    "Nhân viên phòng tổ chức"
-  ],
-  "Phòng kinh doanh": [
-    "Trưởng phòng kinh doanh",
-    "Kế toán kinh doanh",
-    "Nhân viên kinh doanh"
-  ],
-  "Phòng Marketing": [
-    "Trưởng phòng Marketing",
-    "Nhân viên Marketing"
-  ],
-  "Xưởng sản xuất nệm": [
-    "Quản lý xưởng",
-    "Phó quản lý xưởng",
-    "Kế toán xưởng sản xuất",
-    "Nhân viên phun keo",
-    "Nhân viên may viền",
-    "Nhân viên may tay",
-    "Nhân viên may một kim",
-    "Nhân viên vô vali",
-    "Nhân viên vô áo",
-    "Nhân viên cắt vải",
-    "Tài xế xưởng sản xuất"
-  ],
-  "Xưởng sản xuất gối": [
-    "Trưởng nhóm thổi gối",
-    "Nhân viên thổi gối",
-    "Nhân viên may gối"
-  ],
-  "Kho Mỹ Tho": [
-    "Quản lý kho Mỹ Tho",
-    "Phó quản lý kho Mỹ Tho",
-    "Kế toán kho Mỹ Tho",
-    "Đội trưởng đội tài xế",
-    "Nhân viên kho Mỹ Tho",
-    "Nhân viên giao hàng Mỹ Tho",
-    "Tài xế Mỹ Tho"
-  ],
-  "Kho Cần Thơ": [
-    "Quản lý kho Cần Thơ",
-    "Kế toán kho Cần Thơ",
-    "Nhân viên kho Cần Thơ",
-    "Nhân viên giao hàng Cần Thơ",
-    "Tài xế Cần Thơ"
-  ]
-};
+async function getOrCreateBranch(branchName) {
+  if (!branchName) return 1;
+  const name = branchName.trim();
+  let row = await query.get('SELECT id FROM branches WHERE name = ?', [name]);
+  if (!row) {
+    const res = await query.run('INSERT INTO branches (name, address) VALUES (?, ?)', [name, '']);
+    return res.lastID;
+  }
+  return row.id;
+}
 
-const EMPLOYEES_DATA = [
-  { code: "VietA 002", name: "Võ Minh Cường", dept: "Ban giám đốc", pos: "Phó Giám đốc" },
-  { code: "VietA 003", name: "Nguyễn Thị Thu Tâm", dept: "Kho Cần Thơ", pos: "Quản lý kho Cần Thơ" },
-  { code: "VietA 004", name: "Nguyễn Thị Thúy Vy", dept: "Khối văn phòng", pos: "Kế toán thu mua" },
-  { code: "VietA 006", name: "Phạm Thanh Phong", dept: "Kho Cần Thơ", pos: "Kế toán kho Cần Thơ" },
-  { code: "VietA 007", name: "Trần Thanh Hoài", dept: "Kho Cần Thơ", pos: "Tài xế Cần Thơ" },
-  { code: "VietA 009", name: "Huỳnh Ngọc Dư", dept: "Kho Cần Thơ", pos: "Nhân viên kho Cần Thơ" },
-  { code: "VietA 010", name: "Nguyễn Hải Duy", dept: "Kho Cần Thơ", pos: "Nhân viên giao hàng Cần Thơ" },
-  { code: "VietA 011", name: "Lý Minh Trung", dept: "Kho Cần Thơ", pos: "Nhân viên kho Cần Thơ" },
-  { code: "VietA 012", name: "Võ Huỳnh Đông Nghi", dept: "Xưởng sản xuất nệm", pos: "Phó quản lý xưởng" },
-  { code: "VietA 013", name: "Hồ Minh Thuận", dept: "Kho Cần Thơ", pos: "Nhân viên giao hàng Cần Thơ" },
-  { code: "VietA 015", name: "Dương Thị Tuyết Hường", dept: "Kho Mỹ Tho", pos: "Quản lý kho Mỹ Tho" },
-  { code: "VietA 016", name: "Nguyễn Thị Quỳnh Như", dept: "Kho Mỹ Tho", pos: "Phó quản lý kho Mỹ Tho" },
-  { code: "VietA 017", name: "Trần Lương Ngọc Khánh", dept: "Kho Mỹ Tho", pos: "Kế toán kho Mỹ Tho" },
-  { code: "VietA 018", name: "Nguyễn Thị Ngọc Trâm", dept: "Kho Mỹ Tho", pos: "Kế toán kho Mỹ Tho" },
-  { code: "VietA 019", name: "Đoàn Hoài Linh", dept: "Kho Mỹ Tho", pos: "Đội trưởng đội tài xế" },
-  { code: "VietA 020", name: "Đặng Hoàng Tuấn", dept: "Kho Mỹ Tho", pos: "Tài xế Mỹ Tho" },
-  { code: "VietA 022", name: "Nguyễn Tuấn Kiệt", dept: "Kho Mỹ Tho", pos: "Nhân viên giao hàng Mỹ Tho" },
-  { code: "VietA 023", name: "Nguyễn Hoàng Quân", dept: "Kho Mỹ Tho", pos: "Nhân viên giao hàng Mỹ Tho" },
-  { code: "VietA 024", name: "Nguyễn Hữu Tài", dept: "Phòng kinh doanh", pos: "Nhân viên kinh doanh" },
-  { code: "VietA 026", name: "Phạm Minh Phúc", dept: "Kho Mỹ Tho", pos: "Nhân viên kho Mỹ Tho" },
-  { code: "VietA 027", name: "Phạm Ngọc Hiển", dept: "Kho Mỹ Tho", pos: "Nhân viên kho Mỹ Tho" },
-  { code: "VietA 028", name: "Trần Hữu Lộc", dept: "Kho Mỹ Tho", pos: "Nhân viên kho Mỹ Tho" },
-  { code: "VietA 029", name: "Nguyễn Thị Thanh Tú", dept: "Kho Mỹ Tho", pos: "Kế toán kho Mỹ Tho" },
-  { code: "VietA 031", name: "Nguyễn Quốc Hùng", dept: "Khối văn phòng", pos: "Trưởng phòng kế toán" },
-  { code: "VietA 032", name: "Huỳnh Thị Trúc Xinh", dept: "Khối văn phòng", pos: "Trưởng phòng HCNS" },
-  { code: "VietA 033", name: "Nguyễn Quốc Huy", dept: "Khối văn phòng", pos: "Trợ lý Giám đốc" },
-  { code: "VietA 034", name: "Lê Thị Mỹ Phúc", dept: "Khối văn phòng", pos: "Kế toán viên" },
-  { code: "VietA 035", name: "Lê Huy Hoàng", dept: "Khối văn phòng", pos: "Trưởng phòng R&D" },
-  { code: "VietA 036", name: "Phạm Tấn Hưng", dept: "Phòng kinh doanh", pos: "Trưởng phòng kinh doanh" },
-  { code: "VietA 037", name: "Nguyễn Thị Kim Hoàng", dept: "Phòng kinh doanh", pos: "Kế toán kinh doanh" },
-  { code: "VietA 038", name: "Phạm Thị Xuân Khoa", dept: "Phòng kinh doanh", pos: "Nhân viên kinh doanh" },
-  { code: "VietA 040", name: "Võ Thanh Sơn", dept: "Phòng kinh doanh", pos: "Nhân viên kinh doanh" },
-  { code: "VietA 041", name: "Phạm Phước Lành", dept: "Phòng kinh doanh", pos: "Nhân viên kinh doanh" },
-  { code: "VietA 042", name: "Ngô Thanh Tín", dept: "Phòng kinh doanh", pos: "Nhân viên kinh doanh" },
-  { code: "VietA 043", name: "Phan Tuấn Kiệt", dept: "Phòng Marketing", pos: "Trưởng phòng Marketing" },
-  { code: "VietA 046", name: "Nguyễn Thái Cần", dept: "Xưởng sản xuất gối", pos: "Trưởng nhóm thổi gối" },
-  { code: "VietA 047", name: "Nguyễn Thành Lợi", dept: "Xưởng sản xuất gối", pos: "Nhân viên thổi gối" },
-  { code: "VietA 049", name: "Nguyễn Thị Ngọc", dept: "Xưởng sản xuất gối", pos: "Nhân viên may gối" },
-  { code: "VietA 050", name: "Trần Minh Lý", dept: "Xưởng sản xuất nệm", pos: "Quản lý xưởng" },
-  { code: "VietA 052", name: "Nguyễn Minh Văn", dept: "Kho Mỹ Tho", pos: "Nhân viên giao hàng Mỹ Tho" },
-  { code: "VietA 053", name: "Trịnh Dương Minh Nhựt", dept: "Xưởng sản xuất nệm", pos: "Nhân viên phun keo" },
-  { code: "VietA 054", name: "Võ Hoàng Tín", dept: "Xưởng sản xuất nệm", pos: "Nhân viên may viền" },
-  { code: "VietA 055", name: "Phan Quốc Khôi", dept: "Xưởng sản xuất nệm", pos: "Tài xế xưởng sản xuất" },
-  { code: "VietA 056", name: "Trần Thị Bảo Châu", dept: "Xưởng sản xuất nệm", pos: "Kế toán xưởng sản xuất" },
-  { code: "VietA 058", name: "Nguyễn Thị Kim Hòa", dept: "Xưởng sản xuất nệm", pos: "Nhân viên may tay" },
-  { code: "VietA 060", name: "Trần Thị Kim Quyên", dept: "Xưởng sản xuất nệm", pos: "Nhân viên may một kim" },
-  { code: "VietA 061", name: "Lê Thanh Hồng", dept: "Xưởng sản xuất nệm", pos: "Nhân viên may một kim" },
-  { code: "VietA 063", name: "Lê Ngọc Tuấn", dept: "Xưởng sản xuất nệm", pos: "Nhân viên vô vali" },
-  { code: "VietA 066", name: "Nguyễn Thị Thùy Trang", dept: "Xưởng sản xuất nệm", pos: "Kế toán xưởng sản xuất" },
-  { code: "VietA 069", name: "Trương Hồng Quân", dept: "Kho Mỹ Tho", pos: "Tài xế Mỹ Tho" },
-  { code: "VietA 070", name: "Nguyễn Thanh Hải", dept: "Xưởng sản xuất nệm", pos: "Nhân viên phun keo" },
-  { code: "VietA 071", name: "Nguyễn Dương Tiển", dept: "Xưởng sản xuất nệm", pos: "Nhân viên vô áo" },
-  { code: "VietA 074", name: "Nguyễn Thị Ngọc Huệ", dept: "Xưởng sản xuất nệm", pos: "Nhân viên cắt vải" },
-  { code: "VietA 078", name: "Cổ Hoàn Lâm", dept: "Khối văn phòng", pos: "Nhân viên phòng tổ chức" },
-  { code: "VietA 080", name: "Nguyễn Minh Tấn Phát", dept: "Xưởng sản xuất nệm", pos: "Nhân viên phun keo" },
-  { code: "VietA 081", name: "Trần Gia Khải", dept: "Kho Mỹ Tho", pos: "Nhân viên giao hàng Mỹ Tho" },
-  { code: "VietA 082", name: "Nguyễn Huỳnh Trung Tín", dept: "Kho Mỹ Tho", pos: "Nhân viên giao hàng Mỹ Tho" }
-];
+async function getOrCreateDepartment(deptName, branchId) {
+  if (!deptName) return 1;
+  const name = deptName.trim();
+  let row = await query.get('SELECT id FROM departments WHERE name = ?', [name]);
+  if (!row) {
+    const res = await query.run('INSERT INTO departments (name, branch_id, is_active) VALUES (?, ?, 1)', [name, branchId || 1]);
+    return res.lastID;
+  }
+  return row.id;
+}
+
+async function getOrCreatePosition(posName, deptId) {
+  if (!posName) return 1;
+  const name = posName.trim();
+  let row = await query.get('SELECT id FROM positions WHERE name = ?', [name]);
+  if (!row) {
+    const res = await query.run('INSERT INTO positions (name, department_id, is_active) VALUES (?, ?, 1)', [name, deptId || null]);
+    return res.lastID;
+  }
+  return row.id;
+}
 
 export async function runMigration() {
   try {
-    console.log('--- KHỞI CHẠY MIGRATION DỮ LIỆU ---');
+    console.log('--- KHỞI CHẠY ĐỒNG BỘ 57 NHÂN SỰ VÀ CƠ SỞ DỮ LIỆU ---');
 
-    // Tắt kiểm tra khóa ngoại tạm thời
     await query.run('PRAGMA foreign_keys = OFF');
 
-    // 1. Đồng bộ Phòng ban
-    console.log('Đồng bộ Phòng ban...');
-    for (const name of DEPARTMENTS) {
-      const exist = await query.get('SELECT id FROM departments WHERE name = ?', [name]);
-      if (exist) {
-        await query.run('UPDATE departments SET is_active = 1 WHERE id = ?', [exist.id]);
-      } else {
-        await query.run('INSERT INTO departments (name, branch_id, is_active) VALUES (?, 1, 1)', [name]);
-      }
-    }
-
-    // 1.5. Hợp nhất các Phòng ban trùng tên không phân biệt hoa thường
-    console.log('Hợp nhất các Phòng ban trùng tên không phân biệt hoa thường...');
-    const allDeptRows = await query.all('SELECT id, name FROM departments');
-    const deptGroups = {};
-    for (const d of allDeptRows) {
-      const lower = d.name.trim().toLowerCase();
-      if (!deptGroups[lower]) deptGroups[lower] = [];
-      deptGroups[lower].push(d);
-    }
-
-    for (const [lowerName, group] of Object.entries(deptGroups)) {
-      if (group.length > 1) {
-        let officialMatch = group.find(d => DEPARTMENTS.includes(d.name));
-        const target = officialMatch || group[0];
-        console.log(`Hợp nhất nhóm phòng ban "${lowerName}": Giữ lại "${target.name}" (ID: ${target.id})`);
-
-        for (const duplicate of group) {
-          if (duplicate.id !== target.id) {
-            console.log(`  -> Gộp "${duplicate.name}" (ID: ${duplicate.id}) vào "${target.name}" (ID: ${target.id})`);
-            await query.run('UPDATE employees SET department_id = ? WHERE department_id = ?', [target.id, duplicate.id]);
-            await query.run('UPDATE work_history SET department_id = ? WHERE department_id = ?', [target.id, duplicate.id]);
-            await query.run('DELETE FROM departments WHERE id = ?', [duplicate.id]);
-          }
-        }
-      }
-    }
-
-    // Các phòng ban khác không nằm trong danh sách chính thức
-    const allDeptsAfterMerge = await query.all('SELECT id, name FROM departments');
-    for (const d of allDeptsAfterMerge) {
-      if (!DEPARTMENTS.includes(d.name)) {
-        // Kiểm tra xem có nhân viên đang sử dụng không
-        const usage = await query.get('SELECT COUNT(*) as count FROM employees WHERE department_id = ?', [d.id]);
-        if (usage.count > 0) {
-          console.log(`Vô hiệu hóa phòng ban đang sử dụng: ${d.name}`);
-          await query.run('UPDATE departments SET is_active = 0 WHERE id = ?', [d.id]);
-        } else {
-          console.log(`Xóa phòng ban không sử dụng: ${d.name}`);
-          await query.run('DELETE FROM departments WHERE id = ?', [d.id]);
-        }
-      }
-    }
-
-    // Lấy map của phòng ban để mapping nhanh
-    const deptRows = await query.all('SELECT id, name FROM departments');
-    const deptMap = {};
-    for (const d of deptRows) {
-      deptMap[d.name] = d.id;
-    }
-
-    // 2. Đồng bộ Chức vụ
-    console.log('Đồng bộ Chức vụ...');
-    const officialPositionsList = [];
-    for (const [deptName, posList] of Object.entries(POSITIONS)) {
-      const deptId = deptMap[deptName];
-      for (const posName of posList) {
-        officialPositionsList.push({ name: posName, deptId });
-        const exist = await query.get('SELECT id FROM positions WHERE name = ?', [posName]);
-        if (exist) {
-          await query.run('UPDATE positions SET department_id = ?, is_active = 1 WHERE id = ?', [deptId, exist.id]);
-        } else {
-          await query.run('INSERT INTO positions (name, department_id, is_active) VALUES (?, ?, 1)', [posName, deptId]);
-        }
-      }
-    }
-
-    // 2.5. Hợp nhất các Chức vụ trùng tên không phân biệt hoa thường
-    console.log('Hợp nhất các Chức vụ trùng tên không phân biệt hoa thường...');
-    const allPosRows = await query.all('SELECT id, name, department_id FROM positions');
-    const posGroups = {};
-    for (const p of allPosRows) {
-      const lower = p.name.trim().toLowerCase();
-      if (!posGroups[lower]) posGroups[lower] = [];
-      posGroups[lower].push(p);
-    }
-
-    for (const [lowerName, group] of Object.entries(posGroups)) {
-      if (group.length > 1) {
-        let officialMatch = group.find(p => {
-          for (const posList of Object.values(POSITIONS)) {
-            if (posList.includes(p.name)) return true;
-          }
-          return false;
-        });
-
-        const target = officialMatch || group[0];
-        console.log(`Hợp nhất nhóm chức vụ "${lowerName}": Giữ lại "${target.name}" (ID: ${target.id})`);
-
-        for (const duplicate of group) {
-          if (duplicate.id !== target.id) {
-            console.log(`  -> Gộp "${duplicate.name}" (ID: ${duplicate.id}) vào "${target.name}" (ID: ${target.id})`);
-            await query.run('UPDATE employees SET position_id = ? WHERE position_id = ?', [target.id, duplicate.id]);
-            await query.run('UPDATE work_history SET position_id = ? WHERE position_id = ?', [target.id, duplicate.id]);
-            await query.run('UPDATE career_paths SET current_position_id = ? WHERE current_position_id = ?', [target.id, duplicate.id]);
-            await query.run('UPDATE career_paths SET target_position_id = ? WHERE target_position_id = ?', [target.id, duplicate.id]);
-            await query.run('DELETE FROM positions WHERE id = ?', [duplicate.id]);
-          }
-        }
-      }
-    }
-
-    // Các chức vụ khác không nằm trong danh sách chính thức
-    const allPositionsAfterMerge = await query.all('SELECT id, name FROM positions');
-    const officialPosNames = officialPositionsList.map(p => p.name);
-    for (const p of allPositionsAfterMerge) {
-      if (!officialPosNames.includes(p.name)) {
-        const usage = await query.get('SELECT COUNT(*) as count FROM employees WHERE position_id = ?', [p.id]);
-        if (usage.count > 0) {
-          console.log(`Vô hiệu hóa chức vụ đang sử dụng: ${p.name}`);
-          await query.run('UPDATE positions SET is_active = 0 WHERE id = ?', [p.id]);
-        } else {
-          console.log(`Xóa chức vụ không sử dụng: ${p.name}`);
-          await query.run('DELETE FROM positions WHERE id = ?', [p.id]);
-        }
-      }
-    }
-
-    // Lấy map của chức vụ
-    const posRows = await query.all('SELECT id, name FROM positions');
-    const posMap = {};
-    for (const p of posRows) {
-      posMap[p.name] = p.id;
-    }
-
-    // 3. Cập nhật / Thêm mới 57 Nhân sự
-    console.log('Đồng bộ 57 Nhân sự...');
-    let updatedCount = 0;
-    let insertedCount = 0;
     const now = new Date().toISOString();
+    let upsertCount = 0;
 
-    for (const emp of EMPLOYEES_DATA) {
-      const deptId = deptMap[emp.dept];
-      const posId = posMap[emp.pos];
+    for (const line of SEED_EMPLOYEES_RAW) {
+      const parts = line.split('|').map(s => s.trim());
+      if (parts.length < 14) continue;
 
-      if (!deptId) {
-        console.error(`Lỗi: Không tìm thấy phòng ban "${emp.dept}"`);
-        continue;
-      }
-      if (!posId) {
-        console.error(`Lỗi: Không tìm thấy chức vụ "${emp.pos}"`);
-        continue;
-      }
+      const [
+        code,
+        fullname,
+        gender,
+        dob,
+        phone,
+        cccd,
+        address,
+        deptName,
+        posName,
+        branchName,
+        joinDate,
+        status,
+        contractType,
+        baseSalaryStr,
+        allowanceStr = '0',
+        kpiBonusStr = '0'
+      ] = parts;
 
-      // Tìm nhân viên theo mã nhân sự
-      const exist = await query.get('SELECT id, status, notes FROM employees WHERE code = ?', [emp.code]);
-      
-      // Dọn dẹp ký hiệu HV137, HV297, HV307 nếu là VietA 080, 081, 082
-      let status = exist ? exist.status : 'Đang làm việc';
-      let notes = exist ? exist.notes : '';
-      if (emp.code === 'VietA 080' || emp.code === 'VietA 081' || emp.code === 'VietA 082') {
-        status = 'Đang làm việc'; // Set chính thức/đang làm việc
-        if (notes) {
-          notes = notes.replace(/HV137|HV297|HV307/gi, '').trim();
-        }
-      }
+      const baseSalary = parseFloat(baseSalaryStr) || 0;
+      const allowance = parseFloat(allowanceStr) || 0;
+      const kpiBonus = parseFloat(kpiBonusStr) || 0;
 
-      if (exist) {
-        // Cập nhật thông tin nhân sự
-        await query.run(`
-          UPDATE employees 
-          SET fullname = ?, department_id = ?, position_id = ?, status = ?, notes = ?, updated_at = ?
-          WHERE id = ?
-        `, [emp.name, deptId, posId, status, notes || null, now, exist.id]);
-        updatedCount++;
-      } else {
-        // Thêm mới nếu không tồn tại
-        await query.run(`
-          INSERT INTO employees (
-            code, fullname, avatar, dob, gender, phone, email, cccd, address,
-            join_date, branch_id, department_id, position_id, manager_id,
-            status, contract_type, base_salary, allowance, kpi_bonus, notes, created_at, updated_at
-          ) VALUES (?, ?, '', '', '', '', '', '', '', ?, 1, ?, ?, NULL, ?, '', 0, 0, 0, ?, ?, ?)
-        `, [emp.code, emp.name, now.slice(0, 10), deptId, posId, status, notes || null, now, now]);
-        insertedCount++;
-      }
-    }
+      const branchId = await getOrCreateBranch(branchName);
+      const departmentId = await getOrCreateDepartment(deptName, branchId);
+      const positionId = await getOrCreatePosition(posName, departmentId);
 
-    console.log(`Đồng bộ nhân sự thành công: Đã cập nhật ${updatedCount}, thêm mới ${insertedCount}.`);
+      const formattedPhone = phone ? phone.trim() : '';
+      const formattedCccd = cccd ? cccd.trim() : '';
+      const formattedContractType = contractType ? contractType.trim() : 'Không xác định thời hạn';
+      const formattedStatus = status ? status.trim() : 'Đang làm việc';
 
-    // Dọn dẹp thêm bất kỳ chuỗi HV nào trong mã hoặc ghi chú cho 080, 081, 082
-    const targetCodes = ['VietA 080', 'VietA 081', 'VietA 082'];
-    for (const tc of targetCodes) {
-      const emp = await query.get('SELECT id, fullname, notes, code FROM employees WHERE code = ?', [tc]);
+      const sql = `
+        INSERT INTO employees (
+          code, fullname, gender, dob, phone, cccd, address,
+          branch_id, department_id, position_id, join_date,
+          status, contract_type, base_salary, allowance, kpi_bonus,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(code) DO UPDATE SET
+          fullname = excluded.fullname,
+          gender = excluded.gender,
+          dob = excluded.dob,
+          phone = excluded.phone,
+          cccd = excluded.cccd,
+          address = excluded.address,
+          branch_id = excluded.branch_id,
+          department_id = excluded.department_id,
+          position_id = excluded.position_id,
+          join_date = excluded.join_date,
+          status = excluded.status,
+          contract_type = excluded.contract_type,
+          base_salary = excluded.base_salary,
+          allowance = excluded.allowance,
+          kpi_bonus = excluded.kpi_bonus,
+          updated_at = excluded.updated_at
+      `;
+
+      await query.run(sql, [
+        code,
+        fullname,
+        gender,
+        dob,
+        formattedPhone,
+        formattedCccd,
+        address,
+        branchId,
+        departmentId,
+        positionId,
+        joinDate,
+        formattedStatus,
+        formattedContractType,
+        baseSalary,
+        allowance,
+        kpiBonus,
+        now,
+        now
+      ]);
+
+      const emp = await query.get('SELECT id FROM employees WHERE code = ?', [code]);
       if (emp) {
-        // Clean notes
-        let newNotes = emp.notes || '';
-        newNotes = newNotes.replace(/HV137|HV297|HV307/gi, '').trim();
-        let newFullname = emp.fullname || '';
-        newFullname = newFullname.replace(/HV137|HV297|HV307/gi, '').trim();
-        let newCode = emp.code || '';
-        newCode = newCode.replace(/HV137|HV297|HV307/gi, '').trim();
-
-        await query.run('UPDATE employees SET fullname = ?, code = ?, notes = ?, status = ? WHERE id = ?', 
-          [newFullname, newCode, newNotes || null, 'Đang làm việc', emp.id]);
+        await query.run(`
+          INSERT INTO employee_monthly_kpis (
+            employee_id, month, year,
+            responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
+            performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, '09', 2026, ?, 0, 1.0, ?, ?, 0, 'Nạp tự động tháng 09/2026', ?, ?)
+          ON CONFLICT(employee_id, month, year) DO UPDATE SET
+            responsibility_bonus = excluded.responsibility_bonus,
+            responsibility_amount = excluded.responsibility_amount,
+            performance_bonus = excluded.performance_bonus,
+            updated_at = excluded.updated_at
+        `, [emp.id, kpiBonus, kpiBonus, kpiBonus, now, now]);
       }
+
+      upsertCount++;
     }
 
-    // 4. Kiểm tra tài khoản hệ thống của admin, hr_manager, dept_manager
-    console.log('Kiểm tra liên kết tài khoản hệ thống...');
+    console.log(`Đã đồng bộ thành công ${upsertCount}/57 nhân sự với đầy đủ thông tin.`);
+
+    // Đồng bộ user mapping
     const adminEmp = await query.get("SELECT id FROM employees WHERE code = 'VietA 032'");
     if (adminEmp) {
       await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [adminEmp.id, 'admin']);
       await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [adminEmp.id, 'hr_manager']);
     }
-    const mgrEmp = await query.get("SELECT id FROM employees WHERE code = 'VietA 036'");
-    if (mgrEmp) {
-      await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [mgrEmp.id, 'dept_manager']);
-    }
-    const empUser = await query.get("SELECT id FROM employees WHERE code = 'VietA 002'");
-    if (empUser) {
-      await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [empUser.id, 'employee1']);
-    }
 
-    // Bật lại kiểm tra khóa ngoại
     await query.run('PRAGMA foreign_keys = ON');
-
-    // 5. Thống kê kết quả
-    const countEmps = await query.get('SELECT COUNT(*) as total FROM employees');
-    const countDepts = await query.get('SELECT COUNT(*) as total FROM departments WHERE is_active = 1');
-    const countPositions = await query.get('SELECT COUNT(*) as total FROM positions WHERE is_active = 1');
-    console.log('\n================ MIGRATION REPORT ================');
-    console.log(`- Tổng nhân sự trong DB: ${countEmps.total}`);
-    console.log(`- Tổng phòng ban đang hoạt động: ${countDepts.total}`);
-    console.log(`- Tổng chức vụ đang hoạt động: ${countPositions.total}`);
-    console.log('==================================================');
+    console.log('--- HOÀN TẤT ĐỒNG BỘ CƠ SỞ DỮ LIỆU ---');
   } catch (error) {
     console.error('Lỗi khi chạy migration:', error);
-    throw error;
   }
 }
