@@ -136,11 +136,18 @@ const KpiPage = () => {
 
   // Change Responsibility Rate (typed percentage or preset value)
   const handleRateChange = (employeeId, ratePercentOrDecimal) => {
-    let pct = parseFloat(ratePercentOrDecimal);
-    if (isNaN(pct)) pct = 0;
-    if (pct < 0) pct = 0;
-    if (pct > 100) pct = 100;
-    const numericRate = pct / 100;
+    const rawStr = ratePercentOrDecimal === null || ratePercentOrDecimal === undefined ? '' : ratePercentOrDecimal.toString().trim();
+    let numericRate = 1.0;
+
+    if (rawStr === '') {
+      numericRate = 0;
+    } else {
+      let pct = parseFloat(rawStr);
+      if (isNaN(pct)) pct = 0;
+      if (pct < 0) pct = 0;
+      if (pct > 100) pct = 100;
+      numericRate = pct / 100;
+    }
 
     setKpiList(prev =>
       prev.map(item => {
@@ -153,6 +160,7 @@ const KpiPage = () => {
 
         return {
           ...item,
+          raw_rate_input: rawStr,
           responsibility_rate: numericRate,
           responsibility_amount: respAmount,
           net_responsibility: respAmount,
@@ -169,7 +177,8 @@ const KpiPage = () => {
 
   // Inline numeric input change handler
   const handleInlineChange = (employeeId, field, rawValue) => {
-    const numericValue = Math.max(0, parseFloat(rawValue) || 0);
+    const rawStr = rawValue === null || rawValue === undefined ? '' : rawValue.toString().trim();
+    const numericValue = rawStr === '' ? 0 : Math.max(0, parseFloat(rawStr) || 0);
 
     setKpiList(prev =>
       prev.map(item => {
@@ -177,15 +186,15 @@ const KpiPage = () => {
 
         const updated = {
           ...item,
-          [field]: numericValue
+          [field]: rawStr === '' ? '' : numericValue
         };
 
-        const respBonus = parseFloat(field === 'responsibility_bonus' ? numericValue : updated.responsibility_bonus) || 0;
-        const respRate = updated.responsibility_rate !== undefined ? parseFloat(updated.responsibility_rate) : 1.0;
+        const respBonus = parseFloat(field === 'responsibility_bonus' ? (rawStr === '' ? 0 : numericValue) : (item.responsibility_bonus || 0));
+        const respRate = item.responsibility_rate !== undefined ? parseFloat(item.responsibility_rate) : 1.0;
         const respAmount = Math.round(respBonus * respRate);
 
-        const perfBonus = parseFloat(field === 'performance_bonus' ? numericValue : updated.performance_bonus) || 0;
-        const discDeduction = parseFloat(field === 'discipline_deduction' ? numericValue : updated.discipline_deduction) || 0;
+        const perfBonus = parseFloat(field === 'performance_bonus' ? (rawStr === '' ? 0 : numericValue) : (item.performance_bonus || 0));
+        const discDeduction = parseFloat(field === 'discipline_deduction' ? (rawStr === '' ? 0 : numericValue) : (item.discipline_deduction || 0));
         const netPerformance = Math.max(0, perfBonus - discDeduction);
 
         updated.responsibility_amount = respAmount;
@@ -609,7 +618,7 @@ const KpiPage = () => {
                 <th className="px-3 py-3.5 text-center bg-blue-50/70 text-blue-950 font-bold">
                   <div className="flex flex-col items-center">
                     <span>TỶ LỆ ĐẠT TRÁCH NHIỆM</span>
-                    <span className="text-[9px] font-normal text-blue-700">Tự nhập % (0% - 100%)</span>
+                    <span className="text-[9px] font-normal text-blue-700">Điền tay số % (0% - 100%)</span>
                   </div>
                 </th>
                 <th className="px-3 py-3.5 text-right bg-amber-50/40 text-amber-800">
@@ -692,7 +701,7 @@ const KpiPage = () => {
                             type="number"
                             min="0"
                             step="50000"
-                            value={item.responsibility_bonus ?? 0}
+                            value={item.responsibility_bonus !== undefined && item.responsibility_bonus !== '' ? item.responsibility_bonus : ''}
                             onChange={e => handleInlineChange(item.employee_id, 'responsibility_bonus', e.target.value)}
                             className="w-28 text-right font-semibold text-blue-900 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
                           />
@@ -703,7 +712,7 @@ const KpiPage = () => {
                         )}
                       </td>
 
-                      {/* Tỷ lệ đạt KPI Trách nhiệm (Tự nhập tay %) */}
+                      {/* Tỷ lệ đạt KPI Trách nhiệm (Điền tay số %) */}
                       <td className="px-3 py-2 text-center bg-blue-50/30">
                         {canEdit ? (
                           <div className="flex flex-col items-center space-y-1">
@@ -713,12 +722,12 @@ const KpiPage = () => {
                                 min="0"
                                 max="100"
                                 step="1"
-                                value={Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100)}
+                                value={item.raw_rate_input !== undefined ? item.raw_rate_input : Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100)}
                                 onChange={e => handleRateChange(item.employee_id, e.target.value)}
-                                className="w-16 text-center font-bold text-blue-900 border border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-1 py-1 text-xs outline-none bg-white shadow-sm"
-                                placeholder="%"
+                                className="w-16 text-center font-extrabold text-blue-900 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300 rounded-lg px-1.5 py-1 text-xs outline-none bg-white shadow-sm"
+                                placeholder="0 - 100"
                               />
-                              <span className="text-xs font-bold text-blue-700">%</span>
+                              <span className="text-xs font-extrabold text-blue-700">%</span>
                             </div>
                             {/* Nút gán nhanh */}
                             <div className="flex items-center space-x-1">
@@ -761,7 +770,7 @@ const KpiPage = () => {
                             type="number"
                             min="0"
                             step="50000"
-                            value={item.performance_bonus ?? 0}
+                            value={item.performance_bonus !== undefined && item.performance_bonus !== '' ? item.performance_bonus : ''}
                             onChange={e => handleInlineChange(item.employee_id, 'performance_bonus', e.target.value)}
                             className="w-28 text-right font-semibold text-amber-900 border border-slate-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
                           />
@@ -779,7 +788,7 @@ const KpiPage = () => {
                             type="number"
                             min="0"
                             step="50000"
-                            value={item.discipline_deduction ?? 0}
+                            value={item.discipline_deduction !== undefined && item.discipline_deduction !== '' ? item.discipline_deduction : ''}
                             onChange={e => handleInlineChange(item.employee_id, 'discipline_deduction', e.target.value)}
                             className="w-24 text-right font-semibold text-red-600 border border-slate-200 focus:border-red-400 focus:ring-1 focus:ring-red-300 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
                           />
