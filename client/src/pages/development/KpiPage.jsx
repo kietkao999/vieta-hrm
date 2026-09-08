@@ -715,7 +715,7 @@ const KpiPage = () => {
                       {/* Tỷ lệ đạt KPI Trách nhiệm (Điền tay số %) */}
                       <td className="px-3 py-2 text-center bg-blue-50/30">
                         {canEdit ? (
-                          <div className="flex flex-col items-center space-y-1">
+                          <div className="flex flex-col items-center justify-center space-y-1">
                             <div className="flex items-center justify-center space-x-1">
                               <input
                                 type="number"
@@ -724,28 +724,10 @@ const KpiPage = () => {
                                 step="1"
                                 value={item.raw_rate_input !== undefined ? item.raw_rate_input : Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100)}
                                 onChange={e => handleRateChange(item.employee_id, e.target.value)}
-                                className="w-16 text-center font-extrabold text-blue-900 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300 rounded-lg px-1.5 py-1 text-xs outline-none bg-white shadow-sm"
-                                placeholder="0 - 100"
+                                className="w-20 text-center font-extrabold text-blue-900 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300 rounded-lg px-2 py-1.5 text-sm outline-none bg-white shadow-sm"
+                                placeholder="100"
                               />
-                              <span className="text-xs font-extrabold text-blue-700">%</span>
-                            </div>
-                            {/* Nút gán nhanh */}
-                            <div className="flex items-center space-x-1">
-                              {[100, 75, 50, 0].map(p => (
-                                <button
-                                  key={p}
-                                  type="button"
-                                  onClick={() => handleRateChange(item.employee_id, p)}
-                                  className={`px-1.5 py-0.5 text-[10px] font-bold rounded border transition ${
-                                    Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100) === p
-                                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                                  }`}
-                                  title={`Gán nhanh ${p}%`}
-                                >
-                                  {p}%
-                                </button>
-                              ))}
+                              <span className="text-sm font-extrabold text-blue-700">%</span>
                             </div>
                             <span className="text-[11px] font-bold text-blue-800 tracking-tight">
                               ➜ {formatNumber(item.responsibility_amount)} đ
@@ -891,32 +873,16 @@ const KpiPage = () => {
                         min="0"
                         max="100"
                         step="1"
-                        value={Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100)}
+                        value={modalForm.raw_rate !== undefined ? modalForm.raw_rate : Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100)}
                         onChange={e => {
-                          const val = e.target.value === '' ? 0 : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
-                          setModalForm({ ...modalForm, responsibility_rate: val / 100 });
+                          const raw = e.target.value;
+                          const val = raw === '' ? 0 : Math.min(100, Math.max(0, parseFloat(raw) || 0));
+                          setModalForm({ ...modalForm, raw_rate: raw, responsibility_rate: val / 100 });
                         }}
                         className="w-full border border-blue-300 rounded-lg p-2.5 pr-8 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                        placeholder="%"
+                        placeholder="100"
                       />
                       <span className="absolute right-3 top-2.5 text-sm font-bold text-blue-600">%</span>
-                    </div>
-                    {/* Nút gán nhanh */}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {[100, 75, 50, 25, 0].map(p => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setModalForm({ ...modalForm, responsibility_rate: p / 100 })}
-                          className={`px-2 py-1 text-xs font-semibold rounded-md border transition ${
-                            Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100) === p
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          {p}%
-                        </button>
-                      ))}
                     </div>
                   </div>
                 </div>
