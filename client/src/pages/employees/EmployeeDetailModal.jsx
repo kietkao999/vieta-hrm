@@ -144,17 +144,18 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
   };
 
   const getRateBadge = (rate) => {
-    const numRate = parseFloat(rate) || 1.0;
-    if (numRate >= 1.0) {
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">100% (4/4 KPI)</span>;
-    } else if (numRate >= 0.75) {
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">75% (3/4 KPI)</span>;
-    } else if (numRate >= 0.50) {
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">50% (2/4 KPI)</span>;
-    } else if (numRate >= 0.25) {
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">25% (1/4 KPI)</span>;
+    const numRate = parseFloat(rate) || 0;
+    const pct = Math.round(numRate * 100);
+    if (pct >= 100) {
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">100% (Đạt đủ)</span>;
+    } else if (pct >= 75) {
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">{pct}%</span>;
+    } else if (pct >= 50) {
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">{pct}%</span>;
+    } else if (pct >= 25) {
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">{pct}%</span>;
     } else {
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">0% (0/4 KPI)</span>;
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">{pct}%</span>;
     }
   };
 

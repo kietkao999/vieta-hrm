@@ -134,9 +134,13 @@ const KpiPage = () => {
     setYear(y.toString());
   };
 
-  // Change Responsibility Rate dropdown handler
-  const handleRateChange = (employeeId, rateValue) => {
-    const numericRate = parseFloat(rateValue);
+  // Change Responsibility Rate (typed percentage or preset value)
+  const handleRateChange = (employeeId, ratePercentOrDecimal) => {
+    let pct = parseFloat(ratePercentOrDecimal);
+    if (isNaN(pct)) pct = 0;
+    if (pct < 0) pct = 0;
+    if (pct > 100) pct = 100;
+    const numericRate = pct / 100;
 
     setKpiList(prev =>
       prev.map(item => {
@@ -605,7 +609,7 @@ const KpiPage = () => {
                 <th className="px-3 py-3.5 text-center bg-blue-50/70 text-blue-950 font-bold">
                   <div className="flex flex-col items-center">
                     <span>TỶ LỆ ĐẠT TRÁCH NHIỆM</span>
-                    <span className="text-[9px] font-normal text-blue-700">Đánh giá 4 KPI (100% - 0%)</span>
+                    <span className="text-[9px] font-normal text-blue-700">Tự nhập % (0% - 100%)</span>
                   </div>
                 </th>
                 <th className="px-3 py-3.5 text-right bg-amber-50/40 text-amber-800">
@@ -699,31 +703,41 @@ const KpiPage = () => {
                         )}
                       </td>
 
-                      {/* Tỷ lệ đạt KPI Trách nhiệm (Select Dropdown) */}
+                      {/* Tỷ lệ đạt KPI Trách nhiệm (Tự nhập tay %) */}
                       <td className="px-3 py-2 text-center bg-blue-50/30">
                         {canEdit ? (
                           <div className="flex flex-col items-center space-y-1">
-                            <select
-                              value={currentRate}
-                              onChange={e => handleRateChange(item.employee_id, e.target.value)}
-                              className={`text-xs font-bold rounded-lg px-2 py-1 border outline-none bg-white shadow-sm cursor-pointer transition-all ${
-                                currentRate === 1.0
-                                  ? 'border-emerald-300 text-emerald-800 bg-emerald-50/50'
-                                  : currentRate >= 0.75
-                                  ? 'border-blue-300 text-blue-800 bg-blue-50/50'
-                                  : currentRate >= 0.5
-                                  ? 'border-amber-300 text-amber-800 bg-amber-50/50'
-                                  : currentRate >= 0.25
-                                  ? 'border-orange-300 text-orange-800 bg-orange-50/50'
-                                  : 'border-red-300 text-red-800 bg-red-50/50'
-                              }`}
-                            >
-                              {RESPONSIBILITY_RATE_OPTIONS.map(opt => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
+                            <div className="flex items-center justify-center space-x-1">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value={Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100)}
+                                onChange={e => handleRateChange(item.employee_id, e.target.value)}
+                                className="w-16 text-center font-bold text-blue-900 border border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-1 py-1 text-xs outline-none bg-white shadow-sm"
+                                placeholder="%"
+                              />
+                              <span className="text-xs font-bold text-blue-700">%</span>
+                            </div>
+                            {/* Nút gán nhanh */}
+                            <div className="flex items-center space-x-1">
+                              {[100, 75, 50, 0].map(p => (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => handleRateChange(item.employee_id, p)}
+                                  className={`px-1.5 py-0.5 text-[10px] font-bold rounded border transition ${
+                                    Math.round((item.responsibility_rate !== undefined ? item.responsibility_rate : 1.0) * 100) === p
+                                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                  title={`Gán nhanh ${p}%`}
+                                >
+                                  {p}%
+                                </button>
                               ))}
-                            </select>
+                            </div>
                             <span className="text-[11px] font-bold text-blue-800 tracking-tight">
                               ➜ {formatNumber(item.responsibility_amount)} đ
                             </span>
@@ -731,8 +745,7 @@ const KpiPage = () => {
                         ) : (
                           <div className="flex flex-col items-center">
                             <span className="text-xs font-bold text-slate-800">
-                              {RESPONSIBILITY_RATE_OPTIONS.find(o => Math.abs(o.value - currentRate) < 0.01)?.shortLabel ||
-                                `${Math.round(currentRate * 100)}%`}
+                              {Math.round((currentRate !== undefined ? currentRate : 1.0) * 100)}%
                             </span>
                             <span className="text-[11px] font-bold text-blue-800">
                               {formatCurrency(item.responsibility_amount)}
@@ -861,21 +874,41 @@ const KpiPage = () => {
 
                   <div>
                     <label className="text-xs font-semibold text-slate-600 block mb-1">
-                      Tỷ lệ đạt KPI Trách nhiệm (4 tiêu chí)
+                      Tỷ lệ đạt KPI Trách nhiệm (%)
                     </label>
-                    <select
-                      value={modalForm.responsibility_rate}
-                      onChange={e =>
-                        setModalForm({ ...modalForm, responsibility_rate: parseFloat(e.target.value) })
-                      }
-                      className="w-full border border-blue-300 rounded-lg p-2.5 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                    >
-                      {RESPONSIBILITY_RATE_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100)}
+                        onChange={e => {
+                          const val = e.target.value === '' ? 0 : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+                          setModalForm({ ...modalForm, responsibility_rate: val / 100 });
+                        }}
+                        className="w-full border border-blue-300 rounded-lg p-2.5 pr-8 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                        placeholder="%"
+                      />
+                      <span className="absolute right-3 top-2.5 text-sm font-bold text-blue-600">%</span>
+                    </div>
+                    {/* Nút gán nhanh */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {[100, 75, 50, 25, 0].map(p => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setModalForm({ ...modalForm, responsibility_rate: p / 100 })}
+                          className={`px-2 py-1 text-xs font-semibold rounded-md border transition ${
+                            Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100) === p
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {p}%
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 </div>
 

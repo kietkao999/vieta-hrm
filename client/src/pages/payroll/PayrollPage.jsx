@@ -327,17 +327,38 @@ const PayrollPage = () => {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">% Đạt KPI Trách nhiệm</label>
-                      <select 
-                        value={1 - editForm.responsibility_deduction_rate} 
-                        onChange={e => setEditForm({...editForm, responsibility_deduction_rate: 1 - parseFloat(e.target.value)})} 
-                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 bg-white"
-                      >
-                        <option value={1}>100% (Đạt 4/4)</option>
-                        <option value={0.75}>75% (Đạt 3/4)</option>
-                        <option value={0.5}>50% (Đạt 2/4)</option>
-                        <option value={0.25}>25% (Đạt 1/4)</option>
-                        <option value={0}>0% (Đạt 0/4)</option>
-                      </select>
+                      <div className="relative mt-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={Math.round((1 - (parseFloat(editForm.responsibility_deduction_rate) || 0)) * 100)}
+                          onChange={e => {
+                            const val = e.target.value === '' ? 0 : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+                            setEditForm({ ...editForm, responsibility_deduction_rate: (100 - val) / 100 });
+                          }}
+                          className="w-full border rounded-lg p-2 pr-8 text-sm outline-none focus:border-brand-500 font-bold text-slate-800"
+                          placeholder="%"
+                        />
+                        <span className="absolute right-3 top-2 text-sm font-bold text-slate-400">%</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {[100, 75, 50, 25, 0].map(p => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setEditForm({ ...editForm, responsibility_deduction_rate: (100 - p) / 100 })}
+                            className={`px-2 py-0.5 text-xs font-semibold rounded border transition ${
+                              Math.round((1 - (parseFloat(editForm.responsibility_deduction_rate) || 0)) * 100) === p
+                                ? 'bg-brand-600 text-white border-brand-600'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                          >
+                            {p}%
+                          </button>
+                        ))}
+                      </div>
                       <p className="text-[10px] text-amber-600 mt-1">* Suy ra % bị trừ = {(editForm.responsibility_deduction_rate * 100).toFixed(0)}%</p>
                     </div>
                   </div>
