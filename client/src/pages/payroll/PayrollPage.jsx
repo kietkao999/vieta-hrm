@@ -541,37 +541,45 @@ const PayrollPage = () => {
             <form onSubmit={handleEditSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Group I: Lương cơ sở & Công việc */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-                  <Clock size={14} className="text-brand-600" />
-                  <span>I. Lương Cơ Sở, Ngày Công & Giờ Tăng Ca</span>
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Clock size={14} className="text-brand-600" />
+                    <span>I. Lương Cơ Sở, Ngày Công & Giờ Tăng Ca</span>
+                  </h4>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded">
+                    Lương cơ sở lấy từ Hồ sơ NV | Ngày công & OT nhập tay
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Lương Tầng (đ)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-600">Lương Tầng</label>
+                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                    </div>
                     <input
                       type="text"
-                      value={formatInputNumber(editForm.tier_salary)}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '');
-                        setEditForm({ ...editForm, tier_salary: raw === '' ? 0 : parseInt(raw, 10) });
-                      }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold outline-none focus:border-brand-500"
+                      disabled
+                      value={formatVND(editForm.tier_salary)}
+                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-slate-600 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Lương Bậc (đ)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-600">Lương Bậc</label>
+                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                    </div>
                     <input
                       type="text"
-                      value={formatInputNumber(editForm.grade_salary)}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '');
-                        setEditForm({ ...editForm, grade_salary: raw === '' ? 0 : parseInt(raw, 10) });
-                      }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold outline-none focus:border-brand-500"
+                      disabled
+                      value={formatVND(editForm.grade_salary)}
+                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-slate-600 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Ngày công thực tế (chuẩn 26)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-blue-900">Ngày công thực tế (chuẩn 26)</label>
+                      <span className="text-[10px] text-blue-600 font-bold">✍️ Nhập tay</span>
+                    </div>
                     <input
                       type="number"
                       step="0.5"
@@ -579,18 +587,21 @@ const PayrollPage = () => {
                       max="31"
                       value={editForm.work_days}
                       onChange={(e) => setEditForm({ ...editForm, work_days: parseFloat(e.target.value) || 0 })}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-blue-700 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-blue-400 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-blue-700 outline-none focus:ring-2 focus:ring-blue-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Giờ tăng ca (OT × 1.5)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-indigo-900">Giờ tăng ca (OT × 1.5)</label>
+                      <span className="text-[10px] text-indigo-600 font-bold">✍️ Nhập tay</span>
+                    </div>
                     <input
                       type="number"
                       step="0.5"
                       min="0"
                       value={editForm.ot_hours}
                       onChange={(e) => setEditForm({ ...editForm, ot_hours: parseFloat(e.target.value) || 0 })}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-indigo-700 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-indigo-400 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-300"
                     />
                   </div>
                 </div>
@@ -598,37 +609,45 @@ const PayrollPage = () => {
 
               {/* Group II: KPI & Thưởng */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-                  <Award size={14} className="text-emerald-600" />
-                  <span>II. Thưởng KPI & Thưởng Khác</span>
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Award size={14} className="text-emerald-600" />
+                    <span>II. Thưởng KPI & Thưởng Khác</span>
+                  </h4>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded">
+                    KPI lấy từ Quản lý KPI | Thưởng khác nhập tay
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Thưởng KPI Trách nhiệm (đ)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-600">Thưởng KPI Trách nhiệm</label>
+                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                    </div>
                     <input
                       type="text"
-                      value={formatInputNumber(editForm.responsibility_kpi)}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '');
-                        setEditForm({ ...editForm, responsibility_kpi: raw === '' ? 0 : parseInt(raw, 10) });
-                      }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-emerald-700 outline-none focus:border-brand-500"
+                      disabled
+                      value={formatVND(editForm.responsibility_kpi)}
+                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-emerald-800 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Thưởng KPI Hiệu quả (đ)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-slate-600">Thưởng KPI Hiệu quả</label>
+                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                    </div>
                     <input
                       type="text"
-                      value={formatInputNumber(editForm.performance_kpi)}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '');
-                        setEditForm({ ...editForm, performance_kpi: raw === '' ? 0 : parseInt(raw, 10) });
-                      }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-emerald-700 outline-none focus:border-brand-500"
+                      disabled
+                      value={formatVND(editForm.performance_kpi)}
+                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-emerald-800 cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Thưởng khác (đột xuất, sáng kiến) (đ)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-emerald-900">Thưởng khác (đột xuất, sáng kiến) (đ)</label>
+                      <span className="text-[10px] text-emerald-600 font-bold">✍️ Nhập tay</span>
+                    </div>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.other_bonus)}
@@ -636,7 +655,7 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, other_bonus: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-emerald-700 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-emerald-400 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-300"
                     />
                   </div>
                 </div>
@@ -644,13 +663,18 @@ const PayrollPage = () => {
 
               {/* Group III: Phụ cấp */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-                  <Coffee size={14} className="text-amber-600" />
-                  <span>III. Các Khoản Phụ Cấp</span>
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                    <Coffee size={14} className="text-amber-600" />
+                    <span>III. Các Khoản Phụ Cấp (Nhập tay)</span>
+                  </h4>
+                  <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded">
+                    ✍️ Nhập tay
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Phụ cấp cơm & điện thoại (đ)</label>
+                    <label className="text-xs font-semibold text-amber-900">Phụ cấp cơm & điện thoại (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.meal_phone_allowance)}
@@ -658,11 +682,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, meal_phone_allowance: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-amber-800 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-amber-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Phụ cấp khác (xăng xe, công tác...) (đ)</label>
+                    <label className="text-xs font-semibold text-amber-900">Phụ cấp khác (xăng xe, công tác...) (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.other_allowance)}
@@ -670,7 +694,7 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, other_allowance: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-amber-800 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-amber-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-300"
                     />
                   </div>
                 </div>
@@ -678,13 +702,18 @@ const PayrollPage = () => {
 
               {/* Group IV: Các khoản khấu trừ */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider mb-3 flex items-center space-x-1.5">
-                  <ShieldAlert size={14} className="text-red-600" />
-                  <span>IV. Các Khoản Khấu Trừ</span>
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider flex items-center space-x-1.5">
+                    <ShieldAlert size={14} className="text-red-600" />
+                    <span>IV. Các Khoản Khấu Trừ (Nhập tay)</span>
+                  </h4>
+                  <span className="text-[10px] bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded">
+                    ✍️ Nhập tay
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">BHXH (Bảo hiểm xã hội) (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">BHXH (Bảo hiểm xã hội) (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.social_insurance)}
@@ -692,11 +721,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, social_insurance: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Đoàn phí (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">Đoàn phí (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.union_fee)}
@@ -704,11 +733,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, union_fee: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Thuế TNCN (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">Thuế TNCN (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.income_tax)}
@@ -716,11 +745,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, income_tax: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Tạm ứng trong kỳ (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">Tạm ứng trong kỳ (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.advance_payment)}
@@ -728,11 +757,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, advance_payment: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Trừ cắt giờ (đi trễ, về sớm) (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">Trừ cắt giờ (đi trễ, về sớm) (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.hour_deduction)}
@@ -740,11 +769,11 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, hour_deduction: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-600">Trừ khác (phạt vi phạm...) (đ)</label>
+                    <label className="text-xs font-semibold text-red-900">Trừ khác (phạt vi phạm...) (đ)</label>
                     <input
                       type="text"
                       value={formatInputNumber(editForm.other_deductions)}
@@ -752,7 +781,7 @@ const PayrollPage = () => {
                         const raw = e.target.value.replace(/\D/g, '');
                         setEditForm({ ...editForm, other_deductions: raw === '' ? 0 : parseInt(raw, 10) });
                       }}
-                      className="w-full border border-slate-300 rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:border-brand-500"
+                      className="w-full border-2 border-red-300 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-300"
                     />
                   </div>
                 </div>
