@@ -633,53 +633,48 @@ const ReportPage = () => {
       {error && <div className="rounded-lg bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>}
 
       {/* ========================================================================= */}
-      {/* BỘ LỌC CHỌN NHIỀU THÁNG / KHOẢNG THÁNG / PHÒNG BAN TRỰC TIẾP TRÊN TRANG */}
+      {/* BỘ LỌC TINH GỌN: CHẾ ĐỘ XEM, PHÒNG BAN, MỐC NHANH & DẢI 12 THÁNG */}
       {/* ========================================================================= */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        {/* Hàng 1: Chuyển đổi chế độ, Lọc phòng ban & Presets */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div className="flex flex-wrap items-center gap-3">
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+        {/* Hàng 1: Điều khiển chế độ, Lọc phòng ban, Mốc nhanh & Xuất Excel */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Chế độ xem tháng */}
             {activeTab !== 'summary' && (
-              <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chế độ xem:</span>
-                <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
-                  <button
-                    type="button"
-                    onClick={() => setSelectionMode('multi')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      selectionMode === 'multi'
-                        ? 'bg-brand-700 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Chọn nhiều tháng
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectionMode('single')}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      selectionMode === 'single'
-                        ? 'bg-brand-700 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Xem 1 tháng
-                  </button>
-                </div>
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectionMode('multi')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    selectionMode === 'multi'
+                      ? 'bg-brand-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Nhiều tháng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectionMode('single')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    selectionMode === 'single'
+                      ? 'bg-brand-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  1 tháng
+                </button>
               </div>
             )}
 
             {/* Lọc theo Phòng Ban */}
-            <div className="flex items-center space-x-2 bg-brand-50/50 border border-brand-200 px-3 py-1.5 rounded-xl shadow-2xs">
-              <div className="p-1 rounded-md bg-brand-700 text-white">
-                <Layers size={13} />
-              </div>
-              <span className="text-xs font-bold text-brand-900 whitespace-nowrap">Lọc phòng ban:</span>
+            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+              <Layers size={13} className="text-brand-700 shrink-0" />
+              <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Phòng ban:</span>
               <select
                 value={selectedDepartment}
                 onChange={e => setSelectedDepartment(e.target.value)}
-                className="text-xs font-bold text-brand-950 bg-white border border-brand-200 rounded-lg px-2.5 py-1 outline-none cursor-pointer hover:border-brand-400 transition"
+                className="text-xs font-bold text-slate-900 bg-transparent outline-none cursor-pointer max-w-[190px] sm:max-w-[240px] truncate"
               >
                 <option value="">🏢 Tất cả phòng ban (Toàn công ty)</option>
                 {departments.map(d => (
@@ -690,64 +685,77 @@ const ReportPage = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedDepartment('')}
-                  className="text-brand-600 hover:text-red-600 p-1 rounded-md hover:bg-brand-100 transition"
+                  className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
                   title="Xóa bộ lọc phòng ban"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>
+
+            {/* Mốc chọn nhanh dạng Dropdown tinh gọn */}
+            {activeTab !== 'summary' && (
+              <div className="flex items-center space-x-1.5 bg-amber-50/70 border border-amber-200/80 px-2.5 py-1 rounded-lg">
+                <Sparkles size={13} className="text-amber-600 shrink-0" />
+                <span className="text-xs font-semibold text-amber-900 whitespace-nowrap">Mốc nhanh:</span>
+                <select
+                  value=""
+                  onChange={e => {
+                    if (e.target.value) {
+                      const val = e.target.value;
+                      if (val === 't1-t7') applyPreset(['1', '2', '3', '4', '5', '6', '7']);
+                      else if (val === 'q1') applyPreset(['1', '2', '3']);
+                      else if (val === 'q2') applyPreset(['4', '5', '6']);
+                      else if (val === 'q3') applyPreset(['7', '8', '9']);
+                      else if (val === 'q4') applyPreset(['10', '11', '12']);
+                      else if (val === 'h1') applyPreset(['1', '2', '3', '4', '5', '6']);
+                      else if (val === 'h2') applyPreset(['7', '8', '9', '10', '11', '12']);
+                      else if (val === 'all') applyPreset(Array.from({ length: 12 }, (_, i) => (i + 1).toString()));
+                    }
+                  }}
+                  className="text-xs font-bold text-amber-950 bg-transparent outline-none cursor-pointer"
+                >
+                  <option value="" disabled>⚡ Chọn mốc nhanh...</option>
+                  <option value="t1-t7">✨ T1 – T7 (Dữ liệu HQ thực tế)</option>
+                  <option value="q1">Quý 1 (Tháng 01 - 03)</option>
+                  <option value="q2">Quý 2 (Tháng 04 - 06)</option>
+                  <option value="q3">Quý 3 (Tháng 07 - 09)</option>
+                  <option value="q4">Quý 4 (Tháng 10 - 12)</option>
+                  <option value="h1">6 Tháng đầu năm (T01 - T06)</option>
+                  <option value="h2">6 Tháng cuối năm (T07 - T12)</option>
+                  <option value="all">Toàn bộ cả năm (12 Tháng)</option>
+                </select>
+              </div>
+            )}
           </div>
 
-          {/* Mốc chọn nhanh */}
+          {/* Nút Tải nhanh Excel */}
           {activeTab !== 'summary' && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-slate-400 font-semibold mr-1">Mốc nhanh:</span>
+            <div className="flex items-center shrink-0 ml-auto">
               <button
-                onClick={() => applyPreset(['1', '2', '3', '4', '5', '6', '7'])}
-                className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                type="button"
+                onClick={() => handleExportExcel({
+                  reportType: activeTab === 'kpi' ? 'kpi' : activeTab === 'payroll' ? 'payroll' : activeTab === 'attendance' ? 'attendance' : 'all',
+                  months: selectionMode === 'single' ? singleMonth : selectedMonths.join(','),
+                  year: year,
+                  department_id: selectedDepartment
+                })}
+                disabled={isExporting}
+                className="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                title="Tải nhanh file Excel theo các tháng và phòng ban đang chọn"
               >
-                ✨ T1 – T7 (Dữ liệu HQ)
-              </button>
-              <button
-                onClick={() => applyPreset(['1', '2', '3'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-              >
-                Quý 1 (T1-T3)
-              </button>
-              <button
-                onClick={() => applyPreset(['4', '5', '6'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-              >
-                Quý 2 (T4-T6)
-              </button>
-              <button
-                onClick={() => applyPreset(['7', '8', '9'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-              >
-                Quý 3 (T7-T9)
-              </button>
-              <button
-                onClick={() => applyPreset(['1', '2', '3', '4', '5', '6'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-              >
-                6T đầu năm
-              </button>
-              <button
-                onClick={() => applyPreset(Array.from({ length: 12 }, (_, i) => (i + 1).toString()))}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cả năm
+                <Download size={13} />
+                <span>Tải Excel ({selectionMode === 'single' ? `T${singleMonth}` : `${sortedActiveMonths.length} tháng`}{selectedDeptObj ? ` - ${selectedDeptObj.name}` : ''})</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Hàng 2: Danh sách 12 Tháng chọn trực quan */}
+        {/* Hàng 2: Dải 12 Tháng chọn trực quan */}
         {activeTab !== 'summary' && (
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-600 mr-1">Các tháng:</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-0.5">Tháng:</span>
               {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                 const mStr = m.toString();
                 const isSelected = selectionMode === 'single'
@@ -766,63 +774,60 @@ const ReportPage = () => {
                         toggleMonth(mStr);
                       }
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all relative flex items-center space-x-1 cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all relative flex items-center cursor-pointer ${
                       isSelected
-                        ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-700/25 scale-102'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                        ? 'bg-brand-700 text-white shadow-xs font-bold'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                     }`}
                   >
                     {selectionMode === 'multi' && (
-                      isSelected ? <CheckSquare size={13} className="mr-0.5" /> : <Square size={13} className="mr-0.5 text-slate-400" />
+                      isSelected ? <CheckSquare size={12} className="mr-1 text-white" /> : <Square size={12} className="mr-1 text-slate-400" />
                     )}
-                    <span>Tháng {m < 10 ? `0${m}` : m}</span>
+                    <span>T{m < 10 ? `0${m}` : m}</span>
                     {hasDataHQ && !isSelected && (
-                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block ml-0.5" title="Có dữ liệu thưởng hiệu quả"></span>
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block ml-1" title="Có dữ liệu thưởng hiệu quả"></span>
                     )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Quick Export cho các tháng đang chọn */}
-            <div className="flex items-center space-x-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleExportExcel({
-                  reportType: activeTab === 'kpi' ? 'kpi' : activeTab === 'payroll' ? 'payroll' : activeTab === 'attendance' ? 'attendance' : 'all',
-                  months: selectionMode === 'single' ? singleMonth : selectedMonths.join(','),
-                  year: year,
-                  department_id: selectedDepartment
-                })}
-                disabled={isExporting}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                title="Tải nhanh file Excel theo các tháng và phòng ban đang lọc"
-              >
-                <Download size={14} />
-                <span>Tải Excel ({selectionMode === 'single' ? `T${singleMonth}` : `${sortedActiveMonths.length} tháng`}{selectedDeptObj ? ` - ${selectedDeptObj.name}` : ''})</span>
-              </button>
-            </div>
+            {/* Thao tác chọn tất cả / bỏ chọn cho chế độ multi */}
+            {selectionMode === 'multi' && (
+              <div className="flex items-center space-x-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMonths(Array.from({ length: 12 }, (_, i) => (i + 1).toString()))}
+                  className="text-brand-700 hover:underline font-semibold cursor-pointer"
+                >
+                  Chọn tất cả
+                </button>
+                <span className="text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMonths(['7'])}
+                  className="text-slate-500 hover:underline cursor-pointer"
+                >
+                  Mặc định (T7)
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Dòng trạng thái đang lọc */}
-        <div className="bg-slate-50 px-3.5 py-2.5 rounded-lg text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2 border border-slate-150">
-          <div className="flex items-center space-x-2">
-            <Sparkles size={15} className="text-brand-700 shrink-0" />
-            <span>
-              <strong>Đang xem:</strong> <span className="text-brand-800 font-bold">{displayRangeText}</span>
+        {/* Thanh tóm tắt đang xem thanh mảnh */}
+        <div className="bg-slate-50 px-3 py-1.5 rounded-lg text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2 border border-slate-100">
+          <div className="flex items-center space-x-1.5">
+            <Sparkles size={13} className="text-brand-700 shrink-0" />
+            <span className="text-[11.5px]">
+              <strong>Đang xem:</strong> <span className="text-brand-900 font-bold">{displayRangeText}</span>
             </span>
           </div>
-          <div className="flex items-center space-x-3 text-[11px] text-slate-500">
-            {selectionMode === 'multi' && activeTab !== 'summary' && (
-              <span>(Click vào từng tháng để bật/tắt chọn)</span>
-            )}
-            {selectedDepartment && (
-              <span className="bg-brand-100 text-brand-800 font-bold px-2 py-0.5 rounded-md border border-brand-200">
-                Đang lọc: {selectedDeptObj?.name}
-              </span>
-            )}
-          </div>
+          {selectedDepartment && (
+            <span className="bg-brand-100 text-brand-900 font-bold text-[11px] px-2 py-0.5 rounded border border-brand-200">
+              Đang lọc: {selectedDeptObj?.name} ({filteredEmployees.length} NV)
+            </span>
+          )}
         </div>
       </div>
 
