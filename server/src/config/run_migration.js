@@ -158,14 +158,17 @@ export async function runMigration() {
       const rateT6 = item["Tỷ lệ T6"] !== undefined ? item["Tỷ lệ T6"] : 0;
       const rateT7 = item["Tỷ lệ T7"] !== undefined ? item["Tỷ lệ T7"] : 0;
 
+      const quotaT6 = (code === 'VietA 032') ? 1000000 : kpiBonus;
+      const quotaT7 = (code === 'VietA 032') ? 1000000 : kpiBonus;
+
       const monthlyData = [
         { month: '01', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T1"]) || 0 },
         { month: '02', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T2"]) || 0 },
         { month: '03', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T3"]) || 0 },
         { month: '04', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T4"]) || 0 },
         { month: '05', rate: rateT5, amount: Number(item["KPI T5"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T5"]) || 0 },
-        { month: '06', rate: rateT6, amount: Number(item["KPI T6"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T6"]) || 0 },
-        { month: '07', rate: rateT7, amount: Number(item["KPI T7"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T7"]) || 0 },
+        { month: '06', rate: rateT6, amount: Number(item["KPI T6"]) || 0, quota: quotaT6, hq: Number(item["Hiệu quả T6"]) || 0 },
+        { month: '07', rate: rateT7, amount: Number(item["KPI T7"]) || 0, quota: quotaT7, hq: Number(item["Hiệu quả T7"]) || 0 },
         { month: '09', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 }
       ];
 
