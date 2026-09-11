@@ -408,7 +408,7 @@ export const danhSachNhanVienVaKPI = [
   },
   {
     "Mã NV": "VietA 016",
-    "Họ và Tên": "Nguyễn Thị Quỳnh Như",
+    "Họ và Tên": "Nguyễn Thị Huỳnh Như",
     "Giới tính": "Nữ",
     "Ngày sinh": "2003-08-12",
     "Số ĐT": "0965185735",
