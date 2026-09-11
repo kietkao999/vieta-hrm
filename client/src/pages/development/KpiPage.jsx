@@ -485,6 +485,35 @@ const KpiPage = () => {
         </div>
       </div>
 
+      {/* Month Tabs Bar (Tháng 1 -> Tháng 12) */}
+      <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between overflow-x-auto gap-1">
+        <div className="flex items-center space-x-1 min-w-max">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2 ml-1">Chọn tháng:</span>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+            const isSelected = month.toString() === m.toString();
+            const hasData = [5, 6, 7].includes(m);
+            return (
+              <button
+                key={m}
+                onClick={() => setMonth(m.toString())}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-300'
+                    : hasData
+                    ? 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>Tháng {m < 10 ? `0${m}` : m}</span>
+                {hasData && !isSelected && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filter and Control Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Month / Year Navigator */}
@@ -721,8 +750,8 @@ const KpiPage = () => {
                                 type="number"
                                 min="0"
                                 max="100"
-                                step="0.5"
-                                value={item.raw_rate_input !== undefined ? item.raw_rate_input : (item.responsibility_rate !== undefined ? Number((item.responsibility_rate * 100).toFixed(1)) : 100)}
+                                step="0.01"
+                                value={item.raw_rate_input !== undefined ? item.raw_rate_input : (item.responsibility_rate !== undefined ? (Math.round(item.responsibility_rate * 10000) / 100) : 100)}
                                 onChange={e => handleRateChange(item.employee_id, e.target.value)}
                                 className="w-20 text-center font-extrabold text-blue-900 border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-300 rounded-lg px-2 py-1.5 text-sm outline-none bg-white shadow-sm"
                                 placeholder="100"
@@ -736,7 +765,7 @@ const KpiPage = () => {
                         ) : (
                           <div className="flex flex-col items-center">
                             <span className="text-xs font-bold text-slate-800">
-                              {item.responsibility_rate !== undefined ? Number((item.responsibility_rate * 100).toFixed(1)) : 100}%
+                              {item.responsibility_rate !== undefined ? (Math.round(item.responsibility_rate * 10000) / 100) : 100}%
                             </span>
                             <span className="text-[11px] font-bold text-blue-800">
                               {formatCurrency(item.responsibility_amount)}
