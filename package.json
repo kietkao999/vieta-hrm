@@ -1,0 +1,10 @@
+{
+  "name": "vieta-hrm-monorepo",
+  "version": "1.0.0",
+  "description": "Viet A HRM Monorepo",
+  "private": true,
+  "scripts": {
+    "build": "cd client && npm install && npm run build && cd ../server && npm install",
+    "start": "cd server && npm start"
+  }
+}

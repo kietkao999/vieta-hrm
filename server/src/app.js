@@ -67,6 +67,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// Phục vụ frontend build static files
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return next();
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
+    if (err) {
+      next();
+    }
+  });
+});
+
 // Middleware xử lý lỗi tập trung
 app.use((err, req, res, next) => {
   console.error('Lỗi ứng dụng:', err.stack);
