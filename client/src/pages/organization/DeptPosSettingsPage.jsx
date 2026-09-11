@@ -566,9 +566,9 @@ const DeptPosSettingsPage = () => {
       {/* Modal: Danh sách Nhân sự thuộc Phòng ban */}
       {viewDeptEmployeesModalOpen && viewDeptData.department && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden my-8 max-h-[90vh] flex flex-col">
+          <div className="w-full max-w-5xl lg:max-w-6xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden my-6 max-h-[90vh] flex flex-col animate-scaleUp">
             {/* Modal Header */}
-            <div className="p-5 bg-gradient-to-r from-brand-800 to-slate-800 text-white flex justify-between items-center shrink-0">
+            <div className="p-5 bg-gradient-to-r from-brand-800 via-brand-700 to-slate-800 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
                   <Layers size={22} className="text-amber-300" />
@@ -576,11 +576,11 @@ const DeptPosSettingsPage = () => {
                 <div>
                   <h3 className="font-bold text-lg leading-tight flex items-center space-x-2">
                     <span>Phòng ban: {viewDeptData.department.name}</span>
-                    <span className="text-xs bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full">
+                    <span className="text-xs bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full shadow-sm">
                       {viewDeptData.employees?.length || 0} nhân sự
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
+                  <p className="text-xs text-slate-200 mt-0.5 font-medium">
                     {viewDeptData.department.branch_name || 'Văn phòng Trụ sở chính'}
                   </p>
                 </div>
@@ -588,6 +588,7 @@ const DeptPosSettingsPage = () => {
               <button
                 onClick={() => setViewDeptEmployeesModalOpen(false)}
                 className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
+                title="Đóng modal"
               >
                 <XCircle size={24} />
               </button>
@@ -595,7 +596,7 @@ const DeptPosSettingsPage = () => {
 
             {/* Modal Search & Filter */}
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
-              <div className="flex items-center space-x-2 max-w-md w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+              <div className="flex items-center space-x-2 max-w-md w-full bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
                 <Search size={16} className="text-slate-400" />
                 <input
                   type="text"
@@ -605,13 +606,13 @@ const DeptPosSettingsPage = () => {
                   className="outline-none text-xs w-full bg-transparent text-slate-700"
                 />
               </div>
-              <span className="text-xs font-semibold text-slate-500">
-                Hiển thị: <b>{modalFilteredEmployees.length}</b> nhân sự
+              <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+                Hiển thị: <b className="text-brand-700 font-bold">{modalFilteredEmployees.length}</b> / {viewDeptData.employees?.length || 0} nhân sự
               </span>
             </div>
 
             {/* Modal Body / Table */}
-            <div className="p-4 overflow-y-auto flex-1">
+            <div className="p-4 overflow-y-auto flex-1 custom-scroll">
               {viewDeptLoading ? (
                 <div className="flex justify-center p-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
@@ -622,68 +623,70 @@ const DeptPosSettingsPage = () => {
                   <p className="font-semibold text-sm">Chưa có nhân sự nào trong phòng ban này.</p>
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b">
+                <div className="rounded-xl border border-slate-200 overflow-x-auto custom-scroll-x shadow-sm">
+                  <table className="w-full text-left text-xs border-collapse min-w-[800px] whitespace-nowrap">
+                    <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b whitespace-nowrap">
                       <tr>
-                        <th className="px-4 py-3">STT</th>
-                        <th className="px-4 py-3">Mã NV & Họ Tên</th>
-                        <th className="px-4 py-3">Chức vụ</th>
-                        <th className="px-4 py-3 text-center">Giới tính</th>
-                        <th className="px-4 py-3">Liên hệ (SĐT / Email)</th>
-                        <th className="px-4 py-3 text-center">Trạng thái</th>
-                        <th className="px-4 py-3 text-right">Ngày vào làm</th>
+                        <th className="px-4 py-3.5 text-center w-12">STT</th>
+                        <th className="px-5 py-3.5">Mã NV & Họ Tên</th>
+                        <th className="px-5 py-3.5">Chức vụ</th>
+                        <th className="px-4 py-3.5 text-center">Giới tính</th>
+                        <th className="px-5 py-3.5">Liên hệ (SĐT / Email)</th>
+                        <th className="px-4 py-3.5 text-center">Trạng thái</th>
+                        <th className="px-5 py-3.5 text-right">Ngày vào làm</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 whitespace-nowrap">
                       {modalFilteredEmployees.map((emp, idx) => (
-                        <tr key={emp.id} className="hover:bg-slate-50 transition">
-                          <td className="px-4 py-3 text-slate-400 font-bold">{idx + 1}</td>
-                          <td className="px-4 py-3">
-                            <div className="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
-                              <span>{emp.fullname}</span>
+                        <tr key={emp.id} className="hover:bg-brand-50/30 transition">
+                          <td className="px-4 py-3 text-slate-400 font-bold text-center">{idx + 1}</td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <div className="font-bold text-slate-800 text-sm">
+                              {emp.fullname}
                             </div>
-                            <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200/60 inline-block mt-0.5">
                               {emp.code}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            <span className="font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md inline-block">
                               {emp.position_name || 'Chưa phân chức vụ'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-center text-slate-600 font-medium">
+                          <td className="px-4 py-3 text-center text-slate-600 font-medium whitespace-nowrap">
                             {emp.gender || '-'}
                           </td>
-                          <td className="px-4 py-3 space-y-0.5">
-                            {emp.phone && (
-                              <div className="flex items-center space-x-1 text-slate-700 font-medium">
-                                <Phone size={11} className="text-slate-400" />
+                          <td className="px-5 py-3 space-y-1 whitespace-nowrap">
+                            {emp.phone ? (
+                              <div className="flex items-center space-x-1.5 text-slate-700 font-medium">
+                                <Phone size={12} className="text-slate-400 shrink-0" />
                                 <span>{emp.phone}</span>
                               </div>
+                            ) : (
+                              <span className="text-slate-400 italic">-</span>
                             )}
                             {emp.email && (
-                              <div className="flex items-center space-x-1 text-slate-500 text-[10px]">
-                                <Mail size={11} className="text-slate-400" />
+                              <div className="flex items-center space-x-1.5 text-slate-500 text-[10px]">
+                                <Mail size={12} className="text-slate-400 shrink-0" />
                                 <span>{emp.email}</span>
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold inline-block whitespace-nowrap ${
                               emp.status === 'Đang làm việc'
-                                ? 'bg-emerald-100 text-emerald-700'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : emp.status === 'Thử việc'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-slate-100 text-slate-500'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
                             }`}>
                               {emp.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right text-slate-600 font-medium">
+                          <td className="px-5 py-3 text-right text-slate-600 font-medium whitespace-nowrap">
                             {emp.join_date ? (
-                              <span className="inline-flex items-center space-x-1">
-                                <Calendar size={11} className="text-slate-400" />
+                              <span className="inline-flex items-center space-x-1.5">
+                                <Calendar size={12} className="text-slate-400 shrink-0" />
                                 <span>{emp.join_date}</span>
                               </span>
                             ) : '-'}
@@ -701,7 +704,7 @@ const DeptPosSettingsPage = () => {
               <button
                 type="button"
                 onClick={() => setViewDeptEmployeesModalOpen(false)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-sm"
+                className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-sm"
               >
                 Đóng
               </button>
