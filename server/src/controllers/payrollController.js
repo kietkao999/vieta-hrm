@@ -35,11 +35,9 @@ export const getPayroll = async (req, res) => {
     sql += ` ORDER BY p.year DESC, p.month DESC, e.fullname ASC`;
     const records = await query.all(sql, params);
     
-    // Luôn trả về mảng, nếu trống thì trả về [] thay vì throw lỗi
     return res.json(records || []);
   } catch (error) {
     console.error('Lỗi lấy dữ liệu bảng lương:', error);
-    // Vẫn trả về mảng rỗng nếu có lỗi nghiêm trọng để UI không bị văng
     return res.json([]);
   }
 };
@@ -67,54 +65,95 @@ export const generatePayroll = async (req, res) => {
     const now = new Date().toISOString();
     const padMonth = month.toString().padStart(2, '0');
 
-    // 2. Với mỗi nhân viên, tính lương
+    // 2. Với mỗi nhân viên, tính lương theo công thức chuẩn:
+    // Tổng thực lĩnh = [((Lương tầng + Lương bậc) / 26) * Ngày công] 
+    //                + [((Lương tầng + Lương bậc) / 208) * Giờ tăng ca * 1.5] 
+    //                + Thưởng KPI trách nhiệm + Thưởng KPI hiệu quả + Thưởng khác 
+    //                + Phụ cấp cơm & điện thoại + Phụ cấp khác 
+    //                - Bảo hiểm xã hội - Đoàn phí - Thuế TNCN - Tạm ứng - Trừ cắt giờ - Trừ khác
     for (const emp of employees) {
       // 2.1 Lấy KPI tháng của nhân viên
       const kpi = await query.get(`
-        SELECT responsibility_bonus, responsibility_rate, performance_bonus, discipline_deduction
+        SELECT responsibility_bonus, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction
         FROM employee_monthly_kpis
-        WHERE employee_id = ? AND month = ? AND year = ?
-      `, [emp.id, padMonth, year]);
+        WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?
+      `, [emp.id, padMonth, month.toString(), year]);
 
-      // Các giá trị mặc định nếu chưa có KPI tháng này
+      // Các giá trị mặc định KPI
       const respQuota = kpi ? parseFloat(kpi.responsibility_bonus || 0) : 0;
-      const respRate = kpi ? parseFloat(kpi.responsibility_rate || 1.0) : 1.0;
-      const perfBonus = kpi ? parseFloat(kpi.performance_bonus || 0) : 0;
+      const respRate = kpi ? parseFloat(kpi.responsibility_rate ?? 1.0) : 1.0;
+      const respKpi = kpi?.responsibility_amount !== undefined && kpi.responsibility_amount !== null
+        ? parseFloat(kpi.responsibility_amount)
+        : Math.round(respQuota * respRate);
+      const deductRate = 1.0 - respRate;
+
+      const perfKpi = kpi ? parseFloat(kpi.performance_bonus || 0) : 0;
       const discDeduct = kpi ? parseFloat(kpi.discipline_deduction || 0) : 0;
 
-      // 2.2 Tính toán theo công thức
+      // 2.2 Thành phần lương cơ sở
       const tierSalary = parseFloat(emp.tier_salary || 0);
       const gradeSalary = parseFloat(emp.grade_salary || 0);
+      const totalBase = tierSalary + gradeSalary;
 
-      // Trách nhiệm: Tiền phạt = Định mức * (1 - Tỷ lệ đạt)
-      // Tỷ lệ bị trừ
-      const deductRate = 1.0 - respRate;
-      const respNet = respQuota * respRate;
-
-      // Hiệu quả: Max(0, Thưởng - Phạt)
-      const perfNet = Math.max(0, perfBonus - discDeduct);
-
-      // Tổng
-      const netSalary = tierSalary + gradeSalary + respNet + perfNet;
-
-      // 2.3 Lưu vào bảng payrolls (nếu có rồi thì cập nhật, chưa thì insert)
+      // Kiểm tra xem đã có phiếu lương chưa để giữ lại các khoản điều chỉnh nếu có
       const exist = await query.get(`
-        SELECT id FROM payrolls WHERE employee_id = ? AND month = ? AND year = ?
-      `, [emp.id, padMonth, year]);
+        SELECT * FROM payrolls WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?
+      `, [emp.id, padMonth, month.toString(), year]);
+
+      const workDays = exist ? parseFloat(exist.work_days ?? 26) : 26;
+      const otHours = exist ? parseFloat(exist.ot_hours ?? 0) : 0;
+      const otherBonus = exist ? parseFloat(exist.other_bonus ?? 0) : 0;
+      const mealPhoneAllowance = exist ? parseFloat(exist.meal_phone_allowance ?? 0) : 0;
+      const otherAllowance = exist ? parseFloat(exist.other_allowance ?? 0) : 0;
+      const socialInsurance = exist ? parseFloat(exist.social_insurance ?? 0) : 0;
+      const unionFee = exist ? parseFloat(exist.union_fee ?? 0) : 0;
+      const incomeTax = exist ? parseFloat(exist.income_tax ?? 0) : 0;
+      const advancePayment = exist ? parseFloat(exist.advance_payment ?? 0) : 0;
+      const hourDeduction = exist ? parseFloat(exist.hour_deduction ?? 0) : 0;
+      const otherDeductions = exist ? parseFloat(exist.other_deductions ?? 0) : discDeduct;
+
+      // Tính toán công thức
+      const baseWorkSalary = Math.round((totalBase / 26) * workDays);
+      const otSalary = Math.round((totalBase / 208) * otHours * 1.5);
+      const performanceNet = Math.max(0, perfKpi - discDeduct);
+
+      const netSalary = Math.round(
+        baseWorkSalary +
+        otSalary +
+        respKpi +
+        perfKpi +
+        otherBonus +
+        mealPhoneAllowance +
+        otherAllowance -
+        socialInsurance -
+        unionFee -
+        incomeTax -
+        advancePayment -
+        hourDeduction -
+        otherDeductions
+      );
 
       if (exist) {
         await query.run(`
           UPDATE payrolls 
-          SET tier_salary=?, grade_salary=?, 
-              responsibility_quota=?, responsibility_deduction_rate=?, responsibility_net=?,
-              performance_bonus=?, discipline_deduction=?, performance_net=?,
-              net_salary=?, updated_at=?
+          SET tier_salary = ?, grade_salary = ?, 
+              work_days = ?, base_work_salary = ?,
+              ot_hours = ?, ot_salary = ?,
+              responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
+              performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
+              other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
+              social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, hour_deduction = ?,
+              other_deductions = ?, net_salary = ?, updated_at = ?
           WHERE id = ?
         `, [
           tierSalary, gradeSalary,
-          respQuota, deductRate, respNet,
-          perfBonus, discDeduct, perfNet,
-          netSalary, now,
+          workDays, baseWorkSalary,
+          otHours, otSalary,
+          respQuota, deductRate, respKpi, respKpi,
+          perfKpi, discDeduct, performanceNet, perfKpi,
+          otherBonus, mealPhoneAllowance, otherAllowance,
+          socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
+          otherDeductions, netSalary, now,
           exist.id
         ]);
       } else {
@@ -122,22 +161,30 @@ export const generatePayroll = async (req, res) => {
           INSERT INTO payrolls (
             employee_id, month, year, 
             tier_salary, grade_salary, 
-            responsibility_quota, responsibility_deduction_rate, responsibility_net,
-            performance_bonus, discipline_deduction, performance_net,
-            net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
+            work_days, base_work_salary,
+            ot_hours, ot_salary,
+            responsibility_quota, responsibility_deduction_rate, responsibility_net, responsibility_kpi,
+            performance_bonus, discipline_deduction, performance_net, performance_kpi,
+            other_bonus, meal_phone_allowance, other_allowance,
+            social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
+            other_deductions, net_salary, status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
         `, [
           emp.id, padMonth, year,
           tierSalary, gradeSalary,
-          respQuota, deductRate, respNet,
-          perfBonus, discDeduct, perfNet,
-          netSalary, now, now
+          workDays, baseWorkSalary,
+          otHours, otSalary,
+          respQuota, deductRate, respKpi, respKpi,
+          perfKpi, discDeduct, performanceNet, perfKpi,
+          otherBonus, mealPhoneAllowance, otherAllowance,
+          socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
+          otherDeductions, netSalary, now, now
         ]);
       }
       successCount++;
     }
 
-    return res.json({ message: `Đã tính lương thành công cho ${successCount} nhân sự.` });
+    return res.json({ message: `Đã tính lương thành công cho ${successCount} nhân sự theo công thức mới.` });
   } catch (error) {
     console.error('Lỗi tính lương:', error);
     return res.status(500).json({ message: 'Lỗi hệ thống khi tính lương.' });
@@ -150,7 +197,28 @@ export const createPayroll = async (req, res) => {
 
 export const updatePayroll = async (req, res) => {
   const { id } = req.params;
-  const { status, tier_salary, grade_salary, responsibility_deduction_rate, performance_bonus, discipline_deduction, other_deductions } = req.body;
+  const {
+    status,
+    tier_salary,
+    grade_salary,
+    work_days,
+    ot_hours,
+    responsibility_quota,
+    responsibility_deduction_rate,
+    responsibility_kpi,
+    performance_bonus,
+    performance_kpi,
+    discipline_deduction,
+    other_bonus,
+    meal_phone_allowance,
+    other_allowance,
+    social_insurance,
+    union_fee,
+    income_tax,
+    advance_payment,
+    hour_deduction,
+    other_deductions
+  } = req.body;
   
   try {
     const payroll = await query.get('SELECT * FROM payrolls WHERE id = ?', [id]);
@@ -166,31 +234,88 @@ export const updatePayroll = async (req, res) => {
       return res.json({ message: 'Cập nhật trạng thái thành công.' });
     }
 
-    // If updating salary details
-    const tSalary = parseFloat(tier_salary || 0);
-    const gSalary = parseFloat(grade_salary || 0);
-    const respQuota = parseFloat(payroll.responsibility_quota || 0);
-    const respDeductRate = parseFloat(responsibility_deduction_rate !== undefined ? responsibility_deduction_rate : payroll.responsibility_deduction_rate);
-    const perfBonus = parseFloat(performance_bonus || 0);
-    const discDeduct = parseFloat(discipline_deduction || 0);
-    const otherDeduct = parseFloat(other_deductions || 0);
+    // Parsing components
+    const tSalary = parseFloat(tier_salary !== undefined ? tier_salary : payroll.tier_salary || 0);
+    const gSalary = parseFloat(grade_salary !== undefined ? grade_salary : payroll.grade_salary || 0);
+    const totalBase = tSalary + gSalary;
 
-    const respNet = respQuota * (1 - respDeductRate);
-    const perfNet = Math.max(0, perfBonus - discDeduct);
-    const netSalary = tSalary + gSalary + respNet + perfNet - otherDeduct;
+    const wDays = parseFloat(work_days !== undefined ? work_days : payroll.work_days ?? 26);
+    const otHrs = parseFloat(ot_hours !== undefined ? ot_hours : payroll.ot_hours ?? 0);
+
+    const baseWorkSalary = Math.round((totalBase / 26) * wDays);
+    const otSalary = Math.round((totalBase / 208) * otHrs * 1.5);
+
+    const respQuota = parseFloat(responsibility_quota !== undefined ? responsibility_quota : payroll.responsibility_quota || 0);
+    const respDeductRate = parseFloat(responsibility_deduction_rate !== undefined ? responsibility_deduction_rate : payroll.responsibility_deduction_rate || 0);
+    
+    // Responsibility KPI
+    let respKpiVal;
+    if (responsibility_kpi !== undefined) {
+      respKpiVal = parseFloat(responsibility_kpi || 0);
+    } else {
+      respKpiVal = Math.round(respQuota * (1 - respDeductRate));
+    }
+
+    // Performance KPI
+    const perfKpiVal = parseFloat(performance_kpi !== undefined ? performance_kpi : (performance_bonus !== undefined ? performance_bonus : payroll.performance_kpi || payroll.performance_bonus || 0));
+    const discDeduct = parseFloat(discipline_deduction !== undefined ? discipline_deduction : payroll.discipline_deduction || 0);
+    const perfNet = Math.max(0, perfKpiVal - discDeduct);
+
+    // Other additions
+    const oBonus = parseFloat(other_bonus !== undefined ? other_bonus : payroll.other_bonus || 0);
+    const mealPhone = parseFloat(meal_phone_allowance !== undefined ? meal_phone_allowance : payroll.meal_phone_allowance || 0);
+    const oAllowance = parseFloat(other_allowance !== undefined ? other_allowance : payroll.other_allowance || 0);
+
+    // Deductions
+    const socialIns = parseFloat(social_insurance !== undefined ? social_insurance : payroll.social_insurance || 0);
+    const uFee = parseFloat(union_fee !== undefined ? union_fee : payroll.union_fee || 0);
+    const incTax = parseFloat(income_tax !== undefined ? income_tax : payroll.income_tax || 0);
+    const advPay = parseFloat(advance_payment !== undefined ? advance_payment : payroll.advance_payment || 0);
+    const hrDeduct = parseFloat(hour_deduction !== undefined ? hour_deduction : payroll.hour_deduction || 0);
+    const oDeduct = parseFloat(other_deductions !== undefined ? other_deductions : payroll.other_deductions || 0);
+
+    // Total Net Salary calculation:
+    // [((Lương tầng + Lương bậc) / 26) * Ngày công thực tế] 
+    // + [((Lương tầng + Lương bậc) / 208) * Giờ tăng ca * 1.5] 
+    // + Thưởng KPI trách nhiệm + Thưởng KPI hiệu quả + Thưởng khác 
+    // + Phụ cấp cơm & điện thoại + Phụ cấp khác 
+    // - Bảo hiểm xã hội - Đoàn phí - Thuế TNCN - Tạm ứng - Trừ cắt giờ - Trừ khác
+    const netSalary = Math.round(
+      baseWorkSalary +
+      otSalary +
+      respKpiVal +
+      perfKpiVal +
+      oBonus +
+      mealPhone +
+      oAllowance -
+      socialIns -
+      uFee -
+      incTax -
+      advPay -
+      hrDeduct -
+      oDeduct
+    );
 
     await query.run(`
       UPDATE payrolls 
       SET tier_salary = ?, grade_salary = ?, 
-          responsibility_deduction_rate = ?, responsibility_net = ?,
-          performance_bonus = ?, discipline_deduction = ?, performance_net = ?,
+          work_days = ?, base_work_salary = ?,
+          ot_hours = ?, ot_salary = ?,
+          responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
+          performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
+          other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
+          social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, hour_deduction = ?,
           other_deductions = ?, net_salary = ?, updated_at = ?
       WHERE id = ?
     `, [
-      tSalary, gSalary, 
-      respDeductRate, respNet,
-      perfBonus, discDeduct, perfNet,
-      otherDeduct, netSalary, now, id
+      tSalary, gSalary,
+      wDays, baseWorkSalary,
+      otHrs, otSalary,
+      respQuota, respDeductRate, respKpiVal, respKpiVal,
+      perfKpiVal, discDeduct, perfNet, perfKpiVal,
+      oBonus, mealPhone, oAllowance,
+      socialIns, uFee, incTax, advPay, hrDeduct,
+      oDeduct, netSalary, now, id
     ]);
 
     return res.json({ message: 'Cập nhật phiếu lương thành công.' });

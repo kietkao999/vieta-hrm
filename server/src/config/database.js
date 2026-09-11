@@ -261,12 +261,26 @@ export const initDatabase = async () => {
         year INTEGER NOT NULL,
         tier_salary REAL DEFAULT 0,
         grade_salary REAL DEFAULT 0,
+        work_days REAL DEFAULT 26,
+        base_work_salary REAL DEFAULT 0,
+        ot_hours REAL DEFAULT 0,
+        ot_salary REAL DEFAULT 0,
         responsibility_quota REAL DEFAULT 0,
         responsibility_deduction_rate REAL DEFAULT 0,
         responsibility_net REAL DEFAULT 0,
+        responsibility_kpi REAL DEFAULT 0,
         performance_bonus REAL DEFAULT 0,
         discipline_deduction REAL DEFAULT 0,
         performance_net REAL DEFAULT 0,
+        performance_kpi REAL DEFAULT 0,
+        other_bonus REAL DEFAULT 0,
+        meal_phone_allowance REAL DEFAULT 0,
+        other_allowance REAL DEFAULT 0,
+        social_insurance REAL DEFAULT 0,
+        union_fee REAL DEFAULT 0,
+        income_tax REAL DEFAULT 0,
+        advance_payment REAL DEFAULT 0,
+        hour_deduction REAL DEFAULT 0,
         other_deductions REAL DEFAULT 0,
         net_salary REAL DEFAULT 0,
         status TEXT DEFAULT 'Dự thảo',
@@ -316,9 +330,29 @@ export const initDatabase = async () => {
     `);
 
     // Migration for existing tables:
-    try {
-      await query.run('ALTER TABLE payrolls ADD COLUMN other_deductions REAL DEFAULT 0');
-    } catch (e) {}
+    const payrollNewCols = [
+      'work_days REAL DEFAULT 26',
+      'base_work_salary REAL DEFAULT 0',
+      'ot_hours REAL DEFAULT 0',
+      'ot_salary REAL DEFAULT 0',
+      'responsibility_kpi REAL DEFAULT 0',
+      'performance_kpi REAL DEFAULT 0',
+      'other_bonus REAL DEFAULT 0',
+      'meal_phone_allowance REAL DEFAULT 0',
+      'other_allowance REAL DEFAULT 0',
+      'social_insurance REAL DEFAULT 0',
+      'union_fee REAL DEFAULT 0',
+      'income_tax REAL DEFAULT 0',
+      'advance_payment REAL DEFAULT 0',
+      'hour_deduction REAL DEFAULT 0',
+      'other_deductions REAL DEFAULT 0'
+    ];
+
+    for (const colDef of payrollNewCols) {
+      try {
+        await query.run(`ALTER TABLE payrolls ADD COLUMN ${colDef}`);
+      } catch (e) {}
+    }
 
     try {
       await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN responsibility_rate REAL DEFAULT 1.0');

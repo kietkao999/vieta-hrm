@@ -380,20 +380,33 @@ export const exportReportExcel = async (req, res) => {
         'Kỳ Lương': `Tháng ${p.month.toString().padStart(2, '0')}/${p.year}`,
         'Lương Tầng (đ)': p.tier_salary || 0,
         'Lương Bậc (đ)': p.grade_salary || 0,
-        'Định Mức KPI (đ)': p.responsibility_quota || 0,
-        'Tỷ Lệ Đạt KPI': `${Math.round((1 - (p.responsibility_deduction_rate || 0)) * 100)}%`,
-        'KPI Trách Nhiệm Thực Nhận (đ)': p.responsibility_net || 0,
-        'Thưởng Hiệu Quả (đ)': p.performance_bonus || 0,
-        'Khấu Trừ Khác (đ)': (p.discipline_deduction || 0) + (p.other_deductions || 0),
-        'Thực Lĩnh (đ)': p.net_salary || 0,
+        'Ngày Công Thực Tế': p.work_days ?? 26,
+        'Lương Theo Ngày Công (đ)': p.base_work_salary || Math.round((((p.tier_salary || 0) + (p.grade_salary || 0)) / 26) * (p.work_days ?? 26)),
+        'Giờ Tăng Ca (h)': p.ot_hours || 0,
+        'Lương Tăng Ca 150% (đ)': p.ot_salary || Math.round((((p.tier_salary || 0) + (p.grade_salary || 0)) / 208) * (p.ot_hours || 0) * 1.5),
+        'Thưởng KPI Trách Nhiệm (đ)': p.responsibility_kpi || p.responsibility_net || 0,
+        'Thưởng KPI Hiệu Quả (đ)': p.performance_kpi || p.performance_bonus || 0,
+        'Thưởng Khác (đ)': p.other_bonus || 0,
+        'PC Cơm & Điện Thoại (đ)': p.meal_phone_allowance || 0,
+        'Phụ Cấp Khác (đ)': p.other_allowance || 0,
+        'BHXH (đ)': p.social_insurance || 0,
+        'Đoàn Phí (đ)': p.union_fee || 0,
+        'Thuế TNCN (đ)': p.income_tax || 0,
+        'Tạm Ứng (đ)': p.advance_payment || 0,
+        'Trừ Cắt Giờ (đ)': p.hour_deduction || 0,
+        'Trừ Khác (đ)': (p.other_deductions || 0) + (p.discipline_deduction || 0),
+        'Tổng Thực Lĩnh (đ)': p.net_salary || 0,
         'Trạng Thái': p.status || 'Đã chốt'
       }));
 
       const wsPayroll = XLSX.utils.json_to_sheet(payrollFormatted);
       wsPayroll['!cols'] = [
         { wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 22 }, { wch: 20 },
-        { wch: 22 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 16 },
-        { wch: 14 }, { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 12 }
+        { wch: 22 }, { wch: 15 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
+        { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
+        { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 20 },
+        { wch: 14 }
       ];
       XLSX.utils.book_append_sheet(wb, wsPayroll, 'Bảng Lương Chi Tiết');
     }
