@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -18,11 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
-  Percent,
-  BarChart3,
-  FileSpreadsheet
+  Percent
 } from 'lucide-react';
-import KpiPerformanceReport from './KpiPerformanceReport';
 
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
@@ -42,10 +38,6 @@ const RESPONSIBILITY_RATE_OPTIONS = [
 
 const KpiPage = () => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'report_7m';
-  const [activeTab, setActiveTab] = useState(initialTab);
-
   const isAdminOrHR = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
   const canEdit = isAdminOrHR || user?.roleName === 'MANAGER';
 
@@ -391,58 +383,21 @@ const KpiPage = () => {
         </div>
       )}
 
-      {/* Main Tab Navigation */}
-      <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
-        <button
-          onClick={() => {
-            setActiveTab('report_7m');
-            setSearchParams({ tab: 'report_7m' });
-          }}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${
-            activeTab === 'report_7m'
-              ? 'bg-brand-700 text-white shadow-brand-700/20 shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
-          }`}
-        >
-          <BarChart3 size={18} />
-          <span>Báo Cáo Tổng Hợp KPI & Hiệu Quả (T1 - T7)</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('monthly');
-            setSearchParams({ tab: 'monthly' });
-          }}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${
-            activeTab === 'monthly'
-              ? 'bg-brand-700 text-white shadow-brand-700/20 shadow-md'
-              : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
-          }`}
-        >
-          <TrendingUp size={18} />
-          <span>Đánh Giá KPI Tháng</span>
-        </button>
-      </div>
-
-      {activeTab === 'report_7m' ? (
-        <KpiPerformanceReport />
-      ) : (
-        <>
-          {/* Header Bar */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-700 flex items-center justify-center font-bold">
-                  <TrendingUp size={22} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">Quản lý KPI Tháng</h2>
-                  <p className="text-xs text-slate-500">
-                    Quản lý tỷ lệ đạt KPI trách nhiệm và thưởng hiệu quả phục vụ tính lương
-                  </p>
-                </div>
-              </div>
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-700 flex items-center justify-center font-bold">
+              <TrendingUp size={22} />
             </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Quản lý KPI Tháng</h2>
+              <p className="text-xs text-slate-500">
+                Quản lý tỷ lệ đạt KPI trách nhiệm và thưởng hiệu quả phục vụ tính lương
+              </p>
+            </div>
+          </div>
+        </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
@@ -1038,8 +993,6 @@ const KpiPage = () => {
             </form>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );
