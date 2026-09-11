@@ -4,7 +4,7 @@ import {
   BarChart3, Users, DollarSign, Calendar, TrendingUp,
   PieChart, AlertTriangle, ArrowUp, ArrowDown, Download,
   FileSpreadsheet, CalendarRange, Check, X, ChevronDown,
-  Layers, FileText, Sparkles, Filter
+  Layers, FileText, Sparkles, Filter, CheckSquare, Square
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -18,25 +18,40 @@ const ReportPage = () => {
   const [kpiData, setKpiData] = useState(null);
 
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
   const [year, setYear] = useState('2026');
-  const [month, setMonth] = useState('7');
+
+  // Month Selection State
+  // Mode: 'single' | 'multi'
+  const [selectionMode, setSelectionMode] = useState('multi'); 
+  const [singleMonth, setSingleMonth] = useState('7');
+  const [selectedMonths, setSelectedMonths] = useState(['1', '2', '3', '4', '5', '6', '7']); // Default 7 months with HQ data
 
   const [error, setError] = useState('');
 
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportMode, setExportMode] = useState('range'); // 'single' | 'range'
-  const [exportSingleMonth, setExportSingleMonth] = useState(month);
+  const [exportMode, setExportMode] = useState('multi'); // 'current' | 'multi' | 'range' | 'single'
+  const [exportSingleMonth, setExportSingleMonth] = useState('7');
   const [exportFromMonth, setExportFromMonth] = useState('1');
   const [exportToMonth, setExportToMonth] = useState('7');
+  const [exportSelectedMonths, setExportSelectedMonths] = useState(['1', '2', '3', '4', '5', '6', '7']);
   const [exportYear, setExportYear] = useState('2026');
   const [exportType, setExportType] = useState('all'); // 'all' | 'payroll' | 'kpi' | 'attendance' | 'summary'
   const [isExporting, setIsExporting] = useState(false);
 
+  // Helper: Get active months query string
+  const getActiveMonthsParam = () => {
+    if (selectionMode === 'single') {
+      return `month=${singleMonth}`;
+    }
+    const sorted = [...selectedMonths].map(Number).sort((a, b) => a - b).join(',');
+    return `months=${sorted || '1'}`;
+  };
+
   const fetchTabData = async (tab) => {
     setLoading(true);
     setError('');
+    const monthsParam = getActiveMonthsParam();
     try {
       switch (tab) {
         case 'summary': {
@@ -45,17 +60,17 @@ const ReportPage = () => {
           break;
         }
         case 'payroll': {
-          const res = await api.get(`/reports/payroll?year=${year}`);
+          const res = await api.get(`/reports/payroll?${monthsParam}&year=${year}`);
           setPayrollData(res.data);
           break;
         }
         case 'attendance': {
-          const res = await api.get(`/reports/attendance?month=${month}&year=${year}`);
+          const res = await api.get(`/reports/attendance?${monthsParam}&year=${year}`);
           setAttendanceData(res.data);
           break;
         }
         case 'kpi': {
-          const res = await api.get(`/reports/kpi?month=${month}&year=${year}`);
+          const res = await api.get(`/reports/kpi?${monthsParam}&year=${year}`);
           setKpiData(res.data);
           break;
         }
@@ -67,54 +82,75 @@ const ReportPage = () => {
     }
   };
 
-  useEffect(() => { fetchTabData(activeTab); }, [activeTab, year, month]);
+  useEffect(() => {
+    fetchTabData(activeTab);
+  }, [activeTab, year, selectionMode, singleMonth, selectedMonths]);
 
   const formatCurrency = (val) => val ? Number(val).toLocaleString('vi-VN') : '0';
+
+  // Toggle month in multi-select mode
+  const toggleMonth = (mStr) => {
+    if (selectedMonths.includes(mStr)) {
+      if (selectedMonths.length === 1) return; // Giữ lại ít nhất 1 tháng
+      setSelectedMonths(selectedMonths.filter(m => m !== mStr));
+    } else {
+      setSelectedMonths([...selectedMonths, mStr]);
+    }
+  };
+
+  // Quick Presets
+  const applyPreset = (presetMonths) => {
+    setSelectionMode('multi');
+    setSelectedMonths(presetMonths);
+  };
 
   const handleExportExcel = async (overrideParams = null) => {
     setIsExporting(true);
     try {
-      let fromM = exportMode === 'single' ? exportSingleMonth : exportFromMonth;
-      let toM = exportMode === 'single' ? exportSingleMonth : exportToMonth;
-      let y = exportYear;
-      let t = exportType;
+      let url = `/reports/export?year=${exportYear}&reportType=${exportType}`;
 
       if (overrideParams) {
-        if (overrideParams.fromMonth) fromM = overrideParams.fromMonth;
-        if (overrideParams.toMonth) toM = overrideParams.toMonth;
-        if (overrideParams.year) y = overrideParams.year;
-        if (overrideParams.reportType) t = overrideParams.reportType;
+        const pYear = overrideParams.year || year;
+        const pType = overrideParams.reportType || 'all';
+        if (overrideParams.months) {
+          url = `/reports/export?months=${overrideParams.months}&year=${pYear}&reportType=${pType}`;
+        } else if (overrideParams.fromMonth && overrideParams.toMonth) {
+          url = `/reports/export?fromMonth=${overrideParams.fromMonth}&toMonth=${overrideParams.toMonth}&year=${pYear}&reportType=${pType}`;
+        } else if (overrideParams.month) {
+          url = `/reports/export?fromMonth=${overrideParams.month}&toMonth=${overrideParams.month}&year=${pYear}&reportType=${pType}`;
+        }
+      } else {
+        if (exportMode === 'current') {
+          const monthsStr = selectionMode === 'single' ? singleMonth : selectedMonths.join(',');
+          url = `/reports/export?months=${monthsStr}&year=${exportYear}&reportType=${exportType}`;
+        } else if (exportMode === 'multi') {
+          const sorted = [...exportSelectedMonths].map(Number).sort((a, b) => a - b).join(',');
+          url = `/reports/export?months=${sorted || '1'}&year=${exportYear}&reportType=${exportType}`;
+        } else if (exportMode === 'range') {
+          const startM = Math.min(parseInt(exportFromMonth, 10), parseInt(exportToMonth, 10));
+          const endM = Math.max(parseInt(exportFromMonth, 10), parseInt(exportToMonth, 10));
+          url = `/reports/export?fromMonth=${startM}&toMonth=${endM}&year=${exportYear}&reportType=${exportType}`;
+        } else {
+          url = `/reports/export?fromMonth=${exportSingleMonth}&toMonth=${exportSingleMonth}&year=${exportYear}&reportType=${exportType}`;
+        }
       }
 
-      // Đảm bảo fromM <= toM
-      const startNum = parseInt(fromM, 10);
-      const endNum = parseInt(toM, 10);
-      const actualFrom = Math.min(startNum, endNum);
-      const actualTo = Math.max(startNum, endNum);
-
-      const response = await api.get(`/reports/export?fromMonth=${actualFrom}&toMonth=${actualTo}&year=${y}&reportType=${t}`, {
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await api.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
 
-      let typePrefix = 'Bao_Cao_Tong_Hop_Viet_A';
-      if (t === 'payroll') typePrefix = 'Bang_Luong_Viet_A';
-      else if (t === 'kpi') typePrefix = 'Bao_Cao_KPI_Viet_A';
-      else if (t === 'attendance') typePrefix = 'Bao_Cao_Cham_Cong_Viet_A';
-      else if (t === 'summary') typePrefix = 'Danh_Sach_Nhan_Su_Viet_A';
+      const filenameHeader = response.headers['content-disposition'];
+      let filename = `Bao_Cao_HRM_Viet_A_${new Date().getTime()}.xlsx`;
+      if (filenameHeader && filenameHeader.includes('filename=')) {
+        filename = decodeURIComponent(filenameHeader.split('filename=')[1].replace(/['"]/g, ''));
+      }
 
-      const timeRange = actualFrom === actualTo
-        ? `Thang${String(actualFrom).padStart(2, '0')}_${y}`
-        : `Thang${String(actualFrom).padStart(2, '0')}_den_Thang${String(actualTo).padStart(2, '0')}_${y}`;
-
-      link.setAttribute('download', `${typePrefix}_${timeRange}.xlsx`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
       setShowExportModal(false);
     } catch (err) {
       console.error('Lỗi khi xuất file:', err);
@@ -128,8 +164,19 @@ const ReportPage = () => {
     { id: 'summary', label: 'Tổng quan', icon: PieChart },
     { id: 'payroll', label: 'Quỹ Lương', icon: DollarSign },
     { id: 'attendance', label: 'Chấm công', icon: Calendar },
-    { id: 'kpi', label: 'KPI', icon: TrendingUp }
+    { id: 'kpi', label: 'KPI & Hiệu Quả', icon: TrendingUp }
   ];
+
+  const sortedActiveMonths = [...(selectionMode === 'single' ? [singleMonth] : selectedMonths)]
+    .map(Number).sort((a, b) => a - b);
+  
+  const displayRangeText = selectionMode === 'single'
+    ? `Tháng ${singleMonth.padStart(2, '0')}/${year}`
+    : sortedActiveMonths.length === 12
+      ? `Cả năm ${year} (12 Tháng)`
+      : sortedActiveMonths.length > 1 && sortedActiveMonths[sortedActiveMonths.length - 1] - sortedActiveMonths[0] === sortedActiveMonths.length - 1
+        ? `Từ Tháng ${String(sortedActiveMonths[0]).padStart(2, '0')} đến Tháng ${String(sortedActiveMonths[sortedActiveMonths.length - 1]).padStart(2, '0')}/${year} (${sortedActiveMonths.length} tháng)`
+        : `Các Tháng: ${sortedActiveMonths.map(m => `T${m}`).join(', ')} / ${year}`;
 
   // Tab: Tổng quan Nhân sự
   const renderSummary = () => {
@@ -216,36 +263,6 @@ const ReportPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Hợp đồng sắp hết hạn */}
-        {summaryData.expiringContracts?.length > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-amber-800 uppercase tracking-wider mb-4 flex items-center space-x-2">
-              <AlertTriangle size={16} />
-              <span>Hợp đồng sắp hết hạn (30 ngày tới)</span>
-            </h3>
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs text-amber-600 font-bold uppercase">
-                <tr>
-                  <th className="py-2">Mã NV</th>
-                  <th className="py-2">Họ tên</th>
-                  <th className="py-2">Loại HĐ</th>
-                  <th className="py-2">Ngày hết hạn</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summaryData.expiringContracts.map(c => (
-                  <tr key={c.id} className="border-t border-amber-100">
-                    <td className="py-2 font-bold text-amber-800">{c.employee_code}</td>
-                    <td className="py-2 text-amber-900 font-medium">{c.fullname}</td>
-                    <td className="py-2 text-amber-700">{c.type}</td>
-                    <td className="py-2 text-amber-700 font-semibold">{new Date(c.end_date).toLocaleDateString('vi-VN')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     );
   };
@@ -258,19 +275,21 @@ const ReportPage = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG QUỸ LƯƠNG NĂM {year}</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{formatCurrency(yearTotal?.total_net)} đ</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG THỰC LĨNH ({sortedActiveMonths.length} THÁNG)</p>
+            <p className="text-xl font-bold text-brand-700 mt-1">{formatCurrency(yearTotal?.total_net)} đ</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG LƯƠNG CƠ BẢN</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG LƯƠNG TẦNG & BẬC</p>
             <p className="text-xl font-bold text-slate-800 mt-1">{formatCurrency(yearTotal?.total_base)} đ</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG PHỤ CẤP</p>
-            <p className="text-xl font-bold text-emerald-700 mt-1">{formatCurrency(yearTotal?.total_allowances)} đ</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG KPI & HIỆU QUẢ</p>
+            <p className="text-xl font-bold text-emerald-700 mt-1">
+              {formatCurrency((yearTotal?.total_responsibility || 0) + (yearTotal?.total_performance || 0))} đ
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">SỐ PHIẾU LƯƠNG</p>
+            <p className="text-xs font-semibold text-slate-400">SỐ LƯỢT PHIẾU LƯƠNG</p>
             <p className="text-xl font-bold text-slate-800 mt-1">{yearTotal?.total_records || 0}</p>
           </div>
         </div>
@@ -279,22 +298,16 @@ const ReportPage = () => {
           {/* Quỹ lương theo tháng */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Quỹ lương theo tháng</h3>
-              <button
-                onClick={() => handleExportExcel({ reportType: 'payroll', fromMonth: '1', toMonth: '12', year })}
-                className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center space-x-1"
-              >
-                <Download size={13} />
-                <span>Xuất bảng lương cả năm</span>
-              </button>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Quỹ lương theo từng tháng</h3>
+              <span className="text-xs text-slate-500 font-semibold">{monthlyPayroll?.length || 0} tháng có dữ liệu</span>
             </div>
             {monthlyPayroll?.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu lương năm {year}</p>
+              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu lương trong các tháng đã chọn</p>
             ) : (
               <div className="space-y-2">
                 {(monthlyPayroll || []).map((m, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg">
-                    <span className="text-sm font-medium text-slate-700">{m.month}</span>
+                  <div key={i} className="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="text-sm font-bold text-slate-700">Tháng {m.month.toString().padStart(2, '0')}</span>
                     <div className="flex items-center space-x-3">
                       <span className="text-xs text-slate-500">{m.employee_count} NV</span>
                       <span className="text-sm font-bold text-brand-700">{formatCurrency(m.total_net_salary)} đ</span>
@@ -307,7 +320,7 @@ const ReportPage = () => {
 
           {/* Top lương */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top 5 lương cao nhất</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top 5 Tổng Thu Nhập Cao Nhất Trong Kỳ</h3>
             {topSalaries?.length === 0 ? (
               <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
             ) : (
@@ -318,7 +331,7 @@ const ReportPage = () => {
                       <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-200 text-slate-700' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
                       <div>
                         <p className="text-sm font-semibold text-slate-800">{s.fullname}</p>
-                        <p className="text-xs text-slate-500">{s.department_name}</p>
+                        <p className="text-xs text-slate-500">{s.department_name} • {s.months_counted} tháng</p>
                       </div>
                     </div>
                     <span className="text-sm font-bold text-brand-700">{formatCurrency(s.net_salary)} đ</span>
@@ -340,7 +353,7 @@ const ReportPage = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG NGÀY CÔNG</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG NGÀY CÔNG ({sortedActiveMonths.length} THÁNG)</p>
             <p className="text-xl font-bold text-slate-800 mt-1">{totalWorkDays?.total_days || 0}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -360,7 +373,7 @@ const ReportPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Trạng thái chấm công */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Phân bổ trạng thái chấm công Tháng {month}/{year}</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Phân bổ trạng thái chấm công</h3>
             <div className="space-y-3">
               {(statusSummary || []).map((s, i) => {
                 const statusColor = s.status === 'Đúng giờ' ? 'bg-emerald-500' : s.status === 'Đi trễ' ? 'bg-amber-500' : s.status === 'Nghỉ phép' ? 'bg-blue-500' : 'bg-slate-400';
@@ -381,7 +394,7 @@ const ReportPage = () => {
                 );
               })}
               {(!statusSummary || statusSummary.length === 0) && (
-                <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu tháng {month}/{year}</p>
+                <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu chấm công trong các tháng đã chọn</p>
               )}
             </div>
           </div>
@@ -417,57 +430,53 @@ const ReportPage = () => {
   const renderKpi = () => {
     if (!kpiData) return null;
     const { kpiSummary, deptKpi, topPerformers, recordedCount, totalPayout } = kpiData;
-    const totalKpi = recordedCount || (kpiSummary?.reduce((s, k) => s + k.count, 0) || 0);
 
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG NHÂN SỰ KPI THÁNG {month}/{year}</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">{totalKpi} nhân viên</p>
+            <p className="text-xs font-semibold text-slate-400">SỐ THÁNG TỔNG HỢP</p>
+            <p className="text-2xl font-bold text-slate-800 mt-1">{sortedActiveMonths.length} tháng</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{sortedActiveMonths.map(m => `T${m}`).join(', ')}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG NGÂN SÁCH KPI THỰC NHẬN</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG NGÂN SÁCH KPI & HIỆU QUẢ</p>
             <p className="text-2xl font-bold text-brand-700 mt-1">{formatCurrency(totalPayout)} đ</p>
+            <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">Tổng cộng qua {sortedActiveMonths.length} tháng đã chọn</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">ĐÃ THIẾT LẬP DỮ LIỆU</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{recordedCount || 0} / 57</p>
+            <p className="text-xs font-semibold text-slate-400">TỔNG SỐ LƯỢT ĐÁNH GIÁ</p>
+            <p className="text-2xl font-bold text-emerald-700 mt-1">{recordedCount || 0} lượt</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">57 nhân sự / tháng</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* KPI theo phòng ban */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">KPI theo Phòng ban Tháng {month}/{year}</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Tổng Ngân Sách KPI & Hiệu Quả Theo Phòng Ban</h3>
             {deptKpi?.length === 0 ? (
               <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
             ) : (
               <div className="space-y-3">
-                {(deptKpi || []).map((d, i) => {
-                  const pct = Math.round(d.avg_percent || 0);
-                  return (
-                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{d.department_name || 'Chưa phân bổ'}</p>
-                        <p className="text-xs text-slate-500">{d.kpi_count} KPI • TB {formatCurrency(d.avg_score)} đ</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 bg-slate-200 rounded-full h-2">
-                          <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.min(100, pct)}%` }}></div>
-                        </div>
-                        <span className="text-sm font-bold text-slate-800 w-12 text-right">{pct}%</span>
-                      </div>
+                {(deptKpi || []).map((d, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{d.department_name || 'Chưa phân bổ'}</p>
+                      <p className="text-xs text-slate-500">{d.kpi_count} lượt • TB {formatCurrency(d.avg_score)} đ/lượt</p>
                     </div>
-                  );
-                })}
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-brand-700">{formatCurrency(d.total_dept_payout)} đ</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
           {/* Top Performers */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top Thưởng KPI & Hiệu Quả Cao Nhất</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top Thưởng KPI & Hiệu Quả Cao Nhất ({sortedActiveMonths.length} Tháng)</h3>
             {topPerformers?.length === 0 ? (
               <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
             ) : (
@@ -501,72 +510,178 @@ const ReportPage = () => {
           <p className="text-xs text-slate-500">Tổng hợp dữ liệu nhân sự, quỹ lương, chấm công và hiệu suất KPI</p>
         </div>
 
-        {/* Export action button */}
+        {/* Top Actions */}
         <div className="flex items-center space-x-2">
           <button
             onClick={() => {
-              setExportSingleMonth(month);
+              setExportSelectedMonths([...selectedMonths]);
               setExportYear(year);
               setShowExportModal(true);
             }}
             className="inline-flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-brand-700 to-brand-900 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg hover:from-brand-800 hover:to-brand-950 transition-all cursor-pointer"
           >
-            <FileSpreadsheet size={16} />
-            <span>Xuất báo cáo Excel</span>
+            <FileSpreadsheet size={16} className="text-emerald-300" />
+            <span>Xuất Báo Cáo Excel</span>
           </button>
         </div>
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>}
 
-      {/* Quick Month Bar for Tabs requiring Month */}
-      {(activeTab === 'attendance' || activeTab === 'kpi') && (
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Chọn Tháng:</span>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
-              const mStr = m.toString();
-              const isSelected = month === mStr;
-              const hasData = [5, 6, 7, 9].includes(m);
-              return (
+      {/* ========================================================================= */}
+      {/* BỘ LỌC CHỌN NHIỀU THÁNG / KHOẢNG THÁNG / TỪNG THÁNG TRỰC TIẾP TRÊN TRANG */}
+      {/* ========================================================================= */}
+      {activeTab !== 'summary' && (
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          {/* Hàng 1: Chuyển đổi chế độ & Presets */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chế độ xem:</span>
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
                 <button
-                  key={m}
-                  onClick={() => setMonth(mStr)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
-                    isSelected
-                      ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-700/20'
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                  type="button"
+                  onClick={() => setSelectionMode('multi')}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                    selectionMode === 'multi'
+                      ? 'bg-brand-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Tháng {m < 10 ? `0${m}` : m}
-                  {hasData && !isSelected && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full"></span>
-                  )}
+                  Chọn nhiều tháng
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setSelectionMode('single')}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                    selectionMode === 'single'
+                      ? 'bg-brand-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Xem 1 tháng
+                </button>
+              </div>
+            </div>
+
+            {/* Mốc chọn nhanh */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-slate-400 font-semibold mr-1">Mốc nhanh:</span>
+              <button
+                onClick={() => applyPreset(['1', '2', '3', '4', '5', '6', '7'])}
+                className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-xs font-bold transition-colors"
+              >
+                ✨ T1 – T7 (Dữ liệu HQ)
+              </button>
+              <button
+                onClick={() => applyPreset(['1', '2', '3'])}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                Quý 1 (T1-T3)
+              </button>
+              <button
+                onClick={() => applyPreset(['4', '5', '6'])}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                Quý 2 (T4-T6)
+              </button>
+              <button
+                onClick={() => applyPreset(['7', '8', '9'])}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                Quý 3 (T7-T9)
+              </button>
+              <button
+                onClick={() => applyPreset(['1', '2', '3', '4', '5', '6'])}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                6T đầu năm
+              </button>
+              <button
+                onClick={() => applyPreset(Array.from({ length: 12 }, (_, i) => (i + 1).toString()))}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                Cả năm
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handleExportExcel({
-                reportType: activeTab === 'kpi' ? 'kpi' : activeTab === 'attendance' ? 'attendance' : 'all',
-                fromMonth: month,
-                toMonth: month,
-                year: year
+          {/* Hàng 2: Danh sách 12 Tháng chọn trực quan */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-600 mr-1">Các tháng:</span>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                const mStr = m.toString();
+                const isSelected = selectionMode === 'single'
+                  ? singleMonth === mStr
+                  : selectedMonths.includes(mStr);
+                const hasDataHQ = [1, 2, 3, 4, 5, 6, 7].includes(m);
+
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      if (selectionMode === 'single') {
+                        setSingleMonth(mStr);
+                      } else {
+                        toggleMonth(mStr);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all relative flex items-center space-x-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-700/25 scale-102'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                    }`}
+                  >
+                    {selectionMode === 'multi' && (
+                      isSelected ? <CheckSquare size={13} className="mr-0.5" /> : <Square size={13} className="mr-0.5 text-slate-400" />
+                    )}
+                    <span>Tháng {m < 10 ? `0${m}` : m}</span>
+                    {hasDataHQ && !isSelected && (
+                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block ml-0.5" title="Có dữ liệu thưởng hiệu quả"></span>
+                    )}
+                  </button>
+                );
               })}
-              disabled={isExporting}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors shadow-sm"
-              title={`Tải file Excel Tháng ${month}/${year}`}
-            >
-              <Download size={14} />
-              <span>Tải nhanh T{month}</span>
-            </button>
+            </div>
+
+            {/* Quick Export cho các tháng đang chọn */}
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleExportExcel({
+                  reportType: activeTab === 'kpi' ? 'kpi' : activeTab === 'payroll' ? 'payroll' : activeTab === 'attendance' ? 'attendance' : 'all',
+                  months: selectionMode === 'single' ? singleMonth : selectedMonths.join(','),
+                  year: year
+                })}
+                disabled={isExporting}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                title="Tải nhanh file Excel theo các tháng đang lọc"
+              >
+                <Download size={14} />
+                <span>Tải Excel ({selectionMode === 'single' ? `T${singleMonth}` : `${sortedActiveMonths.length} tháng`})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Dòng trạng thái đang lọc */}
+          <div className="bg-slate-50 px-3 py-2 rounded-lg text-xs text-slate-600 flex items-center justify-between">
+            <div className="flex items-center space-x-1.5">
+              <Sparkles size={14} className="text-brand-700 shrink-0" />
+              <span>
+                <strong>Đang xem:</strong> <span className="text-brand-800 font-bold">{displayRangeText}</span>
+              </span>
+            </div>
+            {selectionMode === 'multi' && (
+              <span className="text-[11px] text-slate-500">
+                (Click vào từng tháng để bật/tắt chọn)
+              </span>
+            )}
           </div>
         </div>
       )}
 
-      {/* Tabs + Year Filter */}
+      {/* Tabs Bar + Year Filter */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 flex-wrap">
           <div className="flex">
@@ -596,7 +711,7 @@ const ReportPage = () => {
               <select
                 value={year}
                 onChange={e => setYear(e.target.value)}
-                className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 outline-none bg-slate-50"
+                className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none bg-slate-50"
               >
                 {[2024, 2025, 2026, 2027].map(y => (
                   <option key={y} value={y.toString()}>{y}</option>
@@ -624,7 +739,7 @@ const ReportPage = () => {
       </div>
 
       {/* ========================================================= */}
-      {/* MODAL XUẤT BÁO CÁO EXCEL CHỌN THÁNG / KHOẢNG THÁNG */}
+      {/* MODAL XUẤT BÁO CÁO EXCEL CHỌN NHIỀU THÁNG / KHOẢNG THÁNG */}
       {/* ========================================================= */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -637,12 +752,12 @@ const ReportPage = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold">Xuất Báo Cáo & Dữ Liệu Excel</h3>
-                  <p className="text-xs text-white/80">Tùy chọn xuất theo từng tháng hoặc khoảng thời gian linh hoạt</p>
+                  <p className="text-xs text-white/80">Hỗ trợ xuất gộp nhiều tháng, theo khoảng thời gian hoặc từng tháng</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowExportModal(false)}
-                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -698,75 +813,111 @@ const ReportPage = () => {
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   2. Chọn Thời Gian Xuất
                 </label>
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setExportMode('multi')}
+                    className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                      exportMode === 'multi'
+                        ? 'border-brand-700 bg-brand-50 text-brand-800 ring-2 ring-brand-700/20'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <CheckSquare size={15} />
+                    <span>Chọn nhiều tháng</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setExportMode('range')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all ${
+                    className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                       exportMode === 'range'
                         ? 'border-brand-700 bg-brand-50 text-brand-800 ring-2 ring-brand-700/20'
                         : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
-                    <CalendarRange size={16} />
-                    <span>Khoảng Tháng (Từ - Đến)</span>
+                    <CalendarRange size={15} />
+                    <span>Khoảng (Từ - Đến)</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setExportMode('single')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all ${
+                    className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
                       exportMode === 'single'
                         ? 'border-brand-700 bg-brand-50 text-brand-800 ring-2 ring-brand-700/20'
                         : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
-                    <Calendar size={16} />
-                    <span>Một Tháng Cụ Thể</span>
+                    <Calendar size={15} />
+                    <span>1 Tháng</span>
                   </button>
                 </div>
 
-                {/* Preset nhanh */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  <span className="text-[11px] text-slate-500 self-center mr-1">Mốc nhanh:</span>
-                  {[
-                    { label: 'Từ T1 đến T7 (Có số liệu HQ)', from: '1', to: '7', mode: 'range' },
-                    { label: 'Tháng 07', single: '7', mode: 'single' },
-                    { label: 'Tháng 09', single: '9', mode: 'single' },
-                    { label: 'Quý 1 (T1-T3)', from: '1', to: '3', mode: 'range' },
-                    { label: 'Quý 2 (T4-T6)', from: '4', to: '6', mode: 'range' },
-                    { label: 'Quý 3 (T7-T9)', from: '7', to: '9', mode: 'range' },
-                    { label: 'Cả năm (T1-T12)', from: '1', to: '12', mode: 'range' }
-                  ].map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setExportMode(preset.mode);
-                        if (preset.mode === 'range') {
-                          setExportFromMonth(preset.from);
-                          setExportToMonth(preset.to);
-                        } else {
-                          setExportSingleMonth(preset.single);
-                        }
-                      }}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 rounded-lg text-[11px] font-semibold transition-colors"
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Nội dung chọn thời gian chi tiết */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                  {exportMode === 'multi' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-600">CHỌN CÁC THÁNG MUỐN XUẤT:</span>
+                        <div className="space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => setExportSelectedMonths(['1', '2', '3', '4', '5', '6', '7'])}
+                            className="text-[11px] font-semibold text-brand-700 hover:underline"
+                          >
+                            T1–T7
+                          </button>
+                          <span className="text-slate-300">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setExportSelectedMonths(Array.from({ length: 12 }, (_, i) => (i + 1).toString()))}
+                            className="text-[11px] font-semibold text-brand-700 hover:underline"
+                          >
+                            Cả năm
+                          </button>
+                        </div>
+                      </div>
 
-                {/* Bộ chọn tháng chi tiết */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  {exportMode === 'range' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                          const mStr = m.toString();
+                          const isSel = exportSelectedMonths.includes(mStr);
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => {
+                                if (isSel) {
+                                  if (exportSelectedMonths.length > 1) {
+                                    setExportSelectedMonths(exportSelectedMonths.filter(x => x !== mStr));
+                                  }
+                                } else {
+                                  setExportSelectedMonths([...exportSelectedMonths, mStr]);
+                                }
+                              }}
+                              className={`p-2 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
+                                isSel
+                                  ? 'bg-brand-700 border-brand-700 text-white shadow-xs'
+                                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              Tháng {m < 10 ? `0${m}` : m}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {exportMode === 'range' && (
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-500 mb-1">TỪ THÁNG</label>
                         <select
                           value={exportFromMonth}
                           onChange={e => setExportFromMonth(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-brand-700/20"
+                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                             <option key={m} value={m.toString()}>Tháng {m < 10 ? `0${m}` : m}</option>
@@ -779,56 +930,44 @@ const ReportPage = () => {
                         <select
                           value={exportToMonth}
                           onChange={e => setExportToMonth(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-brand-700/20"
+                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none"
                         >
                           {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                             <option key={m} value={m.toString()}>Tháng {m < 10 ? `0${m}` : m}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">NĂM</label>
-                        <select
-                          value={exportYear}
-                          onChange={e => setExportYear(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-brand-700/20"
-                        >
-                          {[2024, 2025, 2026, 2027].map(y => (
-                            <option key={y} value={y.toString()}>{y}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">CHỌN THÁNG</label>
-                        <select
-                          value={exportSingleMonth}
-                          onChange={e => setExportSingleMonth(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-brand-700/20"
-                        >
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                            <option key={m} value={m.toString()}>Tháng {m < 10 ? `0${m}` : m}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">NĂM</label>
-                        <select
-                          value={exportYear}
-                          onChange={e => setExportYear(e.target.value)}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-brand-700/20"
-                        >
-                          {[2024, 2025, 2026, 2027].map(y => (
-                            <option key={y} value={y.toString()}>{y}</option>
                           ))}
                         </select>
                       </div>
                     </div>
                   )}
+
+                  {exportMode === 'single' && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-500 mb-1">CHỌN THÁNG</label>
+                      <select
+                        value={exportSingleMonth}
+                        onChange={e => setExportSingleMonth(e.target.value)}
+                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                          <option key={m} value={m.toString()}>Tháng {m < 10 ? `0${m}` : m}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Chọn Năm */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">NĂM</label>
+                    <select
+                      value={exportYear}
+                      onChange={e => setExportYear(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none"
+                    >
+                      {[2024, 2025, 2026, 2027].map(y => (
+                        <option key={y} value={y.toString()}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -839,10 +978,12 @@ const ReportPage = () => {
                   <p className="font-bold">
                     File xuất: {exportMode === 'single'
                       ? `Tháng ${exportSingleMonth.padStart(2, '0')}/${exportYear}`
-                      : `Từ Tháng ${exportFromMonth.padStart(2, '0')} đến Tháng ${exportToMonth.padStart(2, '0')}/${exportYear}`}
+                      : exportMode === 'range'
+                        ? `Từ Tháng ${exportFromMonth.padStart(2, '0')} đến Tháng ${exportToMonth.padStart(2, '0')}/${exportYear}`
+                        : `${exportSelectedMonths.length} tháng (${exportSelectedMonths.map(m => `T${m}`).join(', ')}) / ${exportYear}`}
                   </p>
                   <p className="text-[11px] text-emerald-700 mt-0.5">
-                    Định dạng file Microsoft Excel chuẩn (.xlsx) với dữ liệu được căn chỉnh cột, phân nhóm phòng ban và định dạng tiền tệ đẹp mắt.
+                    Định dạng file Microsoft Excel chuẩn (.xlsx) với đầy đủ dữ liệu, công thức và độ rộng cột tối ưu.
                   </p>
                 </div>
               </div>

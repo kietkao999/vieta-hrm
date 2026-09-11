@@ -74,50 +74,73 @@ export const getSummaryReport = async (req, res) => {
 // Báo cáo quỹ lương
 export const getPayrollReport = async (req, res) => {
   try {
-    const { year } = req.query;
-    const targetYear = year || new Date().getFullYear().toString();
+    const { year, months, fromMonth, toMonth } = req.query;
+    const now = new Date();
+    const targetYear = parseInt(year || now.getFullYear().toString(), 10);
 
-    // Tổng quỹ lương theo tháng
+    let selectedMonths = [];
+    if (months) {
+      selectedMonths = months.split(',').map(m => m.trim().padStart(2, '0'));
+    } else if (fromMonth && toMonth) {
+      const startM = Math.min(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      const endM = Math.max(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      for (let i = startM; i <= endM; i++) selectedMonths.push(i.toString().padStart(2, '0'));
+    } else {
+      // Mặc định cả 12 tháng
+      for (let i = 1; i <= 12; i++) selectedMonths.push(i.toString().padStart(2, '0'));
+    }
+
+    const monthRawList = selectedMonths.map(m => parseInt(m, 10).toString());
+    const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
+    const placeholders = allMatches.map(() => '?').join(',');
+
+    // Tổng quỹ lương theo từng tháng được chọn
     const monthlyPayroll = await query.all(`
-      SELECT month, 
-             SUM(net_salary) as total_net_salary,
-             SUM(base_salary) as total_base_salary,
-             SUM(allowances) as total_allowances,
-             SUM(bonus) as total_bonus,
-             SUM(deductions) as total_deductions,
-             COUNT(*) as employee_count
-      FROM payroll
-      WHERE month LIKE ?
-      GROUP BY month
-      ORDER BY month ASC
-    `, [`${targetYear}-%`]);
+      SELECT p.month, 
+             SUM(p.net_salary) as total_net_salary,
+             SUM(p.tier_salary + p.grade_salary) as total_base_salary,
+             SUM(p.responsibility_net) as total_responsibility_kpi,
+             SUM(p.performance_bonus) as total_performance_bonus,
+             SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             COUNT(DISTINCT p.employee_id) as employee_count
+      FROM payrolls p
+      WHERE p.year = ? AND p.month IN (${placeholders})
+      GROUP BY p.month
+      ORDER BY p.month ASC
+    `, [targetYear, ...allMatches]);
 
-    // Tổng quỹ lương cả năm
-    const yearTotal = await query.get(`
-      SELECT SUM(net_salary) as total_net, 
-             SUM(base_salary) as total_base,
-             SUM(allowances) as total_allowances,
-             SUM(bonus) as total_bonus,
-             SUM(deductions) as total_deductions,
-             COUNT(*) as total_records
-      FROM payroll WHERE month LIKE ?
-    `, [`${targetYear}-%`]);
+    // Tổng quỹ lương toàn bộ giai đoạn được chọn
+    const periodTotal = await query.get(`
+      SELECT SUM(p.net_salary) as total_net, 
+             SUM(p.tier_salary + p.grade_salary) as total_base,
+             SUM(p.responsibility_net) as total_responsibility,
+             SUM(p.performance_bonus) as total_performance,
+             SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             COUNT(p.id) as total_records
+      FROM payrolls p
+      WHERE p.year = ? AND p.month IN (${placeholders})
+    `, [targetYear, ...allMatches]);
 
-    // Top 5 lương cao nhất
+    // Top nhân viên có tổng thu nhập cao nhất trong các tháng đã chọn
     const topSalaries = await query.all(`
-      SELECT e.fullname, e.code, p.net_salary, p.month, d.name as department_name
-      FROM payroll p
+      SELECT e.fullname, e.code, 
+             SUM(p.net_salary) as net_salary,
+             d.name as department_name,
+             COUNT(p.id) as months_counted
+      FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
-      WHERE p.month LIKE ?
-      ORDER BY p.net_salary DESC
+      WHERE p.year = ? AND p.month IN (${placeholders})
+      GROUP BY p.employee_id
+      ORDER BY net_salary DESC
       LIMIT 5
-    `, [`${targetYear}-%`]);
+    `, [targetYear, ...allMatches]);
 
     return res.json({
       year: targetYear,
+      months: selectedMonths,
       monthlyPayroll,
-      yearTotal: yearTotal || {},
+      yearTotal: periodTotal || {},
       topSalaries
     });
   } catch (error) {
@@ -129,44 +152,58 @@ export const getPayrollReport = async (req, res) => {
 // Báo cáo chấm công
 export const getAttendanceReport = async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { month, months, fromMonth, toMonth, year } = req.query;
     const now = new Date();
-    const targetMonth = month || (now.getMonth() + 1).toString().padStart(2, '0');
-    const targetYear = year || now.getFullYear().toString();
-    const datePrefix = `${targetYear}-${targetMonth.padStart(2, '0')}`;
+    const targetYear = (year || now.getFullYear().toString()).toString();
+
+    let selectedMonths = [];
+    if (months) {
+      selectedMonths = months.split(',').map(m => m.trim().padStart(2, '0'));
+    } else if (fromMonth && toMonth) {
+      const startM = Math.min(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      const endM = Math.max(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      for (let i = startM; i <= endM; i++) selectedMonths.push(i.toString().padStart(2, '0'));
+    } else if (month) {
+      selectedMonths = [month.toString().padStart(2, '0')];
+    } else {
+      selectedMonths = [(now.getMonth() + 1).toString().padStart(2, '0')];
+    }
+
+    const monthClauses = selectedMonths.map(m => `date LIKE '${targetYear}-${m}%'`).join(' OR ') || '1=0';
 
     // Tổng quan chấm công theo trạng thái
     const statusSummary = await query.all(`
       SELECT status, COUNT(*) as count
       FROM attendance
-      WHERE date LIKE ?
+      WHERE ${monthClauses}
       GROUP BY status
-    `, [`${datePrefix}%`]);
+    `);
 
-    // Thống kê đi trễ
+    // Thống kê đi trễ gom theo nhân viên
     const lateStats = await query.all(`
       SELECT e.fullname, e.code, COUNT(*) as late_count, SUM(a.late_minutes) as total_late_minutes
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      WHERE a.date LIKE ? AND a.late_minutes > 0
+      WHERE (${monthClauses}) AND a.late_minutes > 0
       GROUP BY a.employee_id
       ORDER BY late_count DESC
-    `, [`${datePrefix}%`]);
+    `);
 
     // Tổng giờ OT
     const otSummary = await query.get(`
       SELECT SUM(ot_hours) as total_ot, COUNT(DISTINCT employee_id) as ot_employees
-      FROM attendance WHERE date LIKE ? AND ot_hours > 0
-    `, [`${datePrefix}%`]);
+      FROM attendance WHERE (${monthClauses}) AND ot_hours > 0
+    `);
 
     // Tổng ngày công
     const totalWorkDays = await query.get(`
       SELECT COUNT(*) as total_days, COUNT(DISTINCT employee_id) as total_employees
-      FROM attendance WHERE date LIKE ? AND (status = 'Đúng giờ' OR status = 'Đi trễ')
-    `, [`${datePrefix}%`]);
+      FROM attendance WHERE (${monthClauses}) AND (status = 'Đúng giờ' OR status = 'Đi trễ')
+    `);
 
     return res.json({
-      month: targetMonth,
+      months: selectedMonths,
+      monthCount: selectedMonths.length,
       year: targetYear,
       statusSummary,
       lateStats,
@@ -182,11 +219,26 @@ export const getAttendanceReport = async (req, res) => {
 // Báo cáo KPI
 export const getKpiReport = async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { month, months, fromMonth, toMonth, year } = req.query;
     const now = new Date();
-    const targetMonth = month ? month.toString() : (now.getMonth() + 1).toString();
-    const targetMonthPadded = targetMonth.padStart(2, '0');
     const targetYear = parseInt(year || now.getFullYear().toString(), 10);
+
+    let selectedMonths = [];
+    if (months) {
+      selectedMonths = months.split(',').map(m => m.trim().padStart(2, '0'));
+    } else if (fromMonth && toMonth) {
+      const startM = Math.min(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      const endM = Math.max(parseInt(fromMonth, 10), parseInt(toMonth, 10));
+      for (let i = startM; i <= endM; i++) selectedMonths.push(i.toString().padStart(2, '0'));
+    } else if (month) {
+      selectedMonths = [month.toString().padStart(2, '0')];
+    } else {
+      selectedMonths = [(now.getMonth() + 1).toString().padStart(2, '0')];
+    }
+
+    const monthRawList = selectedMonths.map(m => parseInt(m, 10).toString());
+    const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
+    const placeholders = allMatches.map(() => '?').join(',');
 
     // Thống kê tổng hợp KPI
     const totalActive = await query.get(
@@ -195,13 +247,13 @@ export const getKpiReport = async (req, res) => {
 
     const savedKpis = await query.all(
       `SELECT k.*, e.fullname, e.code, d.name as department_name,
-              (MAX(0, k.responsibility_bonus - k.responsibility_penalty) + MAX(0, k.performance_bonus - k.discipline_deduction)) as total_payout
+              (MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_payout
        FROM employee_monthly_kpis k
        JOIN employees e ON k.employee_id = e.id
        LEFT JOIN departments d ON e.department_id = d.id
-       WHERE (k.month = ? OR k.month = ?) AND k.year = ?
+       WHERE k.year = ? AND k.month IN (${placeholders})
        ORDER BY total_payout DESC`,
-      [targetMonth, targetMonthPadded, targetYear]
+      [targetYear, ...allMatches]
     );
 
     const recordedCount = savedKpis.length;
@@ -210,38 +262,57 @@ export const getKpiReport = async (req, res) => {
 
     const kpiSummary = [
       { status: 'Đã thiết lập', count: recordedCount, avg_score: avgPayout, avg_percent: recordedCount > 0 ? 100 : 0 },
-      { status: 'Chưa có dữ liệu', count: Math.max(0, (totalActive?.count || 0) - recordedCount), avg_score: 0, avg_percent: 0 }
+      { status: 'Chưa có dữ liệu', count: Math.max(0, (totalActive?.count || 0) * selectedMonths.length - recordedCount), avg_score: 0, avg_percent: 0 }
     ];
 
-    // KPI theo phòng ban
+    // KPI theo phòng ban (tổng hợp qua tất cả các tháng đã chọn)
     const deptKpi = await query.all(`
       SELECT COALESCE(d.name, 'Chưa phân bổ') as department_name,
              COUNT(k.id) as kpi_count,
-             AVG(MAX(0, k.responsibility_bonus - k.responsibility_penalty) + MAX(0, k.performance_bonus - k.discipline_deduction)) as avg_score,
+             SUM(MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_dept_payout,
+             AVG(MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as avg_score,
              100 as avg_percent
       FROM employee_monthly_kpis k
       JOIN employees e ON k.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
-      WHERE (k.month = ? OR k.month = ?) AND k.year = ?
+      WHERE k.year = ? AND k.month IN (${placeholders})
       GROUP BY d.id, d.name
-      ORDER BY kpi_count DESC
-    `, [targetMonth, targetMonthPadded, targetYear]);
+      ORDER BY total_dept_payout DESC
+    `, [targetYear, ...allMatches]);
 
-    // Top performers (nhân viên có tổng KPI thực nhận cao nhất)
-    const topPerformers = savedKpis.slice(0, 5).map(k => ({
-      fullname: k.fullname,
-      code: k.code,
-      achieved_score: k.total_payout,
-      target_score: k.responsibility_bonus + k.performance_bonus,
-      criteria: 'Tổng KPI thực nhận',
-      department_name: k.department_name,
-      percent: k.responsibility_bonus + k.performance_bonus > 0 
-        ? Math.round((k.total_payout / (k.responsibility_bonus + k.performance_bonus)) * 100) 
-        : 100
-    }));
+    // Top performers (tổng thu nhập KPI và hiệu quả qua các tháng đã chọn)
+    const empKpiMap = new Map();
+    for (const k of savedKpis) {
+      if (!empKpiMap.has(k.employee_id)) {
+        empKpiMap.set(k.employee_id, {
+          fullname: k.fullname,
+          code: k.code,
+          department_name: k.department_name,
+          total_payout: 0,
+          target_score: 0
+        });
+      }
+      const item = empKpiMap.get(k.employee_id);
+      item.total_payout += (k.total_payout || 0);
+      item.target_score += ((k.responsibility_bonus || 0) + (k.performance_bonus || 0));
+    }
+
+    const topPerformers = Array.from(empKpiMap.values())
+      .sort((a, b) => b.total_payout - a.total_payout)
+      .slice(0, 5)
+      .map(p => ({
+        fullname: p.fullname,
+        code: p.code,
+        achieved_score: p.total_payout,
+        target_score: p.target_score,
+        criteria: 'Tổng KPI & Hiệu quả',
+        department_name: p.department_name,
+        percent: p.target_score > 0 ? Math.round((p.total_payout / p.target_score) * 100) : 100
+      }));
 
     return res.json({
-      month: targetMonthPadded,
+      months: selectedMonths,
+      monthCount: selectedMonths.length,
       year: targetYear,
       totalActive: totalActive?.count || 0,
       recordedCount,
@@ -259,18 +330,21 @@ export const getKpiReport = async (req, res) => {
 // Xuất báo cáo Excel theo tháng hoặc khoảng tháng
 export const exportReportExcel = async (req, res) => {
   try {
-    const { fromMonth, toMonth, year, reportType = 'all' } = req.query;
+    const { fromMonth, toMonth, months, year, reportType = 'all' } = req.query;
     const currentYear = new Date().getFullYear();
     const targetYear = parseInt(year || currentYear.toString(), 10);
-    const startM = Math.min(Math.max(1, parseInt(fromMonth || 1, 10)), 12);
-    const endM = Math.min(Math.max(startM, parseInt(toMonth || startM, 10)), 12);
 
-    const monthList = [];
-    const monthListRaw = [];
-    for (let i = startM; i <= endM; i++) {
-      monthList.push(i.toString().padStart(2, '0'));
-      monthListRaw.push(i.toString());
+    let monthList = [];
+    if (months) {
+      monthList = months.split(',').map(m => m.trim().padStart(2, '0'));
+    } else {
+      const startM = Math.min(Math.max(1, parseInt(fromMonth || 1, 10)), 12);
+      const endM = Math.min(Math.max(startM, parseInt(toMonth || startM, 10)), 12);
+      for (let i = startM; i <= endM; i++) {
+        monthList.push(i.toString().padStart(2, '0'));
+      }
     }
+    const monthListRaw = monthList.map(m => parseInt(m, 10).toString());
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
 
