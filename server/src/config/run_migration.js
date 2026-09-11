@@ -42,24 +42,26 @@ export async function runMigration() {
   try {
     console.log('--- KHỞI CHẠY ĐỒNG BỘ 57 NHÂN SỰ CHÍNH THỨC & DỮ LIỆU LƯƠNG/KPI ---');
 
-    await query.run('PRAGMA foreign_keys = OFF');
     const now = new Date().toISOString();
-
     const validCodes = danhSachNhanVienVaKPI.map(e => e["Mã NV"].trim());
 
-    // 1. DỌN DẸP SẠCH: Xóa tất cả nhân sự và dữ liệu liên quan không thuộc 57 mã chính thức
-    const placeholders = validCodes.map(() => '?').join(',');
-    const invalidEmps = await query.all(`SELECT id FROM employees WHERE code NOT IN (${placeholders})`, validCodes);
-    if (invalidEmps && invalidEmps.length > 0) {
-      const invalidIds = invalidEmps.map(e => e.id);
-      const idPlaceholders = invalidIds.map(() => '?').join(',');
-      await query.run(`DELETE FROM employee_monthly_kpis WHERE employee_id IN (${idPlaceholders})`, invalidIds);
-      await query.run(`DELETE FROM payrolls WHERE employee_id IN (${idPlaceholders})`, invalidIds);
-      await query.run(`DELETE FROM payroll WHERE employee_id IN (${idPlaceholders})`, invalidIds);
-      await query.run(`DELETE FROM contracts WHERE employee_id IN (${idPlaceholders})`, invalidIds);
-      await query.run(`DELETE FROM attendance WHERE employee_id IN (${idPlaceholders})`, invalidIds);
-      await query.run(`DELETE FROM employees WHERE id IN (${idPlaceholders})`, invalidIds);
-      console.log(`✓ Đã xóa ${invalidEmps.length} nhân sự tạo thừa ngoài danh sách.`);
+    await query.run('BEGIN TRANSACTION');
+
+    // 1. DỌN DẸP SẠCH: Xóa tất cả nhân sự ngoài 57 mã chuẩn
+    const allEmps = await query.all('SELECT id, code FROM employees');
+    if (allEmps && allEmps.length > 0) {
+      const invalidIds = allEmps.filter(e => !validCodes.includes(e.code)).map(e => e.id);
+      if (invalidIds.length > 0) {
+        for (const invId of invalidIds) {
+          await query.run('DELETE FROM employee_monthly_kpis WHERE employee_id = ?', [invId]);
+          await query.run('DELETE FROM payrolls WHERE employee_id = ?', [invId]);
+          await query.run('DELETE FROM payroll WHERE employee_id = ?', [invId]);
+          await query.run('DELETE FROM contracts WHERE employee_id = ?', [invId]);
+          await query.run('DELETE FROM attendance WHERE employee_id = ?', [invId]);
+          await query.run('DELETE FROM employees WHERE id = ?', [invId]);
+        }
+        console.log(`✓ Đã xóa ${invalidIds.length} nhân sự tạo thừa ngoài danh sách.`);
+      }
     }
 
     // 2. Nạp/Cập nhật chính xác 57 nhân sự chính thức
@@ -155,7 +157,6 @@ export async function runMigration() {
       ];
 
       for (const m of monthlyData) {
-        // Cập nhật employee_monthly_kpis
         await query.run(`
           INSERT INTO employee_monthly_kpis (
             employee_id, month, year,
@@ -178,7 +179,6 @@ export async function runMigration() {
           now
         ]);
 
-        // Cập nhật payrolls tương ứng
         const responsibilityNet = m.kpi;
         const performanceNet = m.hq;
         const netSalary = baseSalary + responsibilityNet + performanceNet;
@@ -221,9 +221,10 @@ export async function runMigration() {
       await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [adminEmp.id, 'hr_manager']);
     }
 
-    await query.run('PRAGMA foreign_keys = ON');
+    await query.run('COMMIT');
     console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ CHUẨN VÀ DỮ LIỆU KPI/LƯƠNG ---');
   } catch (error) {
+    await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);
   }
 }
