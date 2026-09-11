@@ -20,21 +20,48 @@ body {
 
 /* Custom Scrollbar for modern enterprise feel */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 9px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f5f9;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: #94a3b8;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Custom Scroll Helper Classes */
+.custom-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.custom-scroll-x::-webkit-scrollbar {
+  height: 9px;
+}
+
+.custom-scroll-x::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.custom-scroll-x::-webkit-scrollbar-thumb {
   background: #94a3b8;
+  border-radius: 6px;
+}
+
+.custom-scroll-x::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* Glassmorphism utility */

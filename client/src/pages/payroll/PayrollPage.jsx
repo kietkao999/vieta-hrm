@@ -359,15 +359,16 @@ const PayrollPage = () => {
         </span>
       </div>
 
-      {/* Main Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto print:hidden">
+      {/* Main Table Container with Clear Horizontal Scrollbar */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden print:hidden">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
           </div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse min-w-[1400px]">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+          <div className="w-full overflow-x-auto custom-scroll-x">
+            <table className="w-full text-left text-sm border-collapse min-w-[1350px]">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-3 py-3">Mã NV & Họ Tên</th>
                 <th className="px-3 py-3">Phòng ban</th>
@@ -519,6 +520,7 @@ const PayrollPage = () => {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

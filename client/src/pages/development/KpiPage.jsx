@@ -628,14 +628,15 @@ const KpiPage = () => {
       )}
 
       {/* Main KPI Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center p-12 space-y-3">
             <div className="animate-spin rounded-full h-9 w-9 border-b-2 border-brand-700"></div>
             <p className="text-xs text-slate-500 font-medium">Đang tải bảng KPI tháng {month}/{year}...</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse min-w-[1100px]">
+          <div className="w-full overflow-x-auto custom-scroll-x">
+            <table className="w-full text-left text-sm border-collapse min-w-[1100px]">
             <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3.5">Mã NV</th>
@@ -855,6 +856,7 @@ const KpiPage = () => {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

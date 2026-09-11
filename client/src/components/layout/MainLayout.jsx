@@ -12,12 +12,12 @@ const MainLayout = () => {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Container */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header bar */}
         <Header setIsSidebarOpen={setIsSidebarOpen} />
 
         {/* Dynamic Route Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 min-w-0">
           <Outlet />
         </main>
       </div>
