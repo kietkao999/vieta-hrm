@@ -513,9 +513,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 936782,
     "Hiệu quả T5": 818170,
     "Hiệu quả T6": 996213,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 5735990,
-    "Tổng cộng Lũy kế": 7735990
+    "Hiệu quả T7": 1104310,
+    "Tổng Hiệu quả": 6840300,
+    "Tổng cộng Lũy kế": 8840300
   },
   {
     "Mã NV": "VietA 019",
@@ -661,9 +661,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 1611860,
     "Hiệu quả T5": 1225791,
     "Hiệu quả T6": 1405753,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 6262184,
-    "Tổng cộng Lũy kế": 8262184
+    "Hiệu quả T7": 1554709,
+    "Tổng Hiệu quả": 7816893,
+    "Tổng cộng Lũy kế": 9816893
   },
   {
     "Mã NV": "VietA 024",
@@ -772,9 +772,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 851620,
     "Hiệu quả T5": 826434,
     "Hiệu quả T6": 1121862,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 10218109,
-    "Tổng cộng Lũy kế": 12218109
+    "Hiệu quả T7": 1183189,
+    "Tổng Hiệu quả": 11401298,
+    "Tổng cộng Lũy kế": 13401298
   },
   {
     "Mã NV": "VietA 028",
@@ -809,9 +809,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 2129050,
     "Hiệu quả T5": 1859477,
     "Hiệu quả T6": 1884728,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 15052771,
-    "Tổng cộng Lũy kế": 17022771
+    "Hiệu quả T7": 2129741,
+    "Tổng Hiệu quả": 17182512,
+    "Tổng cộng Lũy kế": 19152512
   },
   {
     "Mã NV": "VietA 029",
@@ -846,9 +846,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 965169,
     "Hiệu quả T5": 842963,
     "Hiệu quả T6": 999205,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 7248200,
-    "Tổng cộng Lũy kế": 9218200
+    "Hiệu quả T7": 1009655,
+    "Tổng Hiệu quả": 8257855,
+    "Tổng cộng Lũy kế": 10227855
   },
   {
     "Mã NV": "VietA 031",
@@ -1475,9 +1475,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 3086500,
     "Hiệu quả T5": 1831459,
     "Hiệu quả T6": 2012301,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 19048610,
-    "Tổng cộng Lũy kế": 21048610
+    "Hiệu quả T7": 2358533,
+    "Tổng Hiệu quả": 21407143,
+    "Tổng cộng Lũy kế": 23407143
   },
   {
     "Mã NV": "VietA 053",
@@ -1845,9 +1845,9 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 0,
     "Hiệu quả T5": 38610,
     "Hiệu quả T6": 634759,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 673369,
-    "Tổng cộng Lũy kế": 2673369
+    "Hiệu quả T7": 812232,
+    "Tổng Hiệu quả": 1485601,
+    "Tổng cộng Lũy kế": 3485601
   },
   {
     "Mã NV": "VietA 070",
@@ -2104,8 +2104,8 @@ export const danhSachNhanVienVaKPI = [
     "Hiệu quả T4": 0,
     "Hiệu quả T5": 0,
     "Hiệu quả T6": 0,
-    "Hiệu quả T7": 0,
-    "Tổng Hiệu quả": 0,
-    "Tổng cộng Lũy kế": 77000
+    "Hiệu quả T7": 44385,
+    "Tổng Hiệu quả": 44385,
+    "Tổng cộng Lũy kế": 121385
   }
 ];
