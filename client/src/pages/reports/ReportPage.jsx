@@ -13,6 +13,7 @@ const ReportPage = () => {
   const [activeTab, setActiveTab] = useState('summary');
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
 
   const [summaryData, setSummaryData] = useState(null);
@@ -43,17 +44,22 @@ const ReportPage = () => {
   const [exportType, setExportType] = useState('all'); // 'all' | 'payroll' | 'kpi' | 'attendance' | 'summary'
   const [isExporting, setIsExporting] = useState(false);
 
-  // Load Departments on mount
+  // Load Departments and Employees on mount
   useEffect(() => {
-    const loadDepartments = async () => {
+    const loadInitData = async () => {
       try {
-        const res = await api.get('/departments');
-        setDepartments(res.data || []);
+        const [deptRes, empRes] = await Promise.all([
+          api.get('/departments'),
+          api.get('/employees?limit=200')
+        ]);
+        setDepartments(deptRes.data || []);
+        const empList = empRes.data?.data || empRes.data?.employees || (Array.isArray(empRes.data) ? empRes.data : []);
+        setEmployees(empList);
       } catch (err) {
-        console.error('Lỗi tải danh mục phòng ban:', err);
+        console.error('Lỗi tải danh mục ban đầu:', err);
       }
     };
-    loadDepartments();
+    loadInitData();
   }, []);
 
   // Helper: Get active months query string
@@ -191,7 +197,73 @@ const ReportPage = () => {
     .map(Number).sort((a, b) => a - b);
   
   const selectedDeptObj = departments.find(d => String(d.id) === String(selectedDepartment) || d.name === selectedDepartment);
+  const targetDeptName = selectedDeptObj ? selectedDeptObj.name : selectedDepartment;
+  const targetDeptId = selectedDeptObj ? selectedDeptObj.id : selectedDepartment;
   const deptDisplayName = selectedDeptObj ? selectedDeptObj.name : 'Tất cả phòng ban';
+
+  // Lọc nhân sự theo phòng ban được chọn
+  const filteredEmployees = selectedDepartment
+    ? employees.filter(e => String(e.department_id) === String(targetDeptId) || String(e.department_id) === String(targetDeptName) || e.department_name === targetDeptName)
+    : employees;
+
+  // Tính toán số liệu tổng quan động
+  const activeEmps = filteredEmployees.filter(e => e.status === 'Đang làm việc' || !e.status);
+  const displayTotalActive = selectedDepartment
+    ? activeEmps.length
+    : (summaryData?.totalActive ?? activeEmps.length);
+
+  const displaySeniority = (() => {
+    const withJoin = activeEmps.filter(e => e.join_date);
+    if (withJoin.length === 0) return summaryData?.avgSeniority || 0;
+    const now = new Date();
+    const totalYears = withJoin.reduce((acc, e) => {
+      const jd = new Date(e.join_date);
+      const diff = (now - jd) / (1000 * 60 * 60 * 24 * 365.25);
+      return acc + (isNaN(diff) ? 0 : diff);
+    }, 0);
+    return Math.round((totalYears / withJoin.length) * 10) / 10;
+  })();
+
+  const displayDeptStats = (() => {
+    if (selectedDepartment) {
+      return [{ department_name: targetDeptName, count: activeEmps.length }];
+    }
+    if (summaryData?.deptStats && summaryData.deptStats.length > 0) {
+      return summaryData.deptStats;
+    }
+    const map = {};
+    activeEmps.forEach(e => {
+      const dName = e.department_name || departments.find(d => d.id === e.department_id)?.name || 'Khác';
+      map[dName] = (map[dName] || 0) + 1;
+    });
+    return Object.entries(map).map(([department_name, count]) => ({ department_name, count })).sort((a, b) => b.count - a.count);
+  })();
+
+  const displayGenderStats = (() => {
+    if (selectedDepartment && activeEmps.length > 0) {
+      const male = activeEmps.filter(e => e.gender === 'Nam').length;
+      const female = activeEmps.filter(e => e.gender === 'Nữ').length;
+      const other = activeEmps.length - male - female;
+      const stats = [];
+      if (male > 0) stats.push({ gender: 'Nam', count: male });
+      if (female > 0) stats.push({ gender: 'Nữ', count: female });
+      if (other > 0) stats.push({ gender: 'Khác', count: other });
+      return stats;
+    }
+    return summaryData?.genderStats || [];
+  })();
+
+  const displayStatusStats = (() => {
+    if (selectedDepartment && filteredEmployees.length > 0) {
+      const map = {};
+      filteredEmployees.forEach(e => {
+        const st = e.status || 'Đang làm việc';
+        map[st] = (map[st] || 0) + 1;
+      });
+      return Object.entries(map).map(([status, count]) => ({ status, count }));
+    }
+    return summaryData?.statusStats || [];
+  })();
 
   const displayRangeText = (selectionMode === 'single'
     ? `Tháng ${singleMonth.padStart(2, '0')}/${year}`
@@ -203,7 +275,7 @@ const ReportPage = () => {
 
   // Tab: Tổng quan Nhân sự
   const renderSummary = () => {
-    if (!summaryData) return null;
+    if (!summaryData && employees.length === 0) return null;
     return (
       <div className="space-y-6">
         {/* Top Stats */}
@@ -212,28 +284,28 @@ const ReportPage = () => {
             <div className="rounded-lg bg-blue-50 p-3 text-blue-600"><Users size={24} /></div>
             <div>
               <p className="text-xs font-semibold text-slate-400">NHÂN SỰ ĐANG LÀM VIỆC</p>
-              <p className="text-2xl font-bold text-slate-800">{summaryData.totalActive}</p>
+              <p className="text-2xl font-bold text-slate-800">{displayTotalActive}</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
             <div className="rounded-lg bg-emerald-50 p-3 text-emerald-600"><TrendingUp size={24} /></div>
             <div>
               <p className="text-xs font-semibold text-slate-400">THÂM NIÊN TRUNG BÌNH</p>
-              <p className="text-2xl font-bold text-slate-800">{summaryData.avgSeniority} năm</p>
+              <p className="text-2xl font-bold text-slate-800">{displaySeniority} năm</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
             <div className="rounded-lg bg-purple-50 p-3 text-purple-600"><PieChart size={24} /></div>
             <div>
               <p className="text-xs font-semibold text-slate-400">SỐ PHÒNG BAN</p>
-              <p className="text-2xl font-bold text-slate-800">{summaryData.deptStats?.length || 0}</p>
+              <p className="text-2xl font-bold text-slate-800">{selectedDepartment ? 1 : (displayDeptStats?.length || 0)}</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
             <div className="rounded-lg bg-amber-50 p-3 text-amber-600"><AlertTriangle size={24} /></div>
             <div>
               <p className="text-xs font-semibold text-slate-400">HĐ SẮP HẾT HẠN</p>
-              <p className="text-2xl font-bold text-slate-800">{summaryData.expiringContracts?.length || 0}</p>
+              <p className="text-2xl font-bold text-slate-800">{summaryData?.expiringContracts?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -243,12 +315,12 @@ const ReportPage = () => {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Phân bổ nhân sự theo Phòng ban</h3>
             <div className="space-y-3">
-              {(summaryData.deptStats || []).map((d, i) => (
+              {(displayDeptStats || []).map((d, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="text-sm text-slate-700 font-medium flex-1 truncate mr-4">{d.department_name}</span>
                   <div className="flex items-center space-x-3 min-w-[180px]">
                     <div className="w-full bg-slate-100 rounded-full h-2.5 max-w-[120px]">
-                      <div className="h-2.5 rounded-full bg-brand-500" style={{ width: `${Math.min(100, (d.count / (summaryData.totalActive || 1)) * 100)}%` }}></div>
+                      <div className="h-2.5 rounded-full bg-brand-500" style={{ width: `${Math.min(100, (d.count / (displayTotalActive || 1)) * 100)}%` }}></div>
                     </div>
                     <span className="text-sm font-bold text-slate-800 w-12 text-right">{d.count}</span>
                   </div>
@@ -264,7 +336,7 @@ const ReportPage = () => {
               <div>
                 <h4 className="text-xs font-semibold text-slate-400 mb-2">GIỚI TÍNH</h4>
                 <div className="space-y-2">
-                  {(summaryData.genderStats || []).map((g, i) => (
+                  {(displayGenderStats || []).map((g, i) => (
                     <div key={i} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
                       <span className="text-sm font-medium text-slate-700">{g.gender || 'Khác'}</span>
                       <span className="text-sm font-bold text-brand-700">{g.count}</span>
@@ -275,7 +347,7 @@ const ReportPage = () => {
               <div>
                 <h4 className="text-xs font-semibold text-slate-400 mb-2">TRẠNG THÁI</h4>
                 <div className="space-y-2">
-                  {(summaryData.statusStats || []).map((s, i) => (
+                  {(displayStatusStats || []).map((s, i) => (
                     <div key={i} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
                       <span className="text-sm font-medium text-slate-700">{s.status}</span>
                       <span className="text-sm font-bold text-brand-700">{s.count}</span>
@@ -293,7 +365,13 @@ const ReportPage = () => {
   // Tab: Quỹ Lương
   const renderPayroll = () => {
     if (!payrollData) return null;
-    const { yearTotal, monthlyPayroll, topSalaries } = payrollData;
+    let { yearTotal, monthlyPayroll, topSalaries } = payrollData;
+
+    // Lọc theo phòng ban nếu được chọn
+    if (selectedDepartment) {
+      topSalaries = (topSalaries || []).filter(s => s.department_name === targetDeptName || filteredEmployees.some(e => e.fullname === s.fullname || e.code === s.code));
+    }
+
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -452,7 +530,15 @@ const ReportPage = () => {
   // Tab: KPI
   const renderKpi = () => {
     if (!kpiData) return null;
-    const { kpiSummary, deptKpi, topPerformers, recordedCount, totalPayout } = kpiData;
+    let { kpiSummary, deptKpi, topPerformers, recordedCount, totalPayout } = kpiData;
+
+    // Lọc theo phòng ban nếu được chọn
+    if (selectedDepartment) {
+      deptKpi = (deptKpi || []).filter(d => d.department_name === targetDeptName || String(d.department_id) === String(targetDeptId));
+      topPerformers = (topPerformers || []).filter(p => p.department_name === targetDeptName || filteredEmployees.some(e => e.fullname === p.fullname || e.code === p.code));
+      recordedCount = deptKpi.reduce((acc, d) => acc + (d.kpi_count || 0), 0);
+      totalPayout = deptKpi.reduce((acc, d) => acc + (d.total_dept_payout || 0), 0);
+    }
 
     return (
       <div className="space-y-6">
@@ -470,7 +556,7 @@ const ReportPage = () => {
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold text-slate-400">TỔNG SỐ LƯỢT ĐÁNH GIÁ</p>
             <p className="text-2xl font-bold text-emerald-700 mt-1">{recordedCount || 0} lượt</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{kpiData?.totalActive || 0} nhân sự / tháng</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{selectedDepartment ? activeEmps.length : (kpiData?.totalActive || 0)} nhân sự / tháng</p>
           </div>
         </div>
 
