@@ -713,7 +713,7 @@ const ReportPage = () => {
                 onChange={e => setYear(e.target.value)}
                 className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none bg-slate-50"
               >
-                {[2024, 2025, 2026, 2027].map(y => (
+                {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
                   <option key={y} value={y.toString()}>{y}</option>
                 ))}
               </select>
@@ -963,7 +963,7 @@ const ReportPage = () => {
                       onChange={e => setExportYear(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 bg-white outline-none"
                     >
-                      {[2024, 2025, 2026, 2027].map(y => (
+                      {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
                         <option key={y} value={y.toString()}>{y}</option>
                       ))}
                     </select>

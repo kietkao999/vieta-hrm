@@ -424,10 +424,10 @@ const AttendancePage = () => {
               <select
                 value={year}
                 onChange={e => setYear(e.target.value)}
-                className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none"
+                className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none font-bold text-slate-700"
               >
-                {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                  <option key={y} value={y}>{y}</option>
+                {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
+                  <option key={y} value={y.toString()}>{y}</option>
                 ))}
               </select>
             </div>

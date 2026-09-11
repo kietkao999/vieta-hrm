@@ -188,7 +188,7 @@ const InnovationPage = () => {
         <div className="flex items-center space-x-2">
           <span className="text-sm font-semibold text-slate-700">Năm</span>
           <select value={year} onChange={e => setYear(e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none">
-            {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map(y => <option key={y} value={y}>{y}</option>)}
+            {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => <option key={y} value={y.toString()}>{y}</option>)}
           </select>
         </div>
         <div className="flex items-center space-x-2">

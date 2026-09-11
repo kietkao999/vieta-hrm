@@ -557,13 +557,8 @@ const KpiPage = () => {
                 onChange={e => setYear(e.target.value)}
                 className="bg-transparent font-bold text-sm text-slate-800 outline-none cursor-pointer"
               >
-                {[
-                  currentDate.getFullYear() - 2,
-                  currentDate.getFullYear() - 1,
-                  currentDate.getFullYear(),
-                  currentDate.getFullYear() + 1
-                ].map(y => (
-                  <option key={y} value={y}>
+                {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
+                  <option key={y} value={y.toString()}>
                     {y}
                   </option>
                 ))}
