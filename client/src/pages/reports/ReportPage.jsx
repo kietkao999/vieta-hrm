@@ -73,7 +73,7 @@ const ReportPage = () => {
     try {
       switch (tab) {
         case 'summary': {
-          const res = await api.get(`/reports/summary?${deptParam.replace('&', '')}`);
+          const res = await api.get(`/reports/summary${selectedDepartment ? `?department_id=${encodeURIComponent(selectedDepartment)}` : ''}`);
           setSummaryData(res.data);
           break;
         }
@@ -470,7 +470,7 @@ const ReportPage = () => {
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold text-slate-400">TỔNG SỐ LƯỢT ĐÁNH GIÁ</p>
             <p className="text-2xl font-bold text-emerald-700 mt-1">{recordedCount || 0} lượt</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">57 nhân sự / tháng</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{kpiData?.totalActive || 0} nhân sự / tháng</p>
           </div>
         </div>
 
