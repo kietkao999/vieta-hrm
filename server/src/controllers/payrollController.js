@@ -14,8 +14,10 @@ export const getPayroll = async (req, res) => {
     const params = [];
 
     if (month && year) {
-      sql += ` AND p.month = ? AND p.year = ?`;
-      params.push(month.padStart(2, '0'), year);
+      const mStr = month.toString();
+      const mPad = mStr.padStart(2, '0');
+      sql += ` AND (p.month = ? OR p.month = ?) AND p.year = ?`;
+      params.push(mStr, mPad, year);
     }
 
     // Phân quyền
