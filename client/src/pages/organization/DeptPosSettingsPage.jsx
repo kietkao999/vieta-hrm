@@ -68,10 +68,39 @@ const DeptPosSettingsPage = () => {
     setViewDeptEmployeesModalOpen(true);
     try {
       const res = await api.get(`/departments/${dept.id}/employees`);
-      setViewDeptData(res.data);
+      if (res.data?.employees && res.data.employees.length > 0) {
+        setViewDeptData(res.data);
+      } else {
+        // Fallback: Lấy danh sách từ /employees và lọc theo phòng ban
+        const empRes = await api.get(`/employees?limit=1000`);
+        const allList = empRes.data?.data || empRes.data || [];
+        const matched = allList.filter(e => 
+          Number(e.department_id) === Number(dept.id) ||
+          e.department_name === dept.name ||
+          e.department_id === dept.name
+        );
+        setViewDeptData({
+          department: dept,
+          employees: matched
+        });
+      }
     } catch (err) {
-      console.error('Lỗi tải nhân sự phòng ban:', err);
-      setViewDeptData({ department: dept, employees: [] });
+      console.error('Lỗi tải nhân sự phòng ban, sử dụng fallback:', err);
+      try {
+        const empRes = await api.get(`/employees?limit=1000`);
+        const allList = empRes.data?.data || empRes.data || [];
+        const matched = allList.filter(e => 
+          Number(e.department_id) === Number(dept.id) ||
+          e.department_name === dept.name ||
+          e.department_id === dept.name
+        );
+        setViewDeptData({
+          department: dept,
+          employees: matched
+        });
+      } catch (e2) {
+        setViewDeptData({ department: dept, employees: [] });
+      }
     } finally {
       setViewDeptLoading(false);
     }

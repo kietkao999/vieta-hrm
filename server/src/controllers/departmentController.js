@@ -4,7 +4,14 @@ export const getDepartments = async (req, res) => {
   try {
     const departments = await query.all(`
       SELECT d.*, b.name as branch_name,
-             (SELECT COUNT(*) FROM employees WHERE department_id = d.id) as employee_count
+             (
+               SELECT COUNT(*) 
+               FROM employees e 
+               LEFT JOIN positions p ON e.position_id = p.id
+               WHERE e.department_id = d.id 
+                  OR e.department_id = d.name
+                  OR p.department_id = d.id
+             ) as employee_count
       FROM departments d
       LEFT JOIN branches b ON d.branch_id = b.id
       ORDER BY d.id ASC
@@ -80,18 +87,39 @@ export const deleteDepartment = async (req, res) => {
 export const getDepartmentEmployees = async (req, res) => {
   try {
     const { id } = req.params;
-    const dept = await query.get('SELECT * FROM departments WHERE id = ?', [id]);
+    let dept = await query.get(`
+      SELECT d.*, b.name as branch_name 
+      FROM departments d 
+      LEFT JOIN branches b ON d.branch_id = b.id 
+      WHERE d.id = ?
+    `, [id]);
+    
+    if (!dept) {
+      dept = await query.get(`
+        SELECT d.*, b.name as branch_name 
+        FROM departments d 
+        LEFT JOIN branches b ON d.branch_id = b.id 
+        WHERE d.name = ?
+      `, [id]);
+    }
+
     if (!dept) return res.status(404).json({ message: 'Phòng ban không tồn tại.' });
 
     const employees = await query.all(`
-      SELECT e.id, e.code, e.fullname, e.gender, e.phone, e.email, e.status, e.join_date,
-             pos.name as position_name, b.name as branch_name
+      SELECT DISTINCT e.id, e.code, e.fullname, e.gender, e.phone, e.email, e.status, e.join_date,
+             COALESCE(pos.name, 'Nhân viên') as position_name,
+             COALESCE(b.name, dept_b.name, 'Văn phòng Trụ sở chính') as branch_name
       FROM employees e
       LEFT JOIN positions pos ON e.position_id = pos.id
       LEFT JOIN branches b ON e.branch_id = b.id
-      WHERE e.department_id = ?
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN branches dept_b ON d.branch_id = dept_b.id
+      WHERE e.department_id = ? 
+         OR e.department_id = ?
+         OR d.name = ?
+         OR pos.department_id = ?
       ORDER BY e.code ASC
-    `, [id]);
+    `, [dept.id, dept.name, dept.name, dept.id]);
 
     return res.json({
       department: dept,
