@@ -207,6 +207,10 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
     }
   };
 
+  const isFullAdmin = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
+  const isSelf = user?.employeeId && employee?.id === user?.employeeId;
+  const canViewSalary = isFullAdmin || isSelf;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 overflow-y-auto py-4">
       {/* Expanded Modal Box (max-w-6xl w-[95vw] max-h-[90vh]) */}
@@ -267,15 +271,17 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
           </div>
 
           {/* Quick Stats Pill */}
-          <div className="flex items-center space-x-3 self-stretch md:self-auto justify-center">
-            <div className="bg-white rounded-2xl px-5 py-3 border border-slate-200 shadow-sm text-right">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Thưởng KPI Trách nhiệm</span>
-              <span className="text-xl font-black text-brand-700">{formatCurrency(employee.kpi_bonus)}</span>
-              {employee.tier && (
-                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded mt-0.5 inline-block border border-blue-200">{employee.tier}</span>
-              )}
+          {canViewSalary && (
+            <div className="flex items-center space-x-3 self-stretch md:self-auto justify-center">
+              <div className="bg-white rounded-2xl px-5 py-3 border border-slate-200 shadow-sm text-right">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Thưởng KPI Trách nhiệm</span>
+                <span className="text-xl font-black text-brand-700">{formatCurrency(employee.kpi_bonus)}</span>
+                {employee.tier && (
+                  <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded mt-0.5 inline-block border border-blue-200">{employee.tier}</span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Tab Navigation Bar */}
@@ -292,17 +298,19 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
             <span>1. Thông tin & Công việc</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('salary')}
-            className={`flex items-center space-x-2.5 py-3.5 px-5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'salary'
-                ? 'border-brand-700 text-brand-900 bg-white rounded-t-xl shadow-sm'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <DollarSign size={17} />
-            <span>2. Chế độ Lương</span>
-          </button>
+          {canViewSalary && (
+            <button
+              onClick={() => setActiveTab('salary')}
+              className={`flex items-center space-x-2.5 py-3.5 px-5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+                activeTab === 'salary'
+                  ? 'border-brand-700 text-brand-900 bg-white rounded-t-xl shadow-sm'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <DollarSign size={17} />
+              <span>2. Chế độ Lương</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('kpi')}

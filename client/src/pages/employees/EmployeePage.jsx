@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Users, Plus, Download, Edit2, Trash2, Search, Filter, Eye } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import EmployeeFormModal from './EmployeeFormModal';
 import EmployeeDetailModal from './EmployeeDetailModal';
 
 const EmployeePage = () => {
+  const { user } = useAuth();
+  const canManage = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
+
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -112,14 +116,18 @@ const EmployeePage = () => {
           <p className="text-xs text-slate-500">Quản lý danh sách và thông tin nhân sự</p>
         </div>
         <div className="flex space-x-2">
-          <button onClick={handleExport} className="inline-flex items-center space-x-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm">
-            <Download size={16} />
-            <span>Xuất Excel</span>
-          </button>
-          <button onClick={handleOpenCreate} className="inline-flex items-center space-x-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 shadow">
-            <Plus size={16} />
-            <span>Thêm Nhân viên</span>
-          </button>
+          {canManage && (
+            <>
+              <button onClick={handleExport} className="inline-flex items-center space-x-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm cursor-pointer">
+                <Download size={16} />
+                <span>Xuất Excel</span>
+              </button>
+              <button onClick={handleOpenCreate} className="inline-flex items-center space-x-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 shadow cursor-pointer">
+                <Plus size={16} />
+                <span>Thêm Nhân viên</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -192,9 +200,13 @@ const EmployeePage = () => {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-right space-x-2">
-                     <button onClick={() => handleOpenDetail(e)} className="text-slate-500 hover:text-brand-600 mr-1" title="Xem chi tiết"><Eye size={16}/></button>
-                     <button onClick={() => handleOpenEdit(e)} className="text-slate-500 hover:text-brand-600" title="Sửa"><Edit2 size={16}/></button>
-                     <button onClick={() => handleDelete(e.id, e.fullname)} className="text-slate-500 hover:text-red-600" title="Xóa"><Trash2 size={16}/></button>
+                     <button onClick={() => handleOpenDetail(e)} className="text-slate-500 hover:text-brand-600 mr-1 cursor-pointer" title="Xem chi tiết"><Eye size={16}/></button>
+                     {canManage && (
+                       <>
+                         <button onClick={() => handleOpenEdit(e)} className="text-slate-500 hover:text-brand-600 mr-1 cursor-pointer" title="Sửa"><Edit2 size={16}/></button>
+                         <button onClick={() => handleDelete(e.id, e.fullname)} className="text-slate-500 hover:text-red-600 cursor-pointer" title="Xóa"><Trash2 size={16}/></button>
+                       </>
+                     )}
                   </td>
                 </tr>
               ))}

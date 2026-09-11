@@ -1,7 +1,7 @@
 import { query } from '../config/database.js';
 import XLSX from 'xlsx';
 
-// Lấy danh sách nhân viên với lọc, tìm kiếm, phân trang
+// Lấy danh sách nhân viên với lọc, tìm kiếm, phân trang & bảo mật lương tuyệt đối
 export const getEmployees = async (req, res) => {
   try {
     const { search, department_id, branch_id, status, page = 1, limit = 1000 } = req.query;
@@ -19,17 +19,6 @@ export const getEmployees = async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-
-    // Lọc theo phân quyền: Trưởng phòng chỉ xem nhân viên phòng mình
-    if (req.user.roleName === 'MANAGER') {
-      sql += ' AND e.department_id = ?';
-      params.push(req.user.departmentId);
-    }
-    // Nhân viên chỉ xem chính mình
-    if (req.user.roleName === 'EMPLOYEE') {
-      sql += ' AND e.id = ?';
-      params.push(req.user.employeeId);
-    }
 
     // Tìm kiếm theo tên, mã NV, email, số ĐT
     if (search) {
@@ -66,10 +55,37 @@ export const getEmployees = async (req, res) => {
     sql += ' ORDER BY e.code ASC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const employees = await query.all(sql, params);
+    const rawEmployees = await query.all(sql, params);
+
+    // Phân quyền bảo mật lương tuyệt đối:
+    // Chỉ ADMIN mới thấy toàn bộ mức lương của tất cả mọi người.
+    // MANAGER & EMPLOYEE chỉ thấy mức lương của chính mình, các trường lương của người khác bị ẩn cứng trên Server.
+    const isFullAdmin = req.user.roleName === 'ADMIN' || req.user.roleName === 'HR';
+    const isManager = req.user.roleName === 'MANAGER';
+
+    const safeEmployees = rawEmployees.map(e => {
+      const isSelf = req.user.employeeId && e.id === req.user.employeeId;
+      const isDeptStaff = isManager && (e.department_id === req.user.departmentId);
+
+      if (!isFullAdmin && !isSelf) {
+        return {
+          ...e,
+          tier_salary: null,
+          grade_salary: null,
+          base_salary: null,
+          allowance: null,
+          kpi_bonus: null,
+          bank_account: null,
+          bank_name: null,
+          cccd: isDeptStaff ? e.cccd : null,
+          address: isDeptStaff ? e.address : null
+        };
+      }
+      return e;
+    });
 
     return res.json({
-      data: employees,
+      data: safeEmployees,
       pagination: {
         total,
         page: parseInt(page),
@@ -95,7 +111,7 @@ export const getAllEmployeesSimple = async (req, res) => {
   }
 };
 
-// Chi tiết 1 nhân viên
+// Chi tiết 1 nhân viên (Bảo mật lương tuyệt đối)
 export const getEmployeeById = async (req, res) => {
   try {
     const emp = await query.get(`
@@ -114,14 +130,23 @@ export const getEmployeeById = async (req, res) => {
 
     if (!emp) return res.status(404).json({ message: 'Nhân viên không tồn tại.' });
 
-    // Phân quyền: nhân viên chỉ xem chính mình
-    if (req.user.roleName === 'EMPLOYEE' && emp.id !== req.user.employeeId) {
-      return res.status(403).json({ message: 'Bạn không có quyền xem hồ sơ này.' });
-    }
+    const isFullAdmin = req.user.roleName === 'ADMIN' || req.user.roleName === 'HR';
+    const isSelf = req.user.employeeId && emp.id === req.user.employeeId;
+    const isDeptStaff = req.user.roleName === 'MANAGER' && (emp.department_id === req.user.departmentId);
 
-    // Trưởng phòng chỉ xem nhân viên cùng phòng
-    if (req.user.roleName === 'MANAGER' && emp.department_id !== req.user.departmentId) {
-      return res.status(403).json({ message: 'Bạn không có quyền xem hồ sơ nhân viên phòng ban khác.' });
+    // Nếu không phải ADMIN và không phải chính mình: Ẩn tuyệt đối các trường bảo mật lương
+    if (!isFullAdmin && !isSelf) {
+      emp.tier_salary = null;
+      emp.grade_salary = null;
+      emp.base_salary = null;
+      emp.allowance = null;
+      emp.kpi_bonus = null;
+      emp.bank_account = null;
+      emp.bank_name = null;
+      if (!isDeptStaff) {
+        emp.cccd = null;
+        emp.address = null;
+      }
     }
 
     return res.json(emp);

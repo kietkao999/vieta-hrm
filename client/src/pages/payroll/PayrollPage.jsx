@@ -251,9 +251,13 @@ const PayrollPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 print:hidden">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Bảng Lương</h2>
+          <h2 className="text-xl font-bold text-slate-800">
+            {isAdmin ? 'Quản Lý Bảng Lương' : 'Phiếu Lương Cá Nhân'}
+          </h2>
           <p className="text-xs text-slate-500">
-            Quản lý bảng lương, tính toán tự động theo công thức chuẩn và xuất phiếu lương
+            {isAdmin
+              ? 'Quản lý bảng lương toàn công ty, tính toán tự động và duyệt chi trả'
+              : 'Tra cứu chi tiết thu nhập, lương cơ sở, KPI và phụ cấp cá nhân theo từng tháng'}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -261,7 +265,7 @@ const PayrollPage = () => {
             <button
               onClick={handleGeneratePayroll}
               disabled={isGenerating}
-              className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 shadow-sm transition disabled:opacity-50"
+              className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Calculator size={16} />
               <span>{isGenerating ? 'Đang tính toán...' : `Tính Lương Tháng ${month}/${year}`}</span>
