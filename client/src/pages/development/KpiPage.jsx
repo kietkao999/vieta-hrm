@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -17,8 +18,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
-  Percent
+  Percent,
+  BarChart3,
+  FileSpreadsheet
 } from 'lucide-react';
+import KpiPerformanceReport from './KpiPerformanceReport';
 
 const formatCurrency = (val) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
@@ -38,6 +42,10 @@ const RESPONSIBILITY_RATE_OPTIONS = [
 
 const KpiPage = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'report_7m';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const isAdminOrHR = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
   const canEdit = isAdminOrHR || user?.roleName === 'MANAGER';
 
@@ -383,58 +391,95 @@ const KpiPage = () => {
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-700 flex items-center justify-center font-bold">
-              <TrendingUp size={22} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Quản lý KPI Tháng</h2>
-              <p className="text-xs text-slate-500">
-                Quản lý tỷ lệ đạt KPI trách nhiệm và thưởng hiệu quả phục vụ tính lương
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Main Tab Navigation */}
+      <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
+        <button
+          onClick={() => {
+            setActiveTab('report_7m');
+            setSearchParams({ tab: 'report_7m' });
+          }}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${
+            activeTab === 'report_7m'
+              ? 'bg-brand-700 text-white shadow-brand-700/20 shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
+          }`}
+        >
+          <BarChart3 size={18} />
+          <span>Báo Cáo Tổng Hợp KPI & Hiệu Quả (T1 - T7)</span>
+        </button>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {isAdminOrHR && (
-            <button
-              onClick={handleInitMonth}
-              disabled={initializing || loading}
-              className="inline-flex items-center space-x-2 rounded-lg bg-white border border-slate-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm transition-all disabled:opacity-50"
-              title="Tải toàn bộ nhân viên đang làm việc và gán mặc định 100% KPI Trách nhiệm theo Tầng"
-            >
-              <RefreshCw size={15} className={initializing ? 'animate-spin text-brand-600' : 'text-slate-500'} />
-              <span>{initializing ? 'Đang khởi tạo...' : 'Khởi tạo dữ liệu tháng này'}</span>
-            </button>
-          )}
-
-          {canEdit && (
-            <button
-              onClick={handleSaveBulk}
-              disabled={saving || loading}
-              className={`inline-flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow transition-all ${
-                modifiedCount > 0
-                  ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-400/50'
-                  : 'bg-brand-700 hover:bg-brand-800'
-              } disabled:opacity-50`}
-            >
-              <Save size={16} />
-              <span>{saving ? 'Đang lưu...' : modifiedCount > 0 ? `Lưu thay đổi (${modifiedCount})` : 'Lưu dữ liệu tháng'}</span>
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => {
+            setActiveTab('monthly');
+            setSearchParams({ tab: 'monthly' });
+          }}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${
+            activeTab === 'monthly'
+              ? 'bg-brand-700 text-white shadow-brand-700/20 shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200'
+          }`}
+        >
+          <TrendingUp size={18} />
+          <span>Đánh Giá KPI Tháng</span>
+        </button>
       </div>
 
-      {/* Summary KPI Statistic Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng nhân sự KPI</span>
+      {activeTab === 'report_7m' ? (
+        <KpiPerformanceReport />
+      ) : (
+        <>
+          {/* Header Bar */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-700 flex items-center justify-center font-bold">
+                  <TrendingUp size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Quản lý KPI Tháng</h2>
+                  <p className="text-xs text-slate-500">
+                    Quản lý tỷ lệ đạt KPI trách nhiệm và thưởng hiệu quả phục vụ tính lương
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdminOrHR && (
+                <button
+                  onClick={handleInitMonth}
+                  disabled={initializing || loading}
+                  className="inline-flex items-center space-x-2 rounded-lg bg-white border border-slate-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm transition-all disabled:opacity-50"
+                  title="Tải toàn bộ nhân viên đang làm việc và gán mặc định 100% KPI Trách nhiệm theo Tầng"
+                >
+                  <RefreshCw size={15} className={initializing ? 'animate-spin text-brand-600' : 'text-slate-500'} />
+                  <span>{initializing ? 'Đang khởi tạo...' : 'Khởi tạo dữ liệu tháng này'}</span>
+                </button>
+              )}
+
+              {canEdit && (
+                <button
+                  onClick={handleSaveBulk}
+                  disabled={saving || loading}
+                  className={`inline-flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow transition-all ${
+                    modifiedCount > 0
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-400/50'
+                      : 'bg-brand-700 hover:bg-brand-800'
+                  } disabled:opacity-50`}
+                >
+                  <Save size={16} />
+                  <span>{saving ? 'Đang lưu...' : modifiedCount > 0 ? `Lưu thay đổi (${modifiedCount})` : 'Lưu dữ liệu tháng'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Summary KPI Statistic Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng nhân sự KPI</span>
             <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
               <Users size={16} />
             </div>
@@ -993,6 +1038,8 @@ const KpiPage = () => {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
