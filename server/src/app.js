@@ -64,7 +64,7 @@ app.use('/api/reports', reportRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ status: 'ok', version: '1.0.1', time: new Date().toISOString() });
 });
 
 // Phục vụ frontend build static files
