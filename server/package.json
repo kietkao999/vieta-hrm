@@ -1,6 +1,6 @@
 {
   "name": "viet-a-hrm-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "HRM Server for Viet A Company",
   "main": "server.js",
   "type": "module",

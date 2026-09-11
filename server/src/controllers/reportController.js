@@ -1,27 +1,30 @@
 import { query } from '../config/database.js';
 import XLSX from 'xlsx';
 
+// Helper tạo điều kiện lọc theo phòng ban
+const getDeptFilterClause = async (department_id) => {
+  if (!department_id || department_id === 'all') {
+    return { deptFilter: '', deptParams: [], deptInfo: null };
+  }
+  const deptInfo = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+  const dId = deptInfo ? deptInfo.id : department_id;
+  const dName = deptInfo ? deptInfo.name : department_id;
+  const deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.id = ? OR d.name = ?)`;
+  const deptParams = [dId, dName, dId, dName];
+  return { deptFilter, deptParams, deptInfo };
+};
+
 // Báo cáo tổng quan nhân sự
 export const getSummaryReport = async (req, res) => {
   try {
     const { department_id } = req.query;
-    let deptFilter = '';
-    let deptParams = [];
-    let deptInfo = null;
-
-    if (department_id && department_id !== 'all') {
-      deptInfo = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-      const dId = deptInfo ? deptInfo.id : department_id;
-      const dName = deptInfo ? deptInfo.name : department_id;
-      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
-      deptParams = [dId, dName, dName];
-    }
+    const { deptFilter, deptParams, deptInfo } = await getDeptFilterClause(department_id);
 
     // Tổng nhân sự theo trạng thái
     const statusStats = await query.all(`
       SELECT e.status, COUNT(*) as count 
       FROM employees e
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE 1=1 ${deptFilter}
       GROUP BY e.status
     `, deptParams);
@@ -41,7 +44,7 @@ export const getSummaryReport = async (req, res) => {
       SELECT b.name as branch_name, COUNT(e.id) as count
       FROM branches b
       LEFT JOIN employees e ON e.branch_id = b.id AND e.status = 'Đang làm việc'
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE 1=1 ${deptFilter}
       GROUP BY b.id, b.name
       ORDER BY count DESC
@@ -51,7 +54,7 @@ export const getSummaryReport = async (req, res) => {
     const genderStats = await query.all(`
       SELECT e.gender, COUNT(*) as count 
       FROM employees e 
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE e.status = 'Đang làm việc' ${deptFilter}
       GROUP BY e.gender
     `, deptParams);
@@ -60,7 +63,7 @@ export const getSummaryReport = async (req, res) => {
     const seniorityAvg = await query.get(`
       SELECT AVG(CAST((julianday('now') - julianday(e.join_date)) / 365.25 AS REAL)) as avg_years
       FROM employees e 
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE e.status = 'Đang làm việc' AND e.join_date IS NOT NULL ${deptFilter}
     `, deptParams);
 
@@ -68,7 +71,7 @@ export const getSummaryReport = async (req, res) => {
     const totalActive = await query.get(`
       SELECT COUNT(*) as count 
       FROM employees e 
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE e.status = 'Đang làm việc' ${deptFilter}
     `, deptParams);
 
@@ -77,7 +80,7 @@ export const getSummaryReport = async (req, res) => {
       SELECT c.*, e.fullname, e.code as employee_code
       FROM contracts c
       JOIN employees e ON c.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE c.status = 'Hiệu lực' 
         AND c.end_date IS NOT NULL
         AND julianday(c.end_date) - julianday('now') BETWEEN 0 AND 30
@@ -123,15 +126,7 @@ export const getPayrollReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
-    let deptFilter = '';
-    let deptParams = [];
-    if (department_id && department_id !== 'all') {
-      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-      const dId = dept ? dept.id : department_id;
-      const dName = dept ? dept.name : department_id;
-      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
-      deptParams = [dId, dName, dName];
-    }
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
     // Tổng quỹ lương theo từng tháng được chọn
     const monthlyPayroll = await query.all(`
@@ -144,7 +139,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(DISTINCT p.employee_id) as employee_count
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.month
       ORDER BY p.month ASC
@@ -160,7 +155,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(p.id) as total_records
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
     `, [targetYear, ...allMatches, ...deptParams]);
 
@@ -172,7 +167,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(p.id) as months_counted
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.employee_id
       ORDER BY net_salary DESC
@@ -213,23 +208,14 @@ export const getAttendanceReport = async (req, res) => {
     }
 
     const monthClauses = selectedMonths.map(m => `a.date LIKE '${targetYear}-${m}%'`).join(' OR ') || '1=0';
-
-    let deptFilter = '';
-    let deptParams = [];
-    if (department_id && department_id !== 'all') {
-      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-      const dId = dept ? dept.id : department_id;
-      const dName = dept ? dept.name : department_id;
-      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
-      deptParams = [dId, dName, dName];
-    }
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
     // Tổng quan chấm công theo trạng thái
     const statusSummary = await query.all(`
       SELECT a.status, COUNT(*) as count
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE (${monthClauses}) ${deptFilter}
       GROUP BY a.status
     `, deptParams);
@@ -239,7 +225,7 @@ export const getAttendanceReport = async (req, res) => {
       SELECT e.fullname, e.code, COUNT(*) as late_count, SUM(a.late_minutes) as total_late_minutes
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE (${monthClauses}) AND a.late_minutes > 0 ${deptFilter}
       GROUP BY a.employee_id
       ORDER BY late_count DESC
@@ -250,7 +236,7 @@ export const getAttendanceReport = async (req, res) => {
       SELECT SUM(a.ot_hours) as total_ot, COUNT(DISTINCT a.employee_id) as ot_employees
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE (${monthClauses}) AND a.ot_hours > 0 ${deptFilter}
     `, deptParams);
 
@@ -259,7 +245,7 @@ export const getAttendanceReport = async (req, res) => {
       SELECT COUNT(*) as total_days, COUNT(DISTINCT a.employee_id) as total_employees
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE (${monthClauses}) AND (a.status = 'Đúng giờ' OR a.status = 'Đi trễ') ${deptFilter}
     `, deptParams);
 
@@ -302,21 +288,13 @@ export const getKpiReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
-    let deptFilter = '';
-    let deptParams = [];
-    if (department_id && department_id !== 'all') {
-      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-      const dId = dept ? dept.id : department_id;
-      const dName = dept ? dept.name : department_id;
-      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
-      deptParams = [dId, dName, dName];
-    }
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
     // Thống kê tổng hợp KPI
     const totalActive = await query.get(
       `SELECT COUNT(*) as count 
        FROM employees e 
-       LEFT JOIN departments d ON e.department_id = d.id 
+       LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name) 
        WHERE e.status != 'Đã nghỉ việc' ${deptFilter}`,
       deptParams
     );
@@ -326,7 +304,7 @@ export const getKpiReport = async (req, res) => {
               (MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_payout
        FROM employee_monthly_kpis k
        JOIN employees e ON k.employee_id = e.id
-       LEFT JOIN departments d ON e.department_id = d.id
+       LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
        WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
        ORDER BY total_payout DESC`,
       [targetYear, ...allMatches, ...deptParams]
@@ -350,7 +328,7 @@ export const getKpiReport = async (req, res) => {
              100 as avg_percent
       FROM employee_monthly_kpis k
       JOIN employees e ON k.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
       GROUP BY d.id, d.name
       ORDER BY total_dept_payout DESC
@@ -429,15 +407,7 @@ export const exportReportExcel = async (req, res) => {
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
 
-    let deptFilter = '';
-    let deptParams = [];
-    if (department_id && department_id !== 'all') {
-      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-      const dId = dept ? dept.id : department_id;
-      const dName = dept ? dept.name : department_id;
-      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
-      deptParams = [dId, dName, dName];
-    }
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
     const wb = XLSX.utils.book_new();
 
@@ -448,7 +418,7 @@ export const exportReportExcel = async (req, res) => {
                d.name as department_name, pos.name as position_name, b.name as branch_name
         FROM payrolls p
         JOIN employees e ON p.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
         LEFT JOIN positions pos ON e.position_id = pos.id
         LEFT JOIN branches b ON e.branch_id = b.id
         WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
@@ -504,7 +474,7 @@ export const exportReportExcel = async (req, res) => {
                d.name as department_name, pos.name as position_name
         FROM employee_monthly_kpis k
         JOIN employees e ON k.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
         LEFT JOIN positions pos ON e.position_id = pos.id
         WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
         ORDER BY k.month ASC, d.name ASC, e.code ASC
@@ -552,7 +522,7 @@ export const exportReportExcel = async (req, res) => {
                COUNT(a.id) as total_attendance_logs
         FROM attendance a
         JOIN employees e ON a.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
         LEFT JOIN positions pos ON e.position_id = pos.id
         WHERE strftime('%Y', a.date) = ? AND strftime('%m', a.date) IN (${monthList.map(() => '?').join(',')}) ${deptFilter}
         GROUP BY a.employee_id, strftime('%m', a.date)
@@ -589,13 +559,13 @@ export const exportReportExcel = async (req, res) => {
       const empSql = `
         SELECT e.*, d.name as department_name, pos.name as position_name, b.name as branch_name
         FROM employees e
-        LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
         LEFT JOIN positions pos ON e.position_id = pos.id
         LEFT JOIN branches b ON e.branch_id = b.id
-        WHERE e.status != 'Đã nghỉ việc'
+        WHERE e.status != 'Đã nghỉ việc' ${deptFilter}
         ORDER BY d.name ASC, e.code ASC
       `;
-      const employees = await query.all(empSql);
+      const employees = await query.all(empSql, deptParams);
 
       const empFormatted = employees.map((e, idx) => ({
         'STT': idx + 1,
