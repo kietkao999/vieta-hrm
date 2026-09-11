@@ -28,6 +28,14 @@ const formatNumber = (val) => {
   return new Intl.NumberFormat('vi-VN').format(val || 0);
 };
 
+const formatInputNumber = (val) => {
+  if (val === '' || val === null || val === undefined) return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (clean === '') return '';
+  const num = parseInt(clean, 10);
+  return new Intl.NumberFormat('vi-VN').format(num);
+};
+
 const RESPONSIBILITY_RATE_OPTIONS = [
   { value: 1.0, label: '100% (Đạt 4/4 KPI)', shortLabel: '100% (4/4 KPI)', color: 'text-emerald-700' },
   { value: 0.75, label: '75% (Đạt 3/4 KPI)', shortLabel: '75% (3/4 KPI)', color: 'text-blue-700' },
@@ -727,12 +735,14 @@ const KpiPage = () => {
                       <td className="px-3 py-2 text-right bg-blue-50/20">
                         {canEdit ? (
                           <input
-                            type="number"
-                            min="0"
-                            step="50000"
-                            value={item.responsibility_bonus !== undefined && item.responsibility_bonus !== '' ? item.responsibility_bonus : ''}
-                            onChange={e => handleInlineChange(item.employee_id, 'responsibility_bonus', e.target.value)}
-                            className="w-28 text-right font-semibold text-blue-900 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            type="text"
+                            value={item.responsibility_bonus !== undefined && item.responsibility_bonus !== '' ? formatInputNumber(item.responsibility_bonus) : ''}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/\D/g, '');
+                              handleInlineChange(item.employee_id, 'responsibility_bonus', raw);
+                            }}
+                            className="w-28 text-right font-bold text-blue-900 border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            placeholder="0"
                           />
                         ) : (
                           <span className="font-semibold text-blue-900 text-xs">
@@ -778,12 +788,14 @@ const KpiPage = () => {
                       <td className="px-3 py-2 text-right bg-amber-50/20">
                         {canEdit ? (
                           <input
-                            type="number"
-                            min="0"
-                            step="50000"
-                            value={item.performance_bonus !== undefined && item.performance_bonus !== '' ? item.performance_bonus : ''}
-                            onChange={e => handleInlineChange(item.employee_id, 'performance_bonus', e.target.value)}
-                            className="w-28 text-right font-semibold text-amber-900 border border-slate-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            type="text"
+                            value={item.performance_bonus !== undefined && item.performance_bonus !== '' ? formatInputNumber(item.performance_bonus) : ''}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/\D/g, '');
+                              handleInlineChange(item.employee_id, 'performance_bonus', raw);
+                            }}
+                            className="w-28 text-right font-bold text-amber-900 border border-slate-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-400 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            placeholder="0"
                           />
                         ) : (
                           <span className="font-semibold text-amber-900 text-xs">
@@ -796,12 +808,14 @@ const KpiPage = () => {
                       <td className="px-3 py-2 text-right bg-amber-50/20">
                         {canEdit ? (
                           <input
-                            type="number"
-                            min="0"
-                            step="50000"
-                            value={item.discipline_deduction !== undefined && item.discipline_deduction !== '' ? item.discipline_deduction : ''}
-                            onChange={e => handleInlineChange(item.employee_id, 'discipline_deduction', e.target.value)}
-                            className="w-24 text-right font-semibold text-red-600 border border-slate-200 focus:border-red-400 focus:ring-1 focus:ring-red-300 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            type="text"
+                            value={item.discipline_deduction !== undefined && item.discipline_deduction !== '' ? formatInputNumber(item.discipline_deduction) : ''}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/\D/g, '');
+                              handleInlineChange(item.employee_id, 'discipline_deduction', raw);
+                            }}
+                            className="w-24 text-right font-bold text-red-600 border border-slate-200 focus:border-red-400 focus:ring-1 focus:ring-red-300 rounded-md px-2 py-1 text-xs outline-none bg-white shadow-sm"
+                            placeholder="0"
                           />
                         ) : (
                           <span className="font-semibold text-red-600 text-xs">
@@ -880,15 +894,15 @@ const KpiPage = () => {
                       Thưởng trách nhiệm định mức (VND)
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      step="50000"
+                      type="text"
                       required
-                      value={modalForm.responsibility_bonus}
-                      onChange={e =>
-                        setModalForm({ ...modalForm, responsibility_bonus: Math.max(0, parseFloat(e.target.value) || 0) })
-                      }
+                      value={formatInputNumber(modalForm.responsibility_bonus)}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setModalForm({ ...modalForm, responsibility_bonus: raw === '' ? 0 : parseInt(raw, 10) });
+                      }}
                       className="w-full border border-blue-300 rounded-lg p-2.5 text-sm font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                      placeholder="0"
                     />
                   </div>
 
@@ -901,8 +915,8 @@ const KpiPage = () => {
                         type="number"
                         min="0"
                         max="100"
-                        step="1"
-                        value={modalForm.raw_rate !== undefined ? modalForm.raw_rate : Math.round((modalForm.responsibility_rate !== undefined ? modalForm.responsibility_rate : 1.0) * 100)}
+                        step="0.01"
+                        value={modalForm.raw_rate !== undefined ? modalForm.raw_rate : (modalForm.responsibility_rate !== undefined ? (Math.round(modalForm.responsibility_rate * 10000) / 100) : 100)}
                         onChange={e => {
                           const raw = e.target.value;
                           const val = raw === '' ? 0 : Math.min(100, Math.max(0, parseFloat(raw) || 0));
@@ -937,14 +951,14 @@ const KpiPage = () => {
                       Thưởng hiệu quả cá nhân (VND)
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      step="50000"
-                      value={modalForm.performance_bonus}
-                      onChange={e =>
-                        setModalForm({ ...modalForm, performance_bonus: Math.max(0, parseFloat(e.target.value) || 0) })
-                      }
+                      type="text"
+                      value={formatInputNumber(modalForm.performance_bonus)}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setModalForm({ ...modalForm, performance_bonus: raw === '' ? 0 : parseInt(raw, 10) });
+                      }}
                       className="w-full border border-amber-300 rounded-lg p-2.5 text-sm font-bold text-amber-900 outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                      placeholder="0"
                     />
                   </div>
 
@@ -953,14 +967,14 @@ const KpiPage = () => {
                       Trừ vi phạm hiệu quả / Kỷ luật (VND)
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      step="50000"
-                      value={modalForm.discipline_deduction}
-                      onChange={e =>
-                        setModalForm({ ...modalForm, discipline_deduction: Math.max(0, parseFloat(e.target.value) || 0) })
-                      }
+                      type="text"
+                      value={formatInputNumber(modalForm.discipline_deduction)}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        setModalForm({ ...modalForm, discipline_deduction: raw === '' ? 0 : parseInt(raw, 10) });
+                      }}
                       className="w-full border border-red-200 rounded-lg p-2.5 text-sm font-bold text-red-600 outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                      placeholder="0"
                     />
                   </div>
                 </div>

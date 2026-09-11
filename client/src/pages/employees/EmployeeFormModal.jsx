@@ -14,6 +14,14 @@ const TIER_OPTIONS = [
 
 const GRADE_OPTIONS = Array.from({ length: 21 }, (_, i) => `Bậc ${i}`);
 
+const formatInputNumber = (val) => {
+  if (val === '' || val === null || val === undefined) return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (clean === '') return '';
+  const num = parseInt(clean, 10);
+  return new Intl.NumberFormat('vi-VN').format(num);
+};
+
 const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     code: '',
@@ -331,23 +339,73 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Lương theo tầng (VND)</label>
-                <input type="number" step="50000" name="tier_salary" value={formData.tier_salary} onChange={handleChange} placeholder="VD: 8000000" className="w-full border rounded-lg p-2 text-xs font-bold text-slate-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none" />
+                <input
+                  type="text"
+                  name="tier_salary"
+                  value={formatInputNumber(formData.tier_salary)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    handleChange({ target: { name: 'tier_salary', value: raw } });
+                  }}
+                  placeholder="VD: 8.000.000"
+                  className="w-full border rounded-lg p-2 text-xs font-bold text-slate-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Lương theo bậc (VND)</label>
-                <input type="number" step="50000" name="grade_salary" value={formData.grade_salary} onChange={handleChange} placeholder="VD: 1500000" className="w-full border rounded-lg p-2 text-xs font-bold text-slate-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none" />
+                <input
+                  type="text"
+                  name="grade_salary"
+                  value={formatInputNumber(formData.grade_salary)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    handleChange({ target: { name: 'grade_salary', value: raw } });
+                  }}
+                  placeholder="VD: 1.200.000"
+                  className="w-full border rounded-lg p-2 text-xs font-bold text-slate-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Tổng Lương cơ bản (VND)</label>
-                <input type="number" step="50000" name="base_salary" value={formData.base_salary} onChange={handleChange} placeholder="VD: 9500000" className="w-full border rounded-lg p-2 text-xs font-bold text-emerald-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none" />
+                <input
+                  type="text"
+                  name="base_salary"
+                  value={formatInputNumber(formData.base_salary)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    handleChange({ target: { name: 'base_salary', value: raw } });
+                  }}
+                  placeholder="VD: 9.200.000"
+                  className="w-full border rounded-lg p-2 text-xs font-bold text-emerald-800 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Định mức Thưởng KPI Trách nhiệm (VND)</label>
-                <input type="number" step="50000" name="kpi_bonus" value={formData.kpi_bonus} onChange={handleChange} placeholder="VD: 2500000" className="w-full border border-blue-300 rounded-lg p-2 text-xs font-bold text-blue-800 mt-1 bg-white focus:ring-2 focus:ring-blue-400 outline-none" />
+                <input
+                  type="text"
+                  name="kpi_bonus"
+                  value={formatInputNumber(formData.kpi_bonus)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    handleChange({ target: { name: 'kpi_bonus', value: raw } });
+                  }}
+                  placeholder="VD: 2.000.000"
+                  className="w-full border border-blue-300 rounded-lg p-2 text-xs font-bold text-blue-800 mt-1 bg-white focus:ring-2 focus:ring-blue-400 outline-none"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Phụ cấp khác (VND)</label>
-                <input type="number" step="50000" name="allowance" value={formData.allowance} onChange={handleChange} placeholder="0" className="w-full border rounded-lg p-2 text-xs mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none" />
+                <input
+                  type="text"
+                  name="allowance"
+                  value={formatInputNumber(formData.allowance)}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    handleChange({ target: { name: 'allowance', value: raw } });
+                  }}
+                  placeholder="0"
+                  className="w-full border rounded-lg p-2 text-xs font-bold text-slate-700 mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="text-xs font-semibold text-slate-600">Ghi chú bổ sung</label>

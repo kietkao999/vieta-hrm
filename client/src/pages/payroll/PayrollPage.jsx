@@ -348,15 +348,35 @@ const PayrollPage = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Lương theo tầng (VNĐ)</label>
-                      <input type="number" required value={editForm.tier_salary} onChange={e => setEditForm({...editForm, tier_salary: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500" />
+                      <input
+                        type="text"
+                        required
+                        value={formatInputNumber(editForm.tier_salary)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({...editForm, tier_salary: raw === '' ? 0 : parseInt(raw, 10)});
+                        }}
+                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 font-bold"
+                        placeholder="0"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Lương theo bậc (VNĐ)</label>
-                      <input type="number" required value={editForm.grade_salary} onChange={e => setEditForm({...editForm, grade_salary: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500" />
+                      <input
+                        type="text"
+                        required
+                        value={formatInputNumber(editForm.grade_salary)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({...editForm, grade_salary: raw === '' ? 0 : parseInt(raw, 10)});
+                        }}
+                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 font-bold"
+                        placeholder="0"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Định mức KPI Trách nhiệm (Cố định)</label>
-                      <input type="number" disabled value={editForm.responsibility_quota} className="w-full border rounded-lg p-2 text-sm mt-1 bg-slate-100 text-slate-500 outline-none" />
+                      <input type="text" disabled value={formatVND(editForm.responsibility_quota)} className="w-full border rounded-lg p-2 text-sm mt-1 bg-slate-100 text-slate-500 outline-none font-semibold" />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">% Đạt KPI Trách nhiệm</label>
@@ -365,7 +385,7 @@ const PayrollPage = () => {
                           type="number"
                           min="0"
                           max="100"
-                          step="1"
+                          step="0.01"
                           value={Math.round((1 - (parseFloat(editForm.responsibility_deduction_rate) || 0)) * 100)}
                           onChange={e => {
                             const val = e.target.value === '' ? 0 : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
@@ -400,15 +420,45 @@ const PayrollPage = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Thưởng hiệu quả (VNĐ)</label>
-                      <input type="number" required value={editForm.performance_bonus} onChange={e => setEditForm({...editForm, performance_bonus: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500" />
+                      <input
+                        type="text"
+                        required
+                        value={formatInputNumber(editForm.performance_bonus)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({...editForm, performance_bonus: raw === '' ? 0 : parseInt(raw, 10)});
+                        }}
+                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 font-bold text-emerald-800"
+                        placeholder="0"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Khấu trừ vi phạm nội quy (VNĐ)</label>
-                      <input type="number" required value={editForm.discipline_deduction} onChange={e => setEditForm({...editForm, discipline_deduction: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500" />
+                      <input
+                        type="text"
+                        required
+                        value={formatInputNumber(editForm.discipline_deduction)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({...editForm, discipline_deduction: raw === '' ? 0 : parseInt(raw, 10)});
+                        }}
+                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 font-bold text-red-600"
+                        placeholder="0"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Khấu trừ khác (BHXH, tạm ứng...) (VNĐ)</label>
-                      <input type="number" required value={editForm.other_deductions} onChange={e => setEditForm({...editForm, other_deductions: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500" />
+                      <input
+                        type="text"
+                        required
+                        value={formatInputNumber(editForm.other_deductions)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({...editForm, other_deductions: raw === '' ? 0 : parseInt(raw, 10)});
+                        }}
+                        className="w-full border rounded-lg p-2 text-sm mt-1 outline-none focus:border-brand-500 font-bold text-red-600"
+                        placeholder="0"
+                      />
                     </div>
                   </div>
                 </div>
