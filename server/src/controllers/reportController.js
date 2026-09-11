@@ -338,12 +338,17 @@ export const exportReportExcel = async (req, res) => {
     if (months) {
       monthList = months.split(',').map(m => m.trim().padStart(2, '0'));
     } else {
-      const startM = Math.min(Math.max(1, parseInt(fromMonth || 1, 10)), 12);
-      const endM = Math.min(Math.max(startM, parseInt(toMonth || startM, 10)), 12);
-      for (let i = startM; i <= endM; i++) {
+      const sM = Math.min(Math.max(1, parseInt(fromMonth || 1, 10)), 12);
+      const eM = Math.min(Math.max(sM, parseInt(toMonth || sM, 10)), 12);
+      for (let i = sM; i <= eM; i++) {
         monthList.push(i.toString().padStart(2, '0'));
       }
     }
+
+    const sortedMonthNums = [...monthList].map(Number).sort((a, b) => a - b);
+    const startM = sortedMonthNums[0] || 1;
+    const endM = sortedMonthNums[sortedMonthNums.length - 1] || 1;
+
     const monthListRaw = monthList.map(m => parseInt(m, 10).toString());
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
@@ -471,7 +476,7 @@ export const exportReportExcel = async (req, res) => {
         'Tổng Lượt Ghi Nhận': a.total_attendance_logs || 0
       }));
 
-      const wsAtt = XLSX.utils.json_to_sheet(attFormatted.length > 0 ? attFormatted : [{ 'Thông báo': `Chưa có dữ liệu chấm công từ Tháng ${startM} đến Tháng ${endM} năm ${targetYear}` }]);
+      const wsAtt = XLSX.utils.json_to_sheet(attFormatted.length > 0 ? attFormatted : [{ 'Thông báo': `Chưa có dữ liệu chấm công trong các tháng đã chọn năm ${targetYear}` }]);
       wsAtt['!cols'] = [
         { wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 22 }, { wch: 20 },
         { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 20 }, { wch: 18 },
@@ -529,14 +534,21 @@ export const exportReportExcel = async (req, res) => {
     else if (reportType === 'attendance') filePrefix = 'Bao_Cao_Cham_Cong_Viet_A';
     else if (reportType === 'summary') filePrefix = 'Danh_Sach_Nhan_Su_Viet_A';
 
-    let timeRangeStr = `Thang${startM.toString().padStart(2, '0')}_${targetYear}`;
-    if (startM !== endM) {
-      timeRangeStr = `Thang${startM.toString().padStart(2, '0')}_den_Thang${endM.toString().padStart(2, '0')}_${targetYear}`;
+    let timeRangeStr = '';
+    if (sortedMonthNums.length === 1) {
+      timeRangeStr = `Thang${String(startM).padStart(2, '0')}_${targetYear}`;
+    } else if (sortedMonthNums.length === 12) {
+      timeRangeStr = `Ca_Nam_${targetYear}`;
+    } else if (endM - startM === sortedMonthNums.length - 1) {
+      timeRangeStr = `Thang${String(startM).padStart(2, '0')}_den_Thang${String(endM).padStart(2, '0')}_${targetYear}`;
+    } else {
+      timeRangeStr = `${sortedMonthNums.length}Thang_${sortedMonthNums.map(m => `T${m}`).join('_')}_${targetYear}`;
     }
 
     const fileName = `${filePrefix}_${timeRangeStr}.xlsx`;
 
-    res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(fileName)}`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     return res.send(buffer);
   } catch (error) {
