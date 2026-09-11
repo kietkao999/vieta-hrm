@@ -84,7 +84,9 @@ export const getKpis = async (req, res) => {
       const respRate = item.responsibility_rate !== undefined && item.responsibility_rate !== null 
         ? parseFloat(item.responsibility_rate) 
         : 1.0;
-      const respAmount = Math.round(respBonus * respRate);
+      const respAmount = item.kpi_id && item.responsibility_amount !== null && item.responsibility_amount !== undefined
+        ? parseFloat(item.responsibility_amount)
+        : Math.round(respBonus * respRate);
       
       const perfBonus = parseFloat(item.performance_bonus) || 0;
       const discDeduction = parseFloat(item.discipline_deduction) || 0;

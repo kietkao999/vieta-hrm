@@ -905,7 +905,7 @@ export const danhSachNhanVienVaKPI = [
     "Lương cơ bản": 7700000,
     "Bậc": 3,
     "Phụ cấp": 0,
-    "Thưởng KPI": 2000000,
+    "Thưởng KPI": 1000000,
     "Ghi chú": "",
     "KPI T5": 0,
     "Tỷ lệ T5": 0,
