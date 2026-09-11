@@ -81,6 +81,10 @@ export async function runMigration() {
       const status = item["Trạng thái"] || 'Đang làm việc';
       const contractType = item["Loại hợp đồng"] || 'Không xác định thời hạn';
       const baseSalary = Number(item["Lương cơ bản"]) || 0;
+      const bac = Number(item["Bậc"]) || 0;
+      const gradeSalary = bac * 400000;
+      const tierSalary = baseSalary;
+      const totalBaseSalary = tierSalary + gradeSalary;
       const allowance = Number(item["Phụ cấp"]) || 0;
       const kpiBonus = Number(item["Thưởng KPI"]) || 0;
 
@@ -93,9 +97,9 @@ export async function runMigration() {
           code, fullname, gender, dob, phone, cccd, email, address,
           branch_id, department_id, position_id, join_date,
           status, contract_type, base_salary, allowance, kpi_bonus,
-          tier_salary, grade_salary,
+          tier, grade, tier_salary, grade_salary,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(code) DO UPDATE SET
           fullname = excluded.fullname,
           gender = excluded.gender,
@@ -111,7 +115,10 @@ export async function runMigration() {
           status = excluded.status,
           contract_type = excluded.contract_type,
           base_salary = excluded.base_salary,
-          tier_salary = excluded.base_salary,
+          tier = excluded.tier,
+          grade = excluded.grade,
+          tier_salary = excluded.tier_salary,
+          grade_salary = excluded.grade_salary,
           allowance = excluded.allowance,
           kpi_bonus = excluded.kpi_bonus,
           updated_at = excluded.updated_at
@@ -132,11 +139,13 @@ export async function runMigration() {
         joinDate,
         status,
         contractType,
-        baseSalary,
+        totalBaseSalary,
         allowance,
         kpiBonus,
-        baseSalary,
-        0,
+        'Tầng tiêu chuẩn',
+        `Bậc ${bac}`,
+        tierSalary,
+        gradeSalary,
         now,
         now
       ]);
@@ -187,7 +196,7 @@ export async function runMigration() {
 
         const responsibilityNet = m.amount;
         const performanceNet = m.hq;
-        const netSalary = baseSalary + responsibilityNet + performanceNet;
+        const netSalary = tierSalary + gradeSalary + responsibilityNet + performanceNet;
 
         await query.run(`
           INSERT INTO payrolls (
@@ -196,9 +205,10 @@ export async function runMigration() {
             responsibility_quota, responsibility_deduction_rate, responsibility_net,
             performance_bonus, discipline_deduction, performance_net,
             other_deductions, net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, 2026, ?, 0, ?, ?, ?, ?, 0, ?, 0, ?, 'Đã chốt', ?, ?)
+          ) VALUES (?, ?, 2026, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, 'Đã chốt', ?, ?)
           ON CONFLICT(employee_id, month, year) DO UPDATE SET
             tier_salary = excluded.tier_salary,
+            grade_salary = excluded.grade_salary,
             responsibility_quota = excluded.responsibility_quota,
             responsibility_deduction_rate = excluded.responsibility_deduction_rate,
             responsibility_net = excluded.responsibility_net,
@@ -209,7 +219,8 @@ export async function runMigration() {
         `, [
           emp.id,
           m.month,
-          baseSalary,
+          tierSalary,
+          gradeSalary,
           m.quota,
           1 - m.rate,
           responsibilityNet,

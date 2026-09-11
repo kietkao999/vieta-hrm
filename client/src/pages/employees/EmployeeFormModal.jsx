@@ -12,17 +12,7 @@ const TIER_OPTIONS = [
   'Tầng 7 - Ban Tổng Giám đốc'
 ];
 
-const GRADE_OPTIONS = [
-  'Bậc 0',
-  'Bậc 1',
-  'Bậc 2',
-  'Bậc 3',
-  'Bậc 4',
-  'Bậc 5',
-  'Bậc 6',
-  'Bậc 7',
-  'Bậc 8'
-];
+const GRADE_OPTIONS = Array.from({ length: 21 }, (_, i) => `Bậc ${i}`);
 
 const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -124,6 +114,17 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
     const { name, value } = e.target;
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
+
+      // Auto compute grade_salary if grade changes (mỗi bậc = 400.000 đ)
+      if (name === 'grade') {
+        const bacNum = parseInt(value.replace(/\D/g, '')) || 0;
+        const gSalary = bacNum * 400000;
+        updated.grade_salary = gSalary ? gSalary.toString() : '0';
+        const tSalary = parseFloat(prev.tier_salary) || 0;
+        if (tSalary || gSalary) {
+          updated.base_salary = (tSalary + gSalary).toString();
+        }
+      }
 
       // Auto compute base_salary if tier_salary or grade_salary is changed
       if (name === 'tier_salary' || name === 'grade_salary') {
@@ -316,9 +317,16 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600">Bậc chuyên môn</label>
+                <label className="text-xs font-semibold text-slate-600">Bậc chuyên môn (+400k/bậc)</label>
                 <select name="grade" value={formData.grade} onChange={handleChange} className="w-full border rounded-lg p-2 text-xs mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none font-semibold text-blue-900">
-                  {GRADE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                  {GRADE_OPTIONS.map(g => {
+                    const num = parseInt(g.replace(/\D/g, '')) || 0;
+                    return (
+                      <option key={g} value={g}>
+                        {g} {num > 0 ? `(+${(num * 400000).toLocaleString('vi-VN')} đ)` : '(0 đ)'}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>

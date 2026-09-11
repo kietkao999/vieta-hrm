@@ -187,17 +187,40 @@ const PayrollPage = () => {
       {success && <div className="rounded-lg bg-emerald-50 p-4 text-xs font-semibold text-emerald-700 print:hidden">{success}</div>}
       {error && <div className="rounded-lg bg-red-50 p-4 text-xs font-semibold text-red-700 print:hidden">{error}</div>}
 
+      {/* Month Tabs Bar (Tháng 1 -> Tháng 12) */}
+      <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between overflow-x-auto gap-1 print:hidden">
+        <div className="flex items-center space-x-1 min-w-max">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2 ml-1">Chọn tháng:</span>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+            const isSelected = month.toString() === m.toString();
+            return (
+              <button
+                key={m}
+                onClick={() => setMonth(m.toString())}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-300'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>Tháng {m < 10 ? `0${m}` : m}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 print:hidden">
         <div className="flex items-center space-x-2">
           <span className="text-sm font-semibold text-slate-700">Tháng</span>
-          <select value={month} onChange={e=>setMonth(e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none">
-            {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}</option>)}
+          <select value={month} onChange={e=>setMonth(e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none font-bold text-brand-700">
+            {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>Tháng {m}</option>)}
           </select>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-sm font-semibold text-slate-700">Năm</span>
-          <select value={year} onChange={e=>setYear(e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none">
+          <select value={year} onChange={e=>setYear(e.target.value)} className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none font-bold text-slate-700">
             {[currentYear - 1, currentYear, currentYear + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -214,7 +237,10 @@ const PayrollPage = () => {
                 <th className="px-4 py-3">Mã NV & Họ Tên</th>
                 <th className="px-4 py-3">Chức vụ / Tầng</th>
                 <th className="px-4 py-3 text-right">Lương theo Tầng</th>
-                <th className="px-4 py-3 text-right">Lương theo Bậc</th>
+                <th className="px-4 py-3 text-right">
+                  <div>Lương theo Bậc</div>
+                  <div className="text-[9px] font-normal text-blue-600 lowercase">(400.000 đ/bậc)</div>
+                </th>
                 <th className="px-4 py-3 text-right">KPI Trách nhiệm</th>
                 <th className="px-4 py-3 text-right">KPI Hiệu quả</th>
                 <th className="px-4 py-3 text-right">Khấu trừ khác</th>
@@ -240,7 +266,14 @@ const PayrollPage = () => {
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-600">{p.department_name}</td>
                   <td className="px-4 py-3 text-right text-slate-600 font-medium">{formatVND(p.tier_salary)}</td>
-                  <td className="px-4 py-3 text-right text-slate-600 font-medium">{formatVND(p.grade_salary)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="font-semibold text-slate-800">{formatVND(p.grade_salary)}</div>
+                    {p.employee_grade && (
+                      <div className="text-[10px] text-blue-600 font-semibold">
+                        {p.employee_grade}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="font-semibold text-emerald-600">{formatVND(p.responsibility_net)}</div>
                     <div className="text-[10px] text-slate-400">ĐM: {formatVND(p.responsibility_quota)} - {p.responsibility_deduction_rate * 100}%</div>
@@ -445,7 +478,12 @@ const PayrollPage = () => {
                     <span className="font-semibold text-slate-800">{formatVND(selectedPayroll.tier_salary)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Lương theo bậc</span>
+                    <div>
+                      <span className="text-slate-600">Lương theo bậc</span>
+                      {selectedPayroll.employee_grade && (
+                        <span className="text-xs text-blue-600 font-semibold ml-2">({selectedPayroll.employee_grade} × 400.000 đ)</span>
+                      )}
+                    </div>
                     <span className="font-semibold text-slate-800">{formatVND(selectedPayroll.grade_salary)}</span>
                   </div>
                 </div>
