@@ -12,6 +12,9 @@ const ReportPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('summary');
   const [loading, setLoading] = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+
   const [summaryData, setSummaryData] = useState(null);
   const [payrollData, setPayrollData] = useState(null);
   const [attendanceData, setAttendanceData] = useState(null);
@@ -35,9 +38,23 @@ const ReportPage = () => {
   const [exportFromMonth, setExportFromMonth] = useState('1');
   const [exportToMonth, setExportToMonth] = useState('7');
   const [exportSelectedMonths, setExportSelectedMonths] = useState(['1', '2', '3', '4', '5', '6', '7']);
+  const [exportDept, setExportDept] = useState('');
   const [exportYear, setExportYear] = useState('2026');
   const [exportType, setExportType] = useState('all'); // 'all' | 'payroll' | 'kpi' | 'attendance' | 'summary'
   const [isExporting, setIsExporting] = useState(false);
+
+  // Load Departments on mount
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const res = await api.get('/departments');
+        setDepartments(res.data || []);
+      } catch (err) {
+        console.error('Lỗi tải danh mục phòng ban:', err);
+      }
+    };
+    loadDepartments();
+  }, []);
 
   // Helper: Get active months query string
   const getActiveMonthsParam = () => {
@@ -52,25 +69,26 @@ const ReportPage = () => {
     setLoading(true);
     setError('');
     const monthsParam = getActiveMonthsParam();
+    const deptParam = selectedDepartment ? `&department_id=${encodeURIComponent(selectedDepartment)}` : '';
     try {
       switch (tab) {
         case 'summary': {
-          const res = await api.get('/reports/summary');
+          const res = await api.get(`/reports/summary?${deptParam.replace('&', '')}`);
           setSummaryData(res.data);
           break;
         }
         case 'payroll': {
-          const res = await api.get(`/reports/payroll?${monthsParam}&year=${year}`);
+          const res = await api.get(`/reports/payroll?${monthsParam}&year=${year}${deptParam}`);
           setPayrollData(res.data);
           break;
         }
         case 'attendance': {
-          const res = await api.get(`/reports/attendance?${monthsParam}&year=${year}`);
+          const res = await api.get(`/reports/attendance?${monthsParam}&year=${year}${deptParam}`);
           setAttendanceData(res.data);
           break;
         }
         case 'kpi': {
-          const res = await api.get(`/reports/kpi?${monthsParam}&year=${year}`);
+          const res = await api.get(`/reports/kpi?${monthsParam}&year=${year}${deptParam}`);
           setKpiData(res.data);
           break;
         }
@@ -84,7 +102,7 @@ const ReportPage = () => {
 
   useEffect(() => {
     fetchTabData(activeTab);
-  }, [activeTab, year, selectionMode, singleMonth, selectedMonths]);
+  }, [activeTab, year, selectionMode, singleMonth, selectedMonths, selectedDepartment]);
 
   const formatCurrency = (val) => val ? Number(val).toLocaleString('vi-VN') : '0';
 
@@ -107,31 +125,33 @@ const ReportPage = () => {
   const handleExportExcel = async (overrideParams = null) => {
     setIsExporting(true);
     try {
-      let url = `/reports/export?year=${exportYear}&reportType=${exportType}`;
+      const activeExportDept = overrideParams?.department_id !== undefined ? overrideParams.department_id : exportDept || selectedDepartment;
+      const deptQuery = activeExportDept ? `&department_id=${encodeURIComponent(activeExportDept)}` : '';
+      let url = `/reports/export?year=${exportYear}&reportType=${exportType}${deptQuery}`;
 
       if (overrideParams) {
         const pYear = overrideParams.year || year;
         const pType = overrideParams.reportType || 'all';
         if (overrideParams.months) {
-          url = `/reports/export?months=${overrideParams.months}&year=${pYear}&reportType=${pType}`;
+          url = `/reports/export?months=${overrideParams.months}&year=${pYear}&reportType=${pType}${deptQuery}`;
         } else if (overrideParams.fromMonth && overrideParams.toMonth) {
-          url = `/reports/export?fromMonth=${overrideParams.fromMonth}&toMonth=${overrideParams.toMonth}&year=${pYear}&reportType=${pType}`;
+          url = `/reports/export?fromMonth=${overrideParams.fromMonth}&toMonth=${overrideParams.toMonth}&year=${pYear}&reportType=${pType}${deptQuery}`;
         } else if (overrideParams.month) {
-          url = `/reports/export?fromMonth=${overrideParams.month}&toMonth=${overrideParams.month}&year=${pYear}&reportType=${pType}`;
+          url = `/reports/export?fromMonth=${overrideParams.month}&toMonth=${overrideParams.month}&year=${pYear}&reportType=${pType}${deptQuery}`;
         }
       } else {
         if (exportMode === 'current') {
           const monthsStr = selectionMode === 'single' ? singleMonth : selectedMonths.join(',');
-          url = `/reports/export?months=${monthsStr}&year=${exportYear}&reportType=${exportType}`;
+          url = `/reports/export?months=${monthsStr}&year=${exportYear}&reportType=${exportType}${deptQuery}`;
         } else if (exportMode === 'multi') {
           const sorted = [...exportSelectedMonths].map(Number).sort((a, b) => a - b).join(',');
-          url = `/reports/export?months=${sorted || '1'}&year=${exportYear}&reportType=${exportType}`;
+          url = `/reports/export?months=${sorted || '1'}&year=${exportYear}&reportType=${exportType}${deptQuery}`;
         } else if (exportMode === 'range') {
           const startM = Math.min(parseInt(exportFromMonth, 10), parseInt(exportToMonth, 10));
           const endM = Math.max(parseInt(exportFromMonth, 10), parseInt(exportToMonth, 10));
-          url = `/reports/export?fromMonth=${startM}&toMonth=${endM}&year=${exportYear}&reportType=${exportType}`;
+          url = `/reports/export?fromMonth=${startM}&toMonth=${endM}&year=${exportYear}&reportType=${exportType}${deptQuery}`;
         } else {
-          url = `/reports/export?fromMonth=${exportSingleMonth}&toMonth=${exportSingleMonth}&year=${exportYear}&reportType=${exportType}`;
+          url = `/reports/export?fromMonth=${exportSingleMonth}&toMonth=${exportSingleMonth}&year=${exportYear}&reportType=${exportType}${deptQuery}`;
         }
       }
 
@@ -170,13 +190,16 @@ const ReportPage = () => {
   const sortedActiveMonths = [...(selectionMode === 'single' ? [singleMonth] : selectedMonths)]
     .map(Number).sort((a, b) => a - b);
   
-  const displayRangeText = selectionMode === 'single'
+  const selectedDeptObj = departments.find(d => String(d.id) === String(selectedDepartment) || d.name === selectedDepartment);
+  const deptDisplayName = selectedDeptObj ? selectedDeptObj.name : 'Tất cả phòng ban';
+
+  const displayRangeText = (selectionMode === 'single'
     ? `Tháng ${singleMonth.padStart(2, '0')}/${year}`
     : sortedActiveMonths.length === 12
       ? `Cả năm ${year} (12 Tháng)`
       : sortedActiveMonths.length > 1 && sortedActiveMonths[sortedActiveMonths.length - 1] - sortedActiveMonths[0] === sortedActiveMonths.length - 1
         ? `Từ Tháng ${String(sortedActiveMonths[0]).padStart(2, '0')} đến Tháng ${String(sortedActiveMonths[sortedActiveMonths.length - 1]).padStart(2, '0')}/${year} (${sortedActiveMonths.length} tháng)`
-        : `Các Tháng: ${sortedActiveMonths.map(m => `T${m}`).join(', ')} / ${year}`;
+        : `Các Tháng: ${sortedActiveMonths.map(m => `T${m}`).join(', ')} / ${year}`) + ` • Phòng ban: ${deptDisplayName}`;
 
   // Tab: Tổng quan Nhân sự
   const renderSummary = () => {
@@ -529,83 +552,118 @@ const ReportPage = () => {
       {error && <div className="rounded-lg bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>}
 
       {/* ========================================================================= */}
-      {/* BỘ LỌC CHỌN NHIỀU THÁNG / KHOẢNG THÁNG / TỪNG THÁNG TRỰC TIẾP TRÊN TRANG */}
+      {/* BỘ LỌC CHỌN NHIỀU THÁNG / KHOẢNG THÁNG / PHÒNG BAN TRỰC TIẾP TRÊN TRANG */}
       {/* ========================================================================= */}
-      {activeTab !== 'summary' && (
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-          {/* Hàng 1: Chuyển đổi chế độ & Presets */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chế độ xem:</span>
-              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
-                <button
-                  type="button"
-                  onClick={() => setSelectionMode('multi')}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                    selectionMode === 'multi'
-                      ? 'bg-brand-700 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Chọn nhiều tháng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectionMode('single')}
-                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                    selectionMode === 'single'
-                      ? 'bg-brand-700 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Xem 1 tháng
-                </button>
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        {/* Hàng 1: Chuyển đổi chế độ, Lọc phòng ban & Presets */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Chế độ xem tháng */}
+            {activeTab !== 'summary' && (
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chế độ xem:</span>
+                <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+                  <button
+                    type="button"
+                    onClick={() => setSelectionMode('multi')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      selectionMode === 'multi'
+                        ? 'bg-brand-700 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Chọn nhiều tháng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectionMode('single')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      selectionMode === 'single'
+                        ? 'bg-brand-700 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Xem 1 tháng
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Mốc chọn nhanh */}
+            {/* Lọc theo Phòng Ban */}
+            <div className="flex items-center space-x-2 bg-brand-50/50 border border-brand-200 px-3 py-1.5 rounded-xl shadow-2xs">
+              <div className="p-1 rounded-md bg-brand-700 text-white">
+                <Layers size={13} />
+              </div>
+              <span className="text-xs font-bold text-brand-900 whitespace-nowrap">Lọc phòng ban:</span>
+              <select
+                value={selectedDepartment}
+                onChange={e => setSelectedDepartment(e.target.value)}
+                className="text-xs font-bold text-brand-950 bg-white border border-brand-200 rounded-lg px-2.5 py-1 outline-none cursor-pointer hover:border-brand-400 transition"
+              >
+                <option value="">🏢 Tất cả phòng ban (Toàn công ty)</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              {selectedDepartment && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDepartment('')}
+                  className="text-brand-600 hover:text-red-600 p-1 rounded-md hover:bg-brand-100 transition"
+                  title="Xóa bộ lọc phòng ban"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Mốc chọn nhanh */}
+          {activeTab !== 'summary' && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-slate-400 font-semibold mr-1">Mốc nhanh:</span>
               <button
                 onClick={() => applyPreset(['1', '2', '3', '4', '5', '6', '7'])}
-                className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-xs font-bold transition-colors"
+                className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 ✨ T1 – T7 (Dữ liệu HQ)
               </button>
               <button
                 onClick={() => applyPreset(['1', '2', '3'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 Quý 1 (T1-T3)
               </button>
               <button
                 onClick={() => applyPreset(['4', '5', '6'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 Quý 2 (T4-T6)
               </button>
               <button
                 onClick={() => applyPreset(['7', '8', '9'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 Quý 3 (T7-T9)
               </button>
               <button
                 onClick={() => applyPreset(['1', '2', '3', '4', '5', '6'])}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 6T đầu năm
               </button>
               <button
                 onClick={() => applyPreset(Array.from({ length: 12 }, (_, i) => (i + 1).toString()))}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 Cả năm
               </button>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Hàng 2: Danh sách 12 Tháng chọn trực quan */}
+        {/* Hàng 2: Danh sách 12 Tháng chọn trực quan */}
+        {activeTab !== 'summary' && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-bold text-slate-600 mr-1">Các tháng:</span>
@@ -652,34 +710,40 @@ const ReportPage = () => {
                 onClick={() => handleExportExcel({
                   reportType: activeTab === 'kpi' ? 'kpi' : activeTab === 'payroll' ? 'payroll' : activeTab === 'attendance' ? 'attendance' : 'all',
                   months: selectionMode === 'single' ? singleMonth : selectedMonths.join(','),
-                  year: year
+                  year: year,
+                  department_id: selectedDepartment
                 })}
                 disabled={isExporting}
                 className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-                title="Tải nhanh file Excel theo các tháng đang lọc"
+                title="Tải nhanh file Excel theo các tháng và phòng ban đang lọc"
               >
                 <Download size={14} />
-                <span>Tải Excel ({selectionMode === 'single' ? `T${singleMonth}` : `${sortedActiveMonths.length} tháng`})</span>
+                <span>Tải Excel ({selectionMode === 'single' ? `T${singleMonth}` : `${sortedActiveMonths.length} tháng`}{selectedDeptObj ? ` - ${selectedDeptObj.name}` : ''})</span>
               </button>
             </div>
           </div>
+        )}
 
-          {/* Dòng trạng thái đang lọc */}
-          <div className="bg-slate-50 px-3 py-2 rounded-lg text-xs text-slate-600 flex items-center justify-between">
-            <div className="flex items-center space-x-1.5">
-              <Sparkles size={14} className="text-brand-700 shrink-0" />
-              <span>
-                <strong>Đang xem:</strong> <span className="text-brand-800 font-bold">{displayRangeText}</span>
-              </span>
-            </div>
-            {selectionMode === 'multi' && (
-              <span className="text-[11px] text-slate-500">
-                (Click vào từng tháng để bật/tắt chọn)
+        {/* Dòng trạng thái đang lọc */}
+        <div className="bg-slate-50 px-3.5 py-2.5 rounded-lg text-xs text-slate-600 flex flex-wrap items-center justify-between gap-2 border border-slate-150">
+          <div className="flex items-center space-x-2">
+            <Sparkles size={15} className="text-brand-700 shrink-0" />
+            <span>
+              <strong>Đang xem:</strong> <span className="text-brand-800 font-bold">{displayRangeText}</span>
+            </span>
+          </div>
+          <div className="flex items-center space-x-3 text-[11px] text-slate-500">
+            {selectionMode === 'multi' && activeTab !== 'summary' && (
+              <span>(Click vào từng tháng để bật/tắt chọn)</span>
+            )}
+            {selectedDepartment && (
+              <span className="bg-brand-100 text-brand-800 font-bold px-2 py-0.5 rounded-md border border-brand-200">
+                Đang lọc: {selectedDeptObj?.name}
               </span>
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Tabs Bar + Year Filter */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
@@ -968,6 +1032,26 @@ const ReportPage = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+              </div>
+
+              {/* 3. Chọn phòng ban cần xuất */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  3. Chọn Phòng Ban Xuất
+                </label>
+                <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                  <Layers size={16} className="text-brand-700 shrink-0" />
+                  <select
+                    value={exportDept}
+                    onChange={e => setExportDept(e.target.value)}
+                    className="w-full text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+                  >
+                    <option value="">🏢 Tất cả phòng ban (Toàn bộ nhân sự công ty)</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

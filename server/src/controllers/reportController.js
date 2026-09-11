@@ -4,57 +4,86 @@ import XLSX from 'xlsx';
 // Báo cáo tổng quan nhân sự
 export const getSummaryReport = async (req, res) => {
   try {
+    const { department_id } = req.query;
+    let deptFilter = '';
+    let deptParams = [];
+    let deptInfo = null;
+
+    if (department_id && department_id !== 'all') {
+      deptInfo = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+      const dId = deptInfo ? deptInfo.id : department_id;
+      const dName = deptInfo ? deptInfo.name : department_id;
+      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
+      deptParams = [dId, dName, dName];
+    }
+
     // Tổng nhân sự theo trạng thái
     const statusStats = await query.all(`
-      SELECT status, COUNT(*) as count FROM employees GROUP BY status
-    `);
+      SELECT e.status, COUNT(*) as count 
+      FROM employees e
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE 1=1 ${deptFilter}
+      GROUP BY e.status
+    `, deptParams);
 
     // Phân bổ theo phòng ban
     const deptStats = await query.all(`
       SELECT d.name as department_name, COUNT(e.id) as count
       FROM departments d
-      LEFT JOIN employees e ON e.department_id = d.id AND e.status = 'Đang làm việc'
+      LEFT JOIN employees e ON (e.department_id = d.id OR e.department_id = d.name) AND e.status = 'Đang làm việc'
+      ${deptInfo ? 'WHERE d.id = ? OR d.name = ?' : ''}
       GROUP BY d.id, d.name
       ORDER BY count DESC
-    `);
+    `, deptInfo ? [deptInfo.id, deptInfo.name] : []);
 
     // Phân bổ theo chi nhánh
     const branchStats = await query.all(`
       SELECT b.name as branch_name, COUNT(e.id) as count
       FROM branches b
       LEFT JOIN employees e ON e.branch_id = b.id AND e.status = 'Đang làm việc'
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE 1=1 ${deptFilter}
       GROUP BY b.id, b.name
       ORDER BY count DESC
-    `);
+    `, deptParams);
 
     // Phân bổ theo giới tính
     const genderStats = await query.all(`
-      SELECT gender, COUNT(*) as count 
-      FROM employees WHERE status = 'Đang làm việc' 
-      GROUP BY gender
-    `);
+      SELECT e.gender, COUNT(*) as count 
+      FROM employees e 
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.status = 'Đang làm việc' ${deptFilter}
+      GROUP BY e.gender
+    `, deptParams);
 
     // Thâm niên trung bình
     const seniorityAvg = await query.get(`
-      SELECT AVG(CAST((julianday('now') - julianday(join_date)) / 365.25 AS REAL)) as avg_years
-      FROM employees WHERE status = 'Đang làm việc' AND join_date IS NOT NULL
-    `);
+      SELECT AVG(CAST((julianday('now') - julianday(e.join_date)) / 365.25 AS REAL)) as avg_years
+      FROM employees e 
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.status = 'Đang làm việc' AND e.join_date IS NOT NULL ${deptFilter}
+    `, deptParams);
 
     // Tổng nhân sự đang làm việc
     const totalActive = await query.get(`
-      SELECT COUNT(*) as count FROM employees WHERE status = 'Đang làm việc'
-    `);
+      SELECT COUNT(*) as count 
+      FROM employees e 
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE e.status = 'Đang làm việc' ${deptFilter}
+    `, deptParams);
 
     // Hợp đồng sắp hết hạn (30 ngày tới)
     const expiringContracts = await query.all(`
       SELECT c.*, e.fullname, e.code as employee_code
       FROM contracts c
       JOIN employees e ON c.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
       WHERE c.status = 'Hiệu lực' 
         AND c.end_date IS NOT NULL
         AND julianday(c.end_date) - julianday('now') BETWEEN 0 AND 30
+        ${deptFilter}
       ORDER BY c.end_date ASC
-    `);
+    `, deptParams);
 
     return res.json({
       totalActive: totalActive?.count || 0,
@@ -74,7 +103,7 @@ export const getSummaryReport = async (req, res) => {
 // Báo cáo quỹ lương
 export const getPayrollReport = async (req, res) => {
   try {
-    const { year, months, fromMonth, toMonth } = req.query;
+    const { year, months, fromMonth, toMonth, department_id } = req.query;
     const now = new Date();
     const targetYear = parseInt(year || now.getFullYear().toString(), 10);
 
@@ -94,6 +123,16 @@ export const getPayrollReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
+    let deptFilter = '';
+    let deptParams = [];
+    if (department_id && department_id !== 'all') {
+      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+      const dId = dept ? dept.id : department_id;
+      const dName = dept ? dept.name : department_id;
+      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
+      deptParams = [dId, dName, dName];
+    }
+
     // Tổng quỹ lương theo từng tháng được chọn
     const monthlyPayroll = await query.all(`
       SELECT p.month, 
@@ -104,10 +143,12 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
              COUNT(DISTINCT p.employee_id) as employee_count
       FROM payrolls p
-      WHERE p.year = ? AND p.month IN (${placeholders})
+      JOIN employees e ON p.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.month
       ORDER BY p.month ASC
-    `, [targetYear, ...allMatches]);
+    `, [targetYear, ...allMatches, ...deptParams]);
 
     // Tổng quỹ lương toàn bộ giai đoạn được chọn
     const periodTotal = await query.get(`
@@ -118,23 +159,25 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
              COUNT(p.id) as total_records
       FROM payrolls p
-      WHERE p.year = ? AND p.month IN (${placeholders})
-    `, [targetYear, ...allMatches]);
+      JOIN employees e ON p.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
+    `, [targetYear, ...allMatches, ...deptParams]);
 
     // Top nhân viên có tổng thu nhập cao nhất trong các tháng đã chọn
     const topSalaries = await query.all(`
       SELECT e.fullname, e.code, 
              SUM(p.net_salary) as net_salary,
-             d.name as department_name,
+             COALESCE(d.name, 'Chưa phân') as department_name,
              COUNT(p.id) as months_counted
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
-      WHERE p.year = ? AND p.month IN (${placeholders})
+      WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.employee_id
       ORDER BY net_salary DESC
-      LIMIT 5
-    `, [targetYear, ...allMatches]);
+      LIMIT 10
+    `, [targetYear, ...allMatches, ...deptParams]);
 
     return res.json({
       year: targetYear,
@@ -152,7 +195,7 @@ export const getPayrollReport = async (req, res) => {
 // Báo cáo chấm công
 export const getAttendanceReport = async (req, res) => {
   try {
-    const { month, months, fromMonth, toMonth, year } = req.query;
+    const { month, months, fromMonth, toMonth, year, department_id } = req.query;
     const now = new Date();
     const targetYear = (year || now.getFullYear().toString()).toString();
 
@@ -169,37 +212,56 @@ export const getAttendanceReport = async (req, res) => {
       selectedMonths = [(now.getMonth() + 1).toString().padStart(2, '0')];
     }
 
-    const monthClauses = selectedMonths.map(m => `date LIKE '${targetYear}-${m}%'`).join(' OR ') || '1=0';
+    const monthClauses = selectedMonths.map(m => `a.date LIKE '${targetYear}-${m}%'`).join(' OR ') || '1=0';
+
+    let deptFilter = '';
+    let deptParams = [];
+    if (department_id && department_id !== 'all') {
+      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+      const dId = dept ? dept.id : department_id;
+      const dName = dept ? dept.name : department_id;
+      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
+      deptParams = [dId, dName, dName];
+    }
 
     // Tổng quan chấm công theo trạng thái
     const statusSummary = await query.all(`
-      SELECT status, COUNT(*) as count
-      FROM attendance
-      WHERE ${monthClauses}
-      GROUP BY status
-    `);
+      SELECT a.status, COUNT(*) as count
+      FROM attendance a
+      JOIN employees e ON a.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE (${monthClauses}) ${deptFilter}
+      GROUP BY a.status
+    `, deptParams);
 
     // Thống kê đi trễ gom theo nhân viên
     const lateStats = await query.all(`
       SELECT e.fullname, e.code, COUNT(*) as late_count, SUM(a.late_minutes) as total_late_minutes
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      WHERE (${monthClauses}) AND a.late_minutes > 0
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE (${monthClauses}) AND a.late_minutes > 0 ${deptFilter}
       GROUP BY a.employee_id
       ORDER BY late_count DESC
-    `);
+    `, deptParams);
 
     // Tổng giờ OT
     const otSummary = await query.get(`
-      SELECT SUM(ot_hours) as total_ot, COUNT(DISTINCT employee_id) as ot_employees
-      FROM attendance WHERE (${monthClauses}) AND ot_hours > 0
-    `);
+      SELECT SUM(a.ot_hours) as total_ot, COUNT(DISTINCT a.employee_id) as ot_employees
+      FROM attendance a
+      JOIN employees e ON a.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE (${monthClauses}) AND a.ot_hours > 0 ${deptFilter}
+    `, deptParams);
 
     // Tổng ngày công
     const totalWorkDays = await query.get(`
-      SELECT COUNT(*) as total_days, COUNT(DISTINCT employee_id) as total_employees
-      FROM attendance WHERE (${monthClauses}) AND (status = 'Đúng giờ' OR status = 'Đi trễ')
-    `);
+      SELECT COUNT(*) as total_days, COUNT(DISTINCT a.employee_id) as total_employees
+      FROM attendance a
+      JOIN employees e ON a.employee_id = e.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      WHERE (${monthClauses}) AND (a.status = 'Đúng giờ' OR a.status = 'Đi trễ') ${deptFilter}
+    `, deptParams);
 
     return res.json({
       months: selectedMonths,
@@ -219,7 +281,7 @@ export const getAttendanceReport = async (req, res) => {
 // Báo cáo KPI
 export const getKpiReport = async (req, res) => {
   try {
-    const { month, months, fromMonth, toMonth, year } = req.query;
+    const { month, months, fromMonth, toMonth, year, department_id } = req.query;
     const now = new Date();
     const targetYear = parseInt(year || now.getFullYear().toString(), 10);
 
@@ -240,20 +302,34 @@ export const getKpiReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
+    let deptFilter = '';
+    let deptParams = [];
+    if (department_id && department_id !== 'all') {
+      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+      const dId = dept ? dept.id : department_id;
+      const dName = dept ? dept.name : department_id;
+      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
+      deptParams = [dId, dName, dName];
+    }
+
     // Thống kê tổng hợp KPI
     const totalActive = await query.get(
-      `SELECT COUNT(*) as count FROM employees WHERE status != 'Đã nghỉ việc'`
+      `SELECT COUNT(*) as count 
+       FROM employees e 
+       LEFT JOIN departments d ON e.department_id = d.id 
+       WHERE e.status != 'Đã nghỉ việc' ${deptFilter}`,
+      deptParams
     );
 
     const savedKpis = await query.all(
-      `SELECT k.*, e.fullname, e.code, d.name as department_name,
+      `SELECT k.*, e.fullname, e.code, COALESCE(d.name, 'Chưa phân bổ') as department_name,
               (MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_payout
        FROM employee_monthly_kpis k
        JOIN employees e ON k.employee_id = e.id
        LEFT JOIN departments d ON e.department_id = d.id
-       WHERE k.year = ? AND k.month IN (${placeholders})
+       WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
        ORDER BY total_payout DESC`,
-      [targetYear, ...allMatches]
+      [targetYear, ...allMatches, ...deptParams]
     );
 
     const recordedCount = savedKpis.length;
@@ -275,10 +351,10 @@ export const getKpiReport = async (req, res) => {
       FROM employee_monthly_kpis k
       JOIN employees e ON k.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
-      WHERE k.year = ? AND k.month IN (${placeholders})
+      WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
       GROUP BY d.id, d.name
       ORDER BY total_dept_payout DESC
-    `, [targetYear, ...allMatches]);
+    `, [targetYear, ...allMatches, ...deptParams]);
 
     // Top performers (tổng thu nhập KPI và hiệu quả qua các tháng đã chọn)
     const empKpiMap = new Map();
@@ -299,7 +375,7 @@ export const getKpiReport = async (req, res) => {
 
     const topPerformers = Array.from(empKpiMap.values())
       .sort((a, b) => b.total_payout - a.total_payout)
-      .slice(0, 5)
+      .slice(0, 10)
       .map(p => ({
         fullname: p.fullname,
         code: p.code,
@@ -330,7 +406,7 @@ export const getKpiReport = async (req, res) => {
 // Xuất báo cáo Excel theo tháng hoặc khoảng tháng
 export const exportReportExcel = async (req, res) => {
   try {
-    const { fromMonth, toMonth, months, year, reportType = 'all' } = req.query;
+    const { fromMonth, toMonth, months, year, reportType = 'all', department_id } = req.query;
     const currentYear = new Date().getFullYear();
     const targetYear = parseInt(year || currentYear.toString(), 10);
 
@@ -353,6 +429,16 @@ export const exportReportExcel = async (req, res) => {
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
 
+    let deptFilter = '';
+    let deptParams = [];
+    if (department_id && department_id !== 'all') {
+      const dept = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+      const dId = dept ? dept.id : department_id;
+      const dName = dept ? dept.name : department_id;
+      deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.name = ?)`;
+      deptParams = [dId, dName, dName];
+    }
+
     const wb = XLSX.utils.book_new();
 
     // 1. BẢNG LƯƠNG
@@ -365,10 +451,10 @@ export const exportReportExcel = async (req, res) => {
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN positions pos ON e.position_id = pos.id
         LEFT JOIN branches b ON e.branch_id = b.id
-        WHERE p.year = ? AND p.month IN (${placeholders})
+        WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
         ORDER BY p.month ASC, d.name ASC, e.code ASC
       `;
-      const payrolls = await query.all(payrollSql, [targetYear, ...allMonthMatches]);
+      const payrolls = await query.all(payrollSql, [targetYear, ...allMonthMatches, ...deptParams]);
 
       const payrollFormatted = payrolls.map((p, idx) => ({
         'STT': idx + 1,
@@ -420,10 +506,10 @@ export const exportReportExcel = async (req, res) => {
         JOIN employees e ON k.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN positions pos ON e.position_id = pos.id
-        WHERE k.year = ? AND k.month IN (${placeholders})
+        WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
         ORDER BY k.month ASC, d.name ASC, e.code ASC
       `;
-      const kpis = await query.all(kpiSql, [targetYear, ...allMonthMatches]);
+      const kpis = await query.all(kpiSql, [targetYear, ...allMonthMatches, ...deptParams]);
 
       const kpiFormatted = kpis.map((k, idx) => {
         const totalKpiPayout = (k.responsibility_amount || 0) + (k.performance_bonus || 0) - (k.discipline_deduction || 0);
@@ -468,11 +554,11 @@ export const exportReportExcel = async (req, res) => {
         JOIN employees e ON a.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN positions pos ON e.position_id = pos.id
-        WHERE strftime('%Y', a.date) = ? AND strftime('%m', a.date) IN (${monthList.map(() => '?').join(',')})
+        WHERE strftime('%Y', a.date) = ? AND strftime('%m', a.date) IN (${monthList.map(() => '?').join(',')}) ${deptFilter}
         GROUP BY a.employee_id, strftime('%m', a.date)
         ORDER BY month_val ASC, d.name ASC, e.code ASC
       `;
-      const attendances = await query.all(attendanceSql, [targetYear.toString(), ...monthList]);
+      const attendances = await query.all(attendanceSql, [targetYear.toString(), ...monthList, ...deptParams]);
 
       const attFormatted = attendances.map((a, idx) => ({
         'STT': idx + 1,
