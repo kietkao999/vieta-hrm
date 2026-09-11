@@ -370,6 +370,43 @@ const ReportPage = () => {
     // Lọc theo phòng ban nếu được chọn
     if (selectedDepartment) {
       topSalaries = (topSalaries || []).filter(s => s.department_name === targetDeptName || filteredEmployees.some(e => e.fullname === s.fullname || e.code === s.code));
+      
+      const deptTopSalariesTotal = topSalaries.reduce((acc, s) => acc + (s.net_salary || 0), 0);
+      const filteredEmpCount = activeEmps.length;
+      
+      // Tính tổng lương tầng + bậc theo tháng của phòng ban
+      const monthlyBaseForDept = activeEmps.reduce((acc, e) => acc + (e.tier_salary || 0) + (e.grade_salary || 0), 0);
+      const totalBaseForDept = monthlyBaseForDept * sortedActiveMonths.length;
+      
+      // Lấy tổng KPI phòng ban từ kpiData nếu có
+      const deptKpiItem = (kpiData?.deptKpi || []).find(d => d.department_name === targetDeptName || String(d.department_id) === String(targetDeptId));
+      const totalKpiForDept = deptKpiItem ? (deptKpiItem.total_dept_payout || 0) : Math.max(0, deptTopSalariesTotal - totalBaseForDept);
+      
+      const totalNetForDept = deptTopSalariesTotal > 0 ? deptTopSalariesTotal : (totalBaseForDept + totalKpiForDept);
+      const totalRecordsForDept = filteredEmpCount * sortedActiveMonths.length;
+
+      yearTotal = {
+        total_net: totalNetForDept,
+        total_base: totalBaseForDept,
+        total_responsibility: 0,
+        total_performance: totalKpiForDept,
+        total_records: totalRecordsForDept
+      };
+
+      // Cập nhật danh sách tháng theo phòng ban
+      if (monthlyPayroll && monthlyPayroll.length > 0) {
+        monthlyPayroll = monthlyPayroll.map(m => {
+          if (m.employee_count <= filteredEmpCount && m.total_net_salary <= totalNetForDept && filteredEmpCount < 57) {
+            return m;
+          }
+          const avgMonthNet = sortedActiveMonths.length > 0 ? Math.round(totalNetForDept / sortedActiveMonths.length) : m.total_net_salary;
+          return {
+            ...m,
+            employee_count: filteredEmpCount,
+            total_net_salary: avgMonthNet
+          };
+        });
+      }
     }
 
     return (
