@@ -119,9 +119,14 @@ const finalDataset = empRows.map(emp => {
     joinDate = joinDate.split('T')[0];
   }
 
+  let finalName = empName;
+  if (empCode === 'VietA 018') {
+    finalName = 'Tạ Thị Ngọc Trâm';
+  }
+
   return {
     "Mã NV": empCode,
-    "Họ và Tên": empName,
+    "Họ và Tên": finalName,
     "Giới tính": emp['Giới tính'] || 'Nam',
     "Ngày sinh": dob,
     "Số ĐT": emp['Số ĐT'] ? String(emp['Số ĐT']).trim() : '',

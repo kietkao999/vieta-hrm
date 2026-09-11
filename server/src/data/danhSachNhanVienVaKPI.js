@@ -482,7 +482,7 @@ export const danhSachNhanVienVaKPI = [
   },
   {
     "Mã NV": "VietA 018",
-    "Họ và Tên": "Nguyễn Thị Ngọc Trâm",
+    "Họ và Tên": "Tạ Thị Ngọc Trâm",
     "Giới tính": "Nữ",
     "Ngày sinh": "2002-12-09",
     "Số ĐT": "0329899054",
