@@ -359,7 +359,16 @@ const ContractPage = () => {
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-semibold text-slate-500">Lương cơ bản (VND)</label>
-                  <input type="number" value={formData.basic_salary} onChange={e=>setFormData({...formData, basic_salary: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none" />
+                  <input
+                    type="text"
+                    value={formData.basic_salary ? Number(String(formData.basic_salary).replace(/\D/g, '')).toLocaleString('vi-VN') : ''}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '');
+                      setFormData({...formData, basic_salary: raw});
+                    }}
+                    placeholder="VD: 8.500.000"
+                    className="w-full border rounded-lg p-2 text-sm mt-1 outline-none font-bold"
+                  />
                 </div>
               </div>
               <div className="flex justify-end space-x-2 pt-4">
