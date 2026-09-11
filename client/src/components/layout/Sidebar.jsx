@@ -40,49 +40,49 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Cấu trúc sidebar mới, gọn gàng, chuẩn nghiệp vụ
+  // Cấu trúc sidebar mới, phân quyền 3 cấp độ chặt chẽ
   const menuGroups = [
     {
       id: 'tochuc',
       title: 'TỔ CHỨC',
-      roles: ['ADMIN', 'HR'],
+      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'HR'] }
+        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {
       id: 'nhansu',
       title: 'NHÂN SỰ',
-      roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'],
+      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'Hồ sơ nhân viên', path: '/employees', icon: Users, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
-        { name: 'Hợp đồng lao động', path: '/contracts', icon: FileText, roles: ['ADMIN', 'HR', 'MANAGER'] }
+        { name: 'Hồ sơ nhân viên', path: '/employees', icon: Users, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Hợp đồng lao động', path: '/contracts', icon: FileText, roles: ['ADMIN', 'MANAGER'] }
       ]
     },
     {
       id: 'chamcong',
       title: 'CHẤM CÔNG & TIỀN LƯƠNG',
-      roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'],
+      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'Chấm công & Nghỉ phép', path: '/attendance', icon: Calendar, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
-        { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] },
-        { name: 'Bảng lương', path: '/payroll', icon: DollarSign, roles: ['ADMIN', 'HR', 'EMPLOYEE'] }
+        { name: 'Chấm công & Nghỉ phép', path: '/attendance', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Bảng lương', path: '/payroll', icon: DollarSign, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {
       id: 'ghinhan',
       title: 'GHI NHẬN',
-      roles: ['ADMIN', 'HR', 'MANAGER'],
+      roles: ['ADMIN', 'MANAGER'],
       items: [
-        { name: 'Khen thưởng & Kỷ luật', path: '/rewards', icon: Award, roles: ['ADMIN', 'HR', 'MANAGER'] }
+        { name: 'Khen thưởng & Kỷ luật', path: '/rewards', icon: Award, roles: ['ADMIN', 'MANAGER'] }
       ]
     },
     {
       id: 'hethong',
       title: 'HỆ THỐNG & BÁO CÁO',
-      roles: ['ADMIN', 'HR', 'MANAGER'],
+      roles: ['ADMIN'],
       items: [
-        { name: 'Báo cáo thống kê', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'HR', 'MANAGER'] },
+        { name: 'Báo cáo thống kê', path: '/reports', icon: BarChart3, roles: ['ADMIN'] },
         { name: 'Phân quyền tài khoản', path: '/users', icon: Shield, roles: ['ADMIN'] }
       ]
     }

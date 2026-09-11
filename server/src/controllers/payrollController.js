@@ -20,13 +20,10 @@ export const getPayroll = async (req, res) => {
       params.push(mStr, mPad, year);
     }
 
-    // Phân quyền
-    if (req.user.roleName === 'EMPLOYEE') {
+    // Phân quyền bảo mật lương tuyệt đối: Chỉ ADMIN mới được xem toàn bộ bảng lương
+    if (req.user.roleName !== 'ADMIN') {
       sql += ` AND p.employee_id = ?`;
       params.push(req.user.employeeId);
-    } else if (req.user.roleName === 'MANAGER') {
-      sql += ` AND e.department_id = ?`;
-      params.push(req.user.departmentId);
     } else if (employee_id) {
       sql += ` AND p.employee_id = ?`;
       params.push(employee_id);

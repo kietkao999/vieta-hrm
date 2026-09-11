@@ -76,3 +76,29 @@ export const deleteDepartment = async (req, res) => {
     return res.status(500).json({ message: 'Không thể xóa phòng ban.' });
   }
 };
+
+export const getDepartmentEmployees = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dept = await query.get('SELECT * FROM departments WHERE id = ?', [id]);
+    if (!dept) return res.status(404).json({ message: 'Phòng ban không tồn tại.' });
+
+    const employees = await query.all(`
+      SELECT e.id, e.code, e.fullname, e.gender, e.phone, e.email, e.status, e.join_date,
+             pos.name as position_name, b.name as branch_name
+      FROM employees e
+      LEFT JOIN positions pos ON e.position_id = pos.id
+      LEFT JOIN branches b ON e.branch_id = b.id
+      WHERE e.department_id = ?
+      ORDER BY e.code ASC
+    `, [id]);
+
+    return res.json({
+      department: dept,
+      employees: employees || []
+    });
+  } catch (error) {
+    console.error('Lỗi lấy danh sách nhân sự phòng ban:', error);
+    return res.status(500).json({ message: 'Lỗi lấy danh sách nhân sự.' });
+  }
+};

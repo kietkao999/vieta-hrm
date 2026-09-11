@@ -4,7 +4,7 @@ import { authMiddleware, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 router.use(authMiddleware);
-router.use(requireRoles(['ADMIN', 'HR', 'MANAGER']));
+router.use(requireRoles(['ADMIN']));
 
 router.get('/summary', getSummaryReport);
 router.get('/payroll', getPayrollReport);
