@@ -40,7 +40,7 @@ async function getOrCreatePosition(posName, deptId) {
 
 export async function runMigration() {
   try {
-    console.log('--- KHỞI CHẠY ĐỒNG BỘ 57 NHÂN SỰ CHÍNH THỨC & DỮ LIỆU LƯƠNG/KPI ---');
+    console.log('--- KHỞI CHẠY ĐỒNG BỘ 57 NHÂN SỰ CHÍNH THỨC & DỮ LIỆU LƯƠNG/KPI KÈM % TRÁCH NHIỆM ---');
 
     const now = new Date().toISOString();
     const validCodes = danhSachNhanVienVaKPI.map(e => e["Mã NV"].trim());
@@ -144,16 +144,20 @@ export async function runMigration() {
       const emp = await query.get('SELECT id FROM employees WHERE code = ?', [code]);
       if (!emp) continue;
 
-      // 3. Đồng bộ dữ liệu KPI & Hiệu quả từng tháng (T1 đến T7 và T9)
+      // 3. Đồng bộ dữ liệu KPI & Hiệu quả từng tháng (T1 đến T7 và T9) kèm % trách nhiệm
+      const rateT5 = item["Tỷ lệ T5"] !== undefined ? item["Tỷ lệ T5"] : 0;
+      const rateT6 = item["Tỷ lệ T6"] !== undefined ? item["Tỷ lệ T6"] : 0;
+      const rateT7 = item["Tỷ lệ T7"] !== undefined ? item["Tỷ lệ T7"] : 0;
+
       const monthlyData = [
-        { month: '01', kpi: 0, hq: Number(item["Hiệu quả T1"]) || 0 },
-        { month: '02', kpi: 0, hq: Number(item["Hiệu quả T2"]) || 0 },
-        { month: '03', kpi: 0, hq: Number(item["Hiệu quả T3"]) || 0 },
-        { month: '04', kpi: 0, hq: Number(item["Hiệu quả T4"]) || 0 },
-        { month: '05', kpi: Number(item["KPI T5"]) || 0, hq: Number(item["Hiệu quả T5"]) || 0 },
-        { month: '06', kpi: Number(item["KPI T6"]) || 0, hq: Number(item["Hiệu quả T6"]) || 0 },
-        { month: '07', kpi: Number(item["KPI T7"]) || 0, hq: Number(item["Hiệu quả T7"]) || 0 },
-        { month: '09', kpi: kpiBonus, hq: kpiBonus }
+        { month: '01', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T1"]) || 0 },
+        { month: '02', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T2"]) || 0 },
+        { month: '03', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T3"]) || 0 },
+        { month: '04', rate: 0, amount: 0, quota: kpiBonus, hq: Number(item["Hiệu quả T4"]) || 0 },
+        { month: '05', rate: rateT5, amount: Number(item["KPI T5"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T5"]) || 0 },
+        { month: '06', rate: rateT6, amount: Number(item["KPI T6"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T6"]) || 0 },
+        { month: '07', rate: rateT7, amount: Number(item["KPI T7"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T7"]) || 0 },
+        { month: '09', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: kpiBonus }
       ];
 
       for (const m of monthlyData) {
@@ -162,24 +166,26 @@ export async function runMigration() {
             employee_id, month, year,
             responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
             performance_bonus, discipline_deduction, note, created_at, updated_at
-          ) VALUES (?, ?, 2026, ?, 0, 1.0, ?, ?, 0, ?, ?, ?)
+          ) VALUES (?, ?, 2026, ?, 0, ?, ?, ?, 0, ?, ?, ?)
           ON CONFLICT(employee_id, month, year) DO UPDATE SET
             responsibility_bonus = excluded.responsibility_bonus,
+            responsibility_rate = excluded.responsibility_rate,
             responsibility_amount = excluded.responsibility_amount,
             performance_bonus = excluded.performance_bonus,
             updated_at = excluded.updated_at
         `, [
           emp.id,
           m.month,
-          m.kpi,
-          m.kpi,
+          m.quota,
+          m.rate,
+          m.amount,
           m.hq,
           `Đồng bộ chuẩn T${m.month}/2026`,
           now,
           now
         ]);
 
-        const responsibilityNet = m.kpi;
+        const responsibilityNet = m.amount;
         const performanceNet = m.hq;
         const netSalary = baseSalary + responsibilityNet + performanceNet;
 
@@ -190,10 +196,11 @@ export async function runMigration() {
             responsibility_quota, responsibility_deduction_rate, responsibility_net,
             performance_bonus, discipline_deduction, performance_net,
             other_deductions, net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, 2026, ?, 0, ?, 0, ?, ?, 0, ?, 0, ?, 'Đã chốt', ?, ?)
+          ) VALUES (?, ?, 2026, ?, 0, ?, ?, ?, ?, 0, ?, 0, ?, 'Đã chốt', ?, ?)
           ON CONFLICT(employee_id, month, year) DO UPDATE SET
             tier_salary = excluded.tier_salary,
             responsibility_quota = excluded.responsibility_quota,
+            responsibility_deduction_rate = excluded.responsibility_deduction_rate,
             responsibility_net = excluded.responsibility_net,
             performance_bonus = excluded.performance_bonus,
             performance_net = excluded.performance_net,
@@ -203,7 +210,8 @@ export async function runMigration() {
           emp.id,
           m.month,
           baseSalary,
-          m.kpi,
+          m.quota,
+          1 - m.rate,
           responsibilityNet,
           m.hq,
           performanceNet,
@@ -222,7 +230,7 @@ export async function runMigration() {
     }
 
     await query.run('COMMIT');
-    console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ CHUẨN VÀ DỮ LIỆU KPI/LƯƠNG ---');
+    console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ CHUẨN VÀ DỮ LIỆU KPI/LƯƠNG KÈM % TRÁCH NHIỆM ---');
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);

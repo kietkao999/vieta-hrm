@@ -40,6 +40,15 @@ for (let i = 5; i < kpiRowsRaw.length; i++) {
       t6: Math.round(r[9] || 0),
       t7: Math.round(r[11] || 0)
     },
+    rate: {
+      t1: 0,
+      t2: 0,
+      t3: 0,
+      t4: 0,
+      t5: r[8] !== undefined && r[8] !== null ? Number(r[8]) : 0,
+      t6: r[10] !== undefined && r[10] !== null ? Number(r[10]) : 0,
+      t7: r[12] !== undefined && r[12] !== null ? Number(r[12]) : 0
+    },
     hq: {
       t1: Math.round(r[24] || 0),
       t2: Math.round(r[25] || 0),
@@ -64,6 +73,7 @@ const alias = {
 const finalDataset = empRows.map(emp => {
   const empCode = String(emp['Mã NV']).trim();
   const empName = String(emp['Họ và Tên']).trim();
+  const defKpi = Number(emp['Thưởng KPI']) || 0;
   const normEmpName = norm(empName);
 
   const matches = kpiEntries.filter(k => {
@@ -76,13 +86,24 @@ const finalDataset = empRows.map(emp => {
 
   const sumKpi = { t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, t6: 0, t7: 0 };
   const sumHq = { t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, t6: 0, t7: 0 };
+  const maxRate = { t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, t6: 0, t7: 0 };
 
   matches.forEach(m => {
     for (let t = 1; t <= 7; t++) {
       sumKpi['t' + t] += m.kpi['t' + t];
       sumHq['t' + t] += m.hq['t' + t];
+      if (m.rate['t' + t] > maxRate['t' + t]) {
+        maxRate['t' + t] = m.rate['t' + t];
+      }
     }
   });
+
+  // Calculate rate from kpi / defKpi if rate was 0 but kpi > 0
+  for (let t = 5; t <= 7; t++) {
+    if (maxRate['t' + t] === 0 && defKpi > 0 && sumKpi['t' + t] > 0) {
+      maxRate['t' + t] = sumKpi['t' + t] / defKpi;
+    }
+  }
 
   const tongKpi = sumKpi.t5 + sumKpi.t6 + sumKpi.t7;
   const tongHq = sumHq.t1 + sumHq.t2 + sumHq.t3 + sumHq.t4 + sumHq.t5 + sumHq.t6 + sumHq.t7;
@@ -116,11 +137,14 @@ const finalDataset = empRows.map(emp => {
     "Lương cơ bản": Number(emp['Lương cơ bản']) || 0,
     "Bậc": Number(emp['Bậc']) || 0,
     "Phụ cấp": Number(emp['Phụ cấp']) || 0,
-    "Thưởng KPI": Number(emp['Thưởng KPI']) || 0,
+    "Thưởng KPI": defKpi,
     "Ghi chú": emp['Ghi chú'] || '',
     "KPI T5": sumKpi.t5,
+    "Tỷ lệ T5": maxRate.t5,
     "KPI T6": sumKpi.t6,
+    "Tỷ lệ T6": maxRate.t6,
     "KPI T7": sumKpi.t7,
+    "Tỷ lệ T7": maxRate.t7,
     "Tổng KPI": tongKpi,
     "Hiệu quả T1": sumHq.t1,
     "Hiệu quả T2": sumHq.t2,
@@ -134,7 +158,7 @@ const finalDataset = empRows.map(emp => {
   };
 });
 
-console.log(`✓ Đã khớp thành công toàn bộ ${finalDataset.length} nhân sự.`);
+console.log(`✓ Đã khớp thành công toàn bộ ${finalDataset.length} nhân sự kèm % trách nhiệm.`);
 
 const fileContent = `export const danhSachNhanVienVaKPI = ${JSON.stringify(finalDataset, null, 2)};\n`;
 
