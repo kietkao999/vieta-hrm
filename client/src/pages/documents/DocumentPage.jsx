@@ -4,7 +4,6 @@ import api from '../../services/api';
 import {
   FileText,
   Search,
-  Filter,
   Download,
   Plus,
   Edit2,
@@ -15,20 +14,15 @@ import {
   ShieldCheck,
   Award,
   BookOpen,
-  DollarSign,
   AlertCircle,
   CheckCircle2,
-  Clock,
-  Layers,
   FileCheck,
   X,
   Upload,
   ExternalLink,
   Printer,
   FileDown,
-  Building2,
-  ZoomIn,
-  ZoomOut
+  Maximize2
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -90,22 +84,22 @@ export default function DocumentPage() {
   // Modals state
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState('embed'); // 'embed' | 'text'
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
-  const [fontSize, setFontSize] = useState(14);
 
   // Form Data
   const [formData, setFormData] = useState({
     title: '',
     category: 'Nội quy & Quy chế',
     file_name: '',
-    file_url: '',
+    doc_id: '',
+    google_drive_url: '',
     file_size: '1.5 MB',
     file_type: 'docx',
     effective_date: new Date().toISOString().split('T')[0],
     applicable_to: 'Toàn thể CBNV',
     description: '',
-    content: '',
     status: 'Đang hiệu lực'
   });
   const [uploading, setUploading] = useState(false);
@@ -143,13 +137,13 @@ export default function DocumentPage() {
       title: '',
       category: 'Nội quy & Quy chế',
       file_name: '',
-      file_url: '',
+      doc_id: '',
+      google_drive_url: '',
       file_size: '1.2 MB',
       file_type: 'docx',
       effective_date: new Date().toISOString().split('T')[0],
       applicable_to: 'Toàn thể CBNV',
       description: '',
-      content: '',
       status: 'Đang hiệu lực'
     });
     setFormError('');
@@ -162,13 +156,13 @@ export default function DocumentPage() {
       title: doc.title || '',
       category: doc.category || 'Nội quy & Quy chế',
       file_name: doc.file_name || '',
-      file_url: doc.file_url || '',
+      doc_id: doc.doc_id || '',
+      google_drive_url: doc.google_drive_url || '',
       file_size: doc.file_size || '1.0 MB',
       file_type: doc.file_type || 'docx',
       effective_date: doc.effective_date || '',
       applicable_to: doc.applicable_to || 'Toàn thể CBNV',
       description: doc.description || '',
-      content: doc.content || '',
       status: doc.status || 'Đang hiệu lực'
     });
     setFormError('');
@@ -247,74 +241,42 @@ export default function DocumentPage() {
     }
   };
 
-  // Tải file trực tiếp
-  const handleDownload = async (doc) => {
-    try {
-      const response = await api.get(`/documents/${doc.id}/download`, {
-        responseType: 'blob'
-      });
+  // Tải file DOCX hoặc PDF trực tiếp từ Google Docs
+  const handleDownloadFile = (doc, format = 'docx') => {
+    if (doc.doc_id) {
+      const url = `https://docs.google.com/document/d/${doc.doc_id}/export?format=${format}`;
+      window.open(url, '_blank');
+      return;
+    }
+    if (doc.download_docx_url) {
+      window.open(doc.download_docx_url, '_blank');
+      return;
+    }
+    window.open(`/api/documents/${doc.id}/download?format=${format}`, '_blank');
+  };
 
-      const blob = new Blob([response.data], {
-        type: 'application/msword;charset=utf-8'
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', doc.file_name || `${doc.title}.doc`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Lỗi khi tải file:', error);
-      // Fallback tải qua file_url tĩnh
-      if (doc.file_url) {
-        window.open(doc.file_url, '_blank');
-      } else {
-        alert('Đã xảy ra lỗi khi tải tài liệu. Vui lòng thử lại.');
-      }
+  // Mở xem trực tiếp trên Google Docs
+  const handleOpenGoogleDocs = (doc) => {
+    const url = doc.google_drive_url || (doc.doc_id ? `https://docs.google.com/document/d/${doc.doc_id}/edit` : null);
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      alert('Tài liệu chưa có liên kết Google Docs.');
     }
   };
 
-  // In tài liệu
-  const handlePrint = () => {
-    const printContent = document.getElementById('printable-doc-content');
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${selectedDoc?.title || 'Văn bản'}</title>
-          <style>
-            body { font-family: 'Times New Roman', serif; padding: 40px; color: #000; line-height: 1.6; font-size: 13pt; }
-            h1 { text-align: center; color: #1e3a8a; font-size: 18pt; margin-bottom: 5px; }
-            h2 { color: #1e40af; font-size: 15pt; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 25px; }
-            h3 { color: #334155; font-size: 13pt; margin-top: 15px; }
-            .header-center { text-align: center; margin-bottom: 25px; }
-            .meta-box { border: 1px solid #e2e8f0; padding: 12px; background-color: #f8fafc; margin-bottom: 20px; font-size: 11pt; }
-            ul, ol { padding-left: 20px; }
-            li { margin-bottom: 6px; }
-            @media print {
-              body { padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header-center">
-            <h3>CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á</h3>
-            <p>Hệ thống Quản trị Nhân sự & Tiền lương (HRM)</p>
-          </div>
-          ${printContent.innerHTML}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+  // Helper lấy URL preview iframe
+  const getPreviewIframeUrl = (doc) => {
+    if (doc.doc_id) {
+      return `https://docs.google.com/document/d/${doc.doc_id}/preview`;
+    }
+    if (doc.preview_url) {
+      return doc.preview_url;
+    }
+    if (doc.google_drive_url) {
+      return doc.google_drive_url.replace(/\/edit.*$/, '/preview');
+    }
+    return null;
   };
 
   return (
@@ -325,13 +287,13 @@ export default function DocumentPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold mb-3 border border-blue-400/30">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>HỆ THỐNG VĂN BẢN NỘI BỘ NỆM VIỆT Á 2026</span>
+              <span>HỆ THỐNG VĂN BẢN & QUY ĐỊNH NỘI BỘ NỆM VIỆT Á 2026</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               Văn Bản, Quy Định & Phúc Lợi
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-              Đọc trực tuyến và tải về toàn bộ Nội quy công ty, Quy chế phúc lợi, Biểu mẫu nhân sự, Bảng hệ số lương tầng bậc và Hướng dẫn an toàn lao động.
+              Xem trực tiếp định dạng gốc nguyên bản (Google Docs) và tải về toàn bộ Nội quy, Chính sách phúc lợi, Biểu mẫu nhân sự và Hệ số lương công ty.
             </p>
           </div>
 
@@ -525,6 +487,7 @@ export default function DocumentPage() {
                   <h3
                     onClick={() => {
                       setSelectedDoc(doc);
+                      setPreviewTab('embed');
                       setIsPreviewOpen(true);
                     }}
                     className="text-base font-bold text-slate-900 group-hover:text-blue-900 transition-colors line-clamp-2 cursor-pointer hover:underline"
@@ -573,41 +536,52 @@ export default function DocumentPage() {
                     <button
                       onClick={() => {
                         setSelectedDoc(doc);
+                        setPreviewTab('embed');
                         setIsPreviewOpen(true);
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Xem & Đọc</span>
+                      <span>Xem bản gốc</span>
                     </button>
 
                     <button
-                      onClick={() => handleDownload(doc)}
+                      onClick={() => handleDownloadFile(doc, 'docx')}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
+                      title="Tải file Word (.docx)"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Tải về</span>
                     </button>
                   </div>
 
-                  {isAdminOrHR && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenEdit(doc)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(doc.id, doc.title)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenGoogleDocs(doc)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                      title="Mở trên Google Docs tab mới"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                    {isAdminOrHR && (
+                      <>
+                        <button
+                          onClick={() => handleOpenEdit(doc)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(doc.id, doc.title)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -644,6 +618,7 @@ export default function DocumentPage() {
                           className="font-bold text-slate-900 hover:text-blue-900 cursor-pointer"
                           onClick={() => {
                             setSelectedDoc(doc);
+                            setPreviewTab('embed');
                             setIsPreviewOpen(true);
                           }}
                         >
@@ -673,21 +648,29 @@ export default function DocumentPage() {
                           <button
                             onClick={() => {
                               setSelectedDoc(doc);
+                              setPreviewTab('embed');
                               setIsPreviewOpen(true);
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                            title="Xem & Đọc trực tuyến"
+                            title="Xem văn bản gốc"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Đọc</span>
+                            <span>Xem</span>
                           </button>
                           <button
-                            onClick={() => handleDownload(doc)}
+                            onClick={() => handleDownloadFile(doc, 'docx')}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
-                            title="Tải về máy tính"
+                            title="Tải file Word (.docx)"
                           >
                             <Download className="w-3.5 h-3.5" />
                             <span>Tải</span>
+                          </button>
+                          <button
+                            onClick={() => handleOpenGoogleDocs(doc)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                            title="Mở Google Docs tab mới"
+                          >
+                            <ExternalLink className="w-4 h-4" />
                           </button>
                           {isAdminOrHR && (
                             <>
@@ -718,10 +701,10 @@ export default function DocumentPage() {
         </div>
       )}
 
-      {/* FULL DOCUMENT PREVIEW & READER MODAL */}
+      {/* FULL DOCUMENT PREVIEW MODAL WITH EMBEDDED GOOGLE DOCS ORIGINAL FORMAT */}
       {isPreviewOpen && selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-100 rounded-2xl max-w-4xl w-full h-[92vh] shadow-2xl border border-slate-300 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-5xl w-full h-[95vh] shadow-2xl border border-slate-300 flex flex-col overflow-hidden">
             {/* Top Toolbar */}
             <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between gap-4 shrink-0 shadow-md">
               <div className="flex items-center gap-3 overflow-hidden">
@@ -733,48 +716,60 @@ export default function DocumentPage() {
                   <div className="text-[11px] text-slate-400 flex items-center gap-2">
                     <span>{selectedDoc.category}</span>
                     <span>•</span>
-                    <span>Áp dụng: {selectedDoc.effective_date}</span>
+                    <span>Hiệu lực từ: {selectedDoc.effective_date}</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-semibold">{selectedDoc.status || 'Đang hiệu lực'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 shrink-0">
-                {/* Font Size Controls */}
-                <div className="hidden sm:flex items-center bg-slate-800 rounded-lg p-0.5 text-xs text-slate-300 border border-slate-700">
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs text-slate-300 border border-slate-700">
                   <button
-                    onClick={() => setFontSize(Math.max(12, fontSize - 1))}
-                    className="p-1.5 hover:text-white"
-                    title="Giảm cỡ chữ"
+                    onClick={() => setPreviewTab('embed')}
+                    className={`px-3 py-1 rounded-md transition-colors ${
+                      previewTab === 'embed' ? 'bg-blue-600 text-white font-bold' : 'hover:text-white'
+                    }`}
                   >
-                    <ZoomOut className="w-3.5 h-3.5" />
+                    Bản gốc Google Docs
                   </button>
-                  <span className="px-2 font-mono text-[11px]">{fontSize}px</span>
                   <button
-                    onClick={() => setFontSize(Math.min(20, fontSize + 1))}
-                    className="p-1.5 hover:text-white"
-                    title="Tăng cỡ chữ"
+                    onClick={() => setPreviewTab('text')}
+                    className={`px-3 py-1 rounded-md transition-colors ${
+                      previewTab === 'text' ? 'bg-blue-600 text-white font-bold' : 'hover:text-white'
+                    }`}
                   >
-                    <ZoomIn className="w-3.5 h-3.5" />
+                    Tóm tắt văn bản
                   </button>
                 </div>
 
                 <button
-                  onClick={handlePrint}
+                  onClick={() => handleOpenGoogleDocs(selectedDoc)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
-                  title="In văn bản"
+                  title="Mở trong Google Docs"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">In văn bản</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Mở Google Docs</span>
                 </button>
 
                 <button
-                  onClick={() => handleDownload(selectedDoc)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-colors cursor-pointer"
-                  title="Tải file về máy tính"
+                  onClick={() => handleDownloadFile(selectedDoc, 'docx')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-colors cursor-pointer"
+                  title="Tải file Word (.docx) gốc"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Tải về</span>
+                  <span>Tải Word (.docx)</span>
+                </button>
+
+                <button
+                  onClick={() => handleDownloadFile(selectedDoc, 'pdf')}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow transition-colors cursor-pointer"
+                  title="Tải file PDF"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Tải PDF</span>
                 </button>
 
                 <button
@@ -786,78 +781,81 @@ export default function DocumentPage() {
               </div>
             </div>
 
-            {/* Document Reader Body (Styled Paper) */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-200/70">
-              <div
-                id="printable-doc-content"
-                className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 sm:p-12 border border-slate-200 min-h-full font-serif text-slate-800 space-y-6"
-                style={{ fontSize: `${fontSize}px`, lineHeight: '1.75' }}
-              >
-                {/* Official Letterhead */}
-                <div className="border-b-2 border-blue-900 pb-6 text-center space-y-2">
-                  <div className="text-xs font-sans font-bold tracking-widest text-slate-500 uppercase">
-                    CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á
+            {/* Document Viewer Area */}
+            <div className="flex-1 bg-slate-100 overflow-hidden relative">
+              {previewTab === 'embed' ? (
+                getPreviewIframeUrl(selectedDoc) ? (
+                  <iframe
+                    src={getPreviewIframeUrl(selectedDoc)}
+                    title={selectedDoc.title}
+                    className="w-full h-full border-0 bg-white"
+                    allow="autoplay"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                    <FileText className="w-12 h-12 text-slate-400 mb-3" />
+                    <h4 className="text-base font-bold text-slate-700">Chưa có liên kết bản gốc</h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-md">
+                      Vui lòng chuyển sang tab "Tóm tắt văn bản" hoặc mở file đính kèm.
+                    </p>
                   </div>
-                  <h1 className="text-xl sm:text-2xl font-bold font-sans text-blue-900 uppercase tracking-tight">
-                    {selectedDoc.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-sans text-slate-500 pt-1">
-                    <span>Mã văn bản: <strong>#{selectedDoc.id}</strong></span>
-                    <span>•</span>
-                    <span>Danh mục: <strong>{selectedDoc.category}</strong></span>
-                    <span>•</span>
-                    <span>Hiệu lực từ: <strong>{selectedDoc.effective_date}</strong></span>
-                    <span>•</span>
-                    <span className="text-emerald-700 font-bold">● {selectedDoc.status || 'Đang hiệu lực'}</span>
-                  </div>
-                </div>
-
-                {/* Scope Box */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 font-sans text-xs space-y-1 text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <strong className="text-slate-900">Đối tượng áp dụng:</strong>
-                    <span>{selectedDoc.applicable_to || 'Toàn thể Cán bộ Công nhân viên'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <strong className="text-slate-900">Đơn vị ban hành:</strong>
-                    <span>{selectedDoc.created_by || 'Phòng Hành chính Nhân sự'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <strong className="text-slate-900">File lưu trữ:</strong>
-                    <span className="font-mono text-blue-700">{selectedDoc.file_name}</span>
-                  </div>
-                </div>
-
-                {/* Document Main Content */}
-                <div className="prose max-w-none text-slate-800 space-y-4 pt-2 whitespace-pre-line font-sans text-sm sm:text-base leading-relaxed">
-                  {selectedDoc.content ? (
-                    selectedDoc.content
-                  ) : (
-                    <div>
-                      <p className="font-sans text-sm text-slate-700 leading-relaxed">{selectedDoc.description}</p>
-                      <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 font-sans text-xs text-blue-800 mt-4">
-                        Tài liệu này đã được chuẩn hóa và lưu trữ tại hệ thống quản lý văn bản nội bộ Việt Á. Bạn có thể nhấn nút <strong>"Tải về"</strong> ở góc trên bên phải để lưu file về máy.
+                )
+              ) : (
+                /* Text View */
+                <div className="h-full overflow-y-auto p-6 sm:p-10 bg-slate-200/60">
+                  <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 sm:p-12 border border-slate-200 min-h-full font-serif text-slate-800 space-y-6">
+                    <div className="border-b-2 border-blue-900 pb-6 text-center space-y-2">
+                      <div className="text-xs font-sans font-bold tracking-widest text-slate-500 uppercase">
+                        CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á
+                      </div>
+                      <h1 className="text-xl sm:text-2xl font-bold font-sans text-blue-900 uppercase tracking-tight">
+                        {selectedDoc.title}
+                      </h1>
+                      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-sans text-slate-500 pt-1">
+                        <span>Mã văn bản: <strong>#{selectedDoc.id}</strong></span>
+                        <span>•</span>
+                        <span>Danh mục: <strong>{selectedDoc.category}</strong></span>
+                        <span>•</span>
+                        <span>Hiệu lực từ: <strong>{selectedDoc.effective_date}</strong></span>
+                        <span>•</span>
+                        <span className="text-emerald-700 font-bold">● {selectedDoc.status || 'Đang hiệu lực'}</span>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Sign-off Footer */}
-                <div className="pt-10 border-t border-slate-200 grid grid-cols-2 text-center font-sans text-xs">
-                  <div>
-                    <strong className="text-slate-900 uppercase block">TRƯỞNG PHÒNG HCNS</strong>
-                    <span className="text-slate-400 italic block mt-1">(Đã ký duyệt)</span>
-                    <div className="h-12" />
-                    <span className="font-bold text-slate-800">Huỳnh Thị Trúc Xinh</span>
-                  </div>
-                  <div>
-                    <strong className="text-slate-900 uppercase block">BAN GIÁM ĐỐC</strong>
-                    <span className="text-slate-400 italic block mt-1">(Đã phê duyệt)</span>
-                    <div className="h-12" />
-                    <span className="font-bold text-slate-800">Võ Minh Cường</span>
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 font-sans text-xs space-y-1 text-slate-700">
+                      <div className="flex items-center gap-2">
+                        <strong className="text-slate-900">Đối tượng áp dụng:</strong>
+                        <span>{selectedDoc.applicable_to || 'Toàn thể Cán bộ Công nhân viên'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <strong className="text-slate-900">Tên file chuẩn:</strong>
+                        <span className="font-mono text-blue-700">{selectedDoc.file_name}</span>
+                      </div>
+                    </div>
+
+                    <div className="prose max-w-none text-slate-800 space-y-4 pt-2 whitespace-pre-line font-sans text-sm sm:text-base leading-relaxed">
+                      {selectedDoc.content || selectedDoc.description}
+                    </div>
+
+                    <div className="pt-8 border-t border-slate-200 flex items-center justify-between font-sans text-xs">
+                      <button
+                        onClick={() => handleOpenGoogleDocs(selectedDoc)}
+                        className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Mở bản đầy đủ trên Google Docs</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownloadFile(selectedDoc, 'docx')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-900 text-white font-bold"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Tải file Word (.docx)</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -924,6 +922,25 @@ export default function DocumentPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Google Docs URL hoặc ID</label>
+                <input
+                  type="text"
+                  placeholder="VD: https://docs.google.com/document/d/.../edit hoặc ID tài liệu"
+                  value={formData.google_drive_url}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const docIdMatch = val.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                    setFormData({
+                      ...formData,
+                      google_drive_url: val,
+                      doc_id: docIdMatch ? docIdMatch[1] : formData.doc_id
+                    });
+                  }}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 text-slate-800 font-mono text-[11px]"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Đối tượng áp dụng</label>
@@ -951,7 +968,7 @@ export default function DocumentPage() {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Tải lên file văn bản (.docx, .pdf, .xlsx)</label>
+                <label className="font-bold text-slate-700 block mb-1">Tải lên file văn bản dự phòng (.docx, .pdf)</label>
                 <div className="border-2 border-dashed border-slate-200 rounded-xl p-3 bg-slate-50 text-center hover:bg-slate-100/60 transition-colors relative">
                   <input
                     type="file"
@@ -964,7 +981,7 @@ export default function DocumentPage() {
                     <span className="text-xs text-slate-600 font-medium">
                       {uploading ? 'Đang tải file lên...' : formData.file_name ? `File đã chọn: ${formData.file_name}` : 'Nhấn vào đây để tải file lên'}
                     </span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">Hỗ trợ DOCX, PDF, XLSX tối đa 20MB</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">Hỗ trợ DOCX, PDF tối đa 20MB</span>
                   </div>
                 </div>
               </div>
@@ -972,22 +989,11 @@ export default function DocumentPage() {
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Nội dung tóm tắt / Ghi chú</label>
                 <textarea
-                  rows="2"
+                  rows="3"
                   placeholder="Tóm tắt các điểm chính hoặc điều khoản quan trọng trong văn bản..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-800"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Toàn văn nội dung văn bản (để đọc trực tuyến)</label>
-                <textarea
-                  rows="6"
-                  placeholder="Nhập toàn văn nội dung quy định, các chương, điều, khoản hoặc nội dung biểu mẫu..."
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-800 font-mono text-[11px]"
                 />
               </div>
 

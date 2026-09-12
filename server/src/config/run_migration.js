@@ -421,6 +421,11 @@ export async function runMigration() {
         title TEXT NOT NULL,
         category TEXT NOT NULL,
         file_name TEXT,
+        doc_id TEXT,
+        google_drive_url TEXT,
+        preview_url TEXT,
+        download_docx_url TEXT,
+        download_pdf_url TEXT,
         file_url TEXT,
         file_size TEXT,
         file_type TEXT,
@@ -435,42 +440,70 @@ export async function runMigration() {
       )
     `);
 
-    try {
-      await query.run('ALTER TABLE documents ADD COLUMN content TEXT');
-    } catch (e) {}
+    const docCols = [
+      'doc_id TEXT',
+      'google_drive_url TEXT',
+      'preview_url TEXT',
+      'download_docx_url TEXT',
+      'download_pdf_url TEXT',
+      'content TEXT'
+    ];
+
+    for (const c of docCols) {
+      try {
+        await query.run(`ALTER TABLE documents ADD COLUMN ${c}`);
+      } catch (e) {}
+    }
 
     const { DEFAULT_DOCUMENTS, ensurePhysicalFiles } = await import('../controllers/documentController.js');
-    ensurePhysicalFiles();
+    if (ensurePhysicalFiles) ensurePhysicalFiles();
 
     for (const d of DEFAULT_DOCUMENTS) {
       const existing = await query.get('SELECT id FROM documents WHERE title = ?', [d.title]);
       if (!existing) {
         await query.run(`
           INSERT INTO documents (
-            title, category, file_name, file_url, file_size, file_type,
-            effective_date, applicable_to, description, content, status, created_by,
+            title, category, file_name, doc_id, google_drive_url, preview_url,
+            download_docx_url, download_pdf_url, file_url, file_size, file_type,
+            effective_date, applicable_to, description, status, created_by,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          d.title, d.category, d.file_name, d.file_url, d.file_size, d.file_type,
-          d.effective_date, d.applicable_to, d.description, d.content, d.status, d.created_by,
+          d.title, d.category, d.file_name, d.doc_id, d.google_drive_url, d.preview_url,
+          d.download_docx_url, d.download_pdf_url, d.file_url, d.file_size, d.file_type,
+          d.effective_date, d.applicable_to, d.description, d.status, d.created_by,
           now, now
         ]);
       } else {
         await query.run(`
           UPDATE documents SET
-            file_url = ?,
             file_name = ?,
-            content = ?,
+            doc_id = ?,
+            google_drive_url = ?,
+            preview_url = ?,
+            download_docx_url = ?,
+            download_pdf_url = ?,
             description = ?,
             applicable_to = ?,
             effective_date = ?,
             updated_at = ?
           WHERE id = ?
-        `, [d.file_url, d.file_name, d.content, d.description, d.applicable_to, d.effective_date, now, existing.id]);
+        `, [
+          d.file_name,
+          d.doc_id,
+          d.google_drive_url,
+          d.preview_url,
+          d.download_docx_url,
+          d.download_pdf_url,
+          d.description,
+          d.applicable_to,
+          d.effective_date,
+          now,
+          existing.id
+        ]);
       }
     }
-    console.log('✓ Đã đồng bộ thành công 8 tài liệu Phúc lợi - Quy định & Biểu mẫu 2026 kèm nội dung đọc trực tuyến!');
+    console.log('✓ Đã đồng bộ thành công 8 tài liệu với link Google Docs Preview & Download gốc!');
 
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
