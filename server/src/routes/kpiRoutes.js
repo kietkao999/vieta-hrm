@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   getKpis, 
+  getAvailableKpiMonths,
   initMonthlyKpis, 
   saveBulkKpis, 
   createOrUpdateKpi, 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get('/', getKpis);
+router.get('/months', getAvailableKpiMonths);
 router.get('/history/:employee_id', getEmployeeKpiHistory);
 router.post('/init', requireRoles(['ADMIN', 'HR']), initMonthlyKpis);
 router.post('/bulk', requireRoles(['ADMIN', 'HR', 'MANAGER']), saveBulkKpis);

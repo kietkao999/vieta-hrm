@@ -57,6 +57,7 @@ const KpiPage = () => {
 
   const [kpiList, setKpiList] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [availableMonths, setAvailableMonths] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [initializing, setInitializing] = useState(false);
@@ -89,18 +90,24 @@ const KpiPage = () => {
     }, 4000);
   };
 
-  // Fetch Departments
+  // Fetch Departments and Available KPI Months
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await api.get('/departments');
-        setDepartments(res.data || []);
+        const [deptRes, monthsRes] = await Promise.all([
+          api.get('/departments'),
+          api.get(`/kpi/months?year=${year}`)
+        ]);
+        setDepartments(deptRes.data || []);
+        if (Array.isArray(monthsRes.data) && monthsRes.data.length > 0) {
+          setAvailableMonths(monthsRes.data);
+        }
       } catch (err) {
-        console.error('Lỗi tải phòng ban:', err);
+        console.error('Lỗi tải phòng ban/tháng KPI:', err);
       }
     };
     fetchDepartments();
-  }, []);
+  }, [year]);
 
   // Fetch KPI Data
   const fetchKpiData = async () => {
@@ -506,7 +513,7 @@ const KpiPage = () => {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2 ml-1">Chọn tháng:</span>
           {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
             const isSelected = month.toString() === m.toString();
-            const hasData = [5, 6, 7].includes(m);
+            const hasData = availableMonths.includes(m);
             return (
               <button
                 key={m}

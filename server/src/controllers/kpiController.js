@@ -1,5 +1,19 @@
 import { query } from '../config/database.js';
 
+export const getAvailableKpiMonths = async (req, res) => {
+  try {
+    const year = req.query.year || new Date().getFullYear();
+    const rows = await query.all(
+      `SELECT DISTINCT month FROM employee_monthly_kpis WHERE year = ?`,
+      [year]
+    );
+    const months = rows.map(r => parseInt(r.month, 10));
+    return res.json(months);
+  } catch (error) {
+    return res.json([]);
+  }
+};
+
 /**
  * Lấy danh sách KPI tháng
  * Query: month, year, department_id, search, employee_id
