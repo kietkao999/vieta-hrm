@@ -36,14 +36,16 @@ import InnovationPage from './pages/innovations/InnovationPage';
 // Giai đoạn 6
 import ReportPage from './pages/reports/ReportPage';
 import DocumentPage from './pages/documents/DocumentPage';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
 
           {/* Protected Main Routes */}
           <Route
@@ -169,6 +171,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

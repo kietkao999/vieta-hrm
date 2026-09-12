@@ -28,11 +28,11 @@ const PayrollPage = () => {
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
-  const maxDisplayMonth = parseInt(year, 10) >= currentYear ? currentMonth : 12;
-  
   
   const [month, setMonth] = useState(currentMonth.toString());
   const [year, setYear] = useState(currentYear.toString());
+
+  const maxDisplayMonth = parseInt(year, 10) >= currentYear ? currentMonth : 12;
   
   const [payslipModalOpen, setPayslipModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
