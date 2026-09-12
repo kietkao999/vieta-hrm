@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee } from 'lucide-react';
+import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const PayrollPage = () => {
   const { user } = useAuth();
   const [payrolls, setPayrolls] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [departmentFilter, setDepartmentFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   
   const currentMonth = new Date().getMonth() + 1;
@@ -22,6 +24,19 @@ const PayrollPage = () => {
   const [success, setSuccess] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Load danh sách phòng ban cho bộ lọc
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const res = await api.get('/departments');
+        setDepartments(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('Lỗi tải danh sách phòng ban:', err);
+      }
+    };
+    fetchDepts();
+  }, []);
 
   // Edit Form State matching the full formula
   const [editForm, setEditForm] = useState({
@@ -47,7 +62,8 @@ const PayrollPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const payrollRes = await api.get(`/payroll?month=${month}&year=${year}`);
+      const deptParam = departmentFilter && departmentFilter !== 'all' ? `&department_id=${departmentFilter}` : '';
+      const payrollRes = await api.get(`/payroll?month=${month}&year=${year}${deptParam}`);
       setPayrolls(Array.isArray(payrollRes.data) ? payrollRes.data : []);
     } catch (err) {
       setPayrolls([]);
@@ -58,7 +74,7 @@ const PayrollPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [month, year]);
+  }, [month, year, departmentFilter]);
 
   const handleGeneratePayroll = async () => {
     if (window.confirm(`Bạn có chắc muốn tự động khởi tạo và tính lương cho toàn bộ nhân viên trong tháng ${month}/${year} theo công thức mới?`)) {
@@ -549,16 +565,16 @@ const PayrollPage = () => {
 
           {/* Filters Bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 print:hidden">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-semibold text-slate-700">Tháng</span>
                 <select
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-brand-700"
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-brand-700 bg-white"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <option key={m} value={m}>Tháng {m}</option>
+                    <option key={m} value={m}>Tháng {m < 10 ? `0${m}` : m}</option>
                   ))}
                 </select>
               </div>
@@ -567,16 +583,34 @@ const PayrollPage = () => {
                 <select
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
-                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-slate-700"
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-slate-700 bg-white"
                 >
                   {Array.from({ length: 12 }, (_, i) => 2024 + i).map((y) => (
                     <option key={y} value={y.toString()}>{y}</option>
                   ))}
                 </select>
               </div>
+
+              {/* Bộ lọc theo Phòng Ban */}
+              <div className="flex items-center space-x-2">
+                <Building2 size={16} className="text-brand-600" />
+                <span className="text-sm font-semibold text-slate-700">Phòng ban:</span>
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none font-bold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white focus:border-brand-500 transition cursor-pointer"
+                >
+                  <option value="all">-- Tất cả phòng ban ({payrolls.length} nhân sự) --</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="flex-1 max-w-xs">
+            <div className="flex-1 max-w-xs min-w-[200px]">
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -586,6 +620,55 @@ const PayrollPage = () => {
                   placeholder="Tìm theo tên, mã NV..."
                   className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Strip for Selected Department & Month */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Users size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase">Nhân sự lọc</p>
+                <p className="text-base font-black text-slate-800">{filteredPayrolls.length} người</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <DollarSign size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Quỹ Lương Thực Lĩnh</p>
+                <p className="text-base font-black text-emerald-700">
+                  {formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.net_salary || 0), 0))}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <Award size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Thưởng & KPI</p>
+                <p className="text-base font-black text-indigo-700">
+                  {formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.responsibility_kpi || p.responsibility_net || 0) + (p.performance_kpi || p.performance_bonus || 0) + (p.other_bonus || 0), 0))}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold">
+                <ShieldAlert size={20} />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Các Khấu Trừ</p>
+                <p className="text-base font-black text-red-600">
+                  -{formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.social_insurance || 0) + (p.union_fee || 0) + (p.income_tax || 0) + (p.advance_payment || 0) + (p.hour_deduction || 0) + (p.other_deductions || 0) + (p.discipline_deduction || 0), 0))}
+                </p>
               </div>
             </div>
           </div>

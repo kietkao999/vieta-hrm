@@ -2,10 +2,10 @@ import { query } from '../config/database.js';
 
 export const getPayroll = async (req, res) => {
   try {
-    const { month, year, employee_id } = req.query;
+    const { month, year, employee_id, department_id } = req.query;
     
     let sql = `
-      SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, d.name as department_name
+      SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, e.department_id, d.name as department_name
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
@@ -21,6 +21,12 @@ export const getPayroll = async (req, res) => {
     } else if (year) {
       sql += ` AND p.year = ?`;
       params.push(year);
+    }
+
+    // Lọc theo phòng ban (Backend SQL Filter 100% chính xác)
+    if (department_id && department_id !== 'all') {
+      sql += ` AND e.department_id = ?`;
+      params.push(department_id);
     }
 
     // Phân quyền bảo mật lương tuyệt đối: Chỉ ADMIN mới được xem toàn bộ bảng lương
