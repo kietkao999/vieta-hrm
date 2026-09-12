@@ -85,6 +85,8 @@ export default function DocumentPage() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState('embed'); // 'embed' | 'text'
+  const [iframeError, setIframeError] = useState(false); // fallback khi Google Docs không public
+  const [iframeLoading, setIframeLoading] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
 
@@ -109,6 +111,16 @@ export default function DocumentPage() {
   useEffect(() => {
     fetchDocuments();
   }, [selectedCategory, searchKeyword]);
+
+  // Auto-fallback: nếu iframe vẫn loading sau 10 giây → Google Docs bị private → hiện nội dung offline
+  useEffect(() => {
+    if (!iframeLoading) return;
+    const timeout = setTimeout(() => {
+      setIframeError(true);
+      setIframeLoading(false);
+    }, 10000); // 10 giây timeout
+    return () => clearTimeout(timeout);
+  }, [iframeLoading]);
 
   const fetchDocuments = async () => {
     try {
@@ -537,6 +549,8 @@ export default function DocumentPage() {
                       onClick={() => {
                         setSelectedDoc(doc);
                         setPreviewTab('embed');
+                        setIframeError(false);
+                        setIframeLoading(true);
                         setIsPreviewOpen(true);
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
@@ -619,6 +633,8 @@ export default function DocumentPage() {
                           onClick={() => {
                             setSelectedDoc(doc);
                             setPreviewTab('embed');
+                            setIframeError(false);
+                            setIframeLoading(true);
                             setIsPreviewOpen(true);
                           }}
                         >
@@ -649,6 +665,8 @@ export default function DocumentPage() {
                             onClick={() => {
                               setSelectedDoc(doc);
                               setPreviewTab('embed');
+                              setIframeError(false);
+                              setIframeLoading(true);
                               setIsPreviewOpen(true);
                             }}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
@@ -784,20 +802,91 @@ export default function DocumentPage() {
             {/* Document Viewer Area */}
             <div className="flex-1 bg-slate-100 overflow-hidden relative">
               {previewTab === 'embed' ? (
-                getPreviewIframeUrl(selectedDoc) ? (
-                  <iframe
-                    src={getPreviewIframeUrl(selectedDoc)}
-                    title={selectedDoc.title}
-                    className="w-full h-full border-0 bg-white"
-                    allow="autoplay"
-                  />
+                iframeError || !getPreviewIframeUrl(selectedDoc) ? (
+                  /* Fallback khi Google Docs bị private/tắt quyền truy cập */
+                  <div className="h-full overflow-y-auto p-6 sm:p-10 bg-slate-200/60">
+                    <div className="max-w-3xl mx-auto space-y-4">
+                      {/* Thông báo trạng thái */}
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                        <div className="text-amber-500 shrink-0 mt-0.5">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="text-xs">
+                          <p className="font-bold text-amber-800 mb-1">Không thể tải bản gốc Google Docs</p>
+                          <p className="text-amber-700">File Google Docs hiện đang ở chế độ riêng tư hoặc chưa được chia sẻ công khai. Nội dung văn bản đã được lưu sẵn trong hệ thống và hiển thị đầy đủ bên dưới.</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <button
+                              onClick={() => handleOpenGoogleDocs(selectedDoc)}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Mở Google Docs để đăng nhập
+                            </button>
+                            <button
+                              onClick={() => { setIframeError(false); setIframeLoading(true); }}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold text-xs transition-colors"
+                            >
+                              ↻ Thử tải lại
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Nội dung văn bản từ DB */}
+                      <div className="bg-white rounded-xl shadow-md p-8 sm:p-12 border border-slate-200 font-serif text-slate-800 space-y-6">
+                        <div className="border-b-2 border-blue-900 pb-6 text-center space-y-2">
+                          <div className="text-xs font-sans font-bold tracking-widest text-slate-500 uppercase">CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á</div>
+                          <h1 className="text-xl sm:text-2xl font-bold font-sans text-blue-900 uppercase tracking-tight">{selectedDoc.title}</h1>
+                          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-sans text-slate-500 pt-1">
+                            <span>Danh mục: <strong>{selectedDoc.category}</strong></span>
+                            <span>•</span>
+                            <span>Hiệu lực từ: <strong>{selectedDoc.effective_date}</strong></span>
+                            <span>•</span>
+                            <span className="text-emerald-700 font-bold">● {selectedDoc.status || 'Đang hiệu lực'}</span>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 font-sans text-xs space-y-1 text-slate-700">
+                          <div><strong>Đối tượng áp dụng:</strong> {selectedDoc.applicable_to || 'Toàn thể CBNV'}</div>
+                          <div><strong>Tên file chuẩn:</strong> <span className="font-mono text-blue-700">{selectedDoc.file_name}</span></div>
+                        </div>
+                        <div className="prose max-w-none text-slate-800 space-y-4 pt-2 whitespace-pre-line font-sans text-sm leading-relaxed">
+                          {selectedDoc.content || selectedDoc.description || 'Chưa có nội dung chi tiết.'}
+                        </div>
+                        <div className="pt-8 border-t border-slate-200 flex items-center justify-between font-sans text-xs">
+                          <button onClick={() => handleOpenGoogleDocs(selectedDoc)} className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold">
+                            <ExternalLink className="w-4 h-4" />
+                            <span>Mở bản đầy đủ trên Google Docs</span>
+                          </button>
+                          <button onClick={() => handleDownloadFile(selectedDoc, 'docx')} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-900 text-white font-bold">
+                            <Download className="w-4 h-4" />
+                            <span>Tải file Word (.docx)</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                    <FileText className="w-12 h-12 text-slate-400 mb-3" />
-                    <h4 className="text-base font-bold text-slate-700">Chưa có liên kết bản gốc</h4>
-                    <p className="text-xs text-slate-500 mt-1 max-w-md">
-                      Vui lòng chuyển sang tab "Tóm tắt văn bản" hoặc mở file đính kèm.
-                    </p>
+                  /* Google Docs Iframe - sẽ tự fallback nếu lỗi */
+                  <div className="w-full h-full relative">
+                    {iframeLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-10">
+                        <div className="text-center space-y-3">
+                          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                          <p className="text-xs text-slate-500 font-semibold">Đang tải văn bản gốc...</p>
+                        </div>
+                      </div>
+                    )}
+                    <iframe
+                      key={selectedDoc.id}
+                      src={getPreviewIframeUrl(selectedDoc)}
+                      title={selectedDoc.title}
+                      className="w-full h-full border-0 bg-white"
+                      allow="autoplay"
+                      onLoad={() => setIframeLoading(false)}
+                      onError={() => { setIframeError(true); setIframeLoading(false); }}
+                    />
                   </div>
                 )
               ) : (
