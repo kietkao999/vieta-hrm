@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getDocuments,
   getDocumentById,
+  downloadDocument,
   createDocument,
   updateDocument,
   deleteDocument
@@ -59,6 +60,7 @@ router.post('/upload-file', requireRoles(['ADMIN', 'HR']), upload.single('file')
 
 // Tra cứu danh sách & chi tiết (Mọi nhân sự: Admin, Manager, Employee)
 router.get('/', getDocuments);
+router.get('/:id/download', downloadDocument);
 router.get('/:id', getDocumentById);
 
 // Thao tác chỉnh sửa, thêm, xóa (Admin & HR)

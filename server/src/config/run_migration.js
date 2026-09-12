@@ -427,6 +427,7 @@ export async function runMigration() {
         effective_date TEXT,
         applicable_to TEXT DEFAULT 'Toàn thể CBNV',
         description TEXT,
+        content TEXT,
         status TEXT DEFAULT 'Đang hiệu lực',
         created_by TEXT,
         created_at TEXT,
@@ -434,24 +435,42 @@ export async function runMigration() {
       )
     `);
 
-    const docCount = await query.get('SELECT COUNT(*) as total FROM documents');
-    if (!docCount || docCount.total === 0) {
-      const { DEFAULT_DOCUMENTS } = await import('../controllers/documentController.js');
-      for (const d of DEFAULT_DOCUMENTS) {
+    try {
+      await query.run('ALTER TABLE documents ADD COLUMN content TEXT');
+    } catch (e) {}
+
+    const { DEFAULT_DOCUMENTS, ensurePhysicalFiles } = await import('../controllers/documentController.js');
+    ensurePhysicalFiles();
+
+    for (const d of DEFAULT_DOCUMENTS) {
+      const existing = await query.get('SELECT id FROM documents WHERE title = ?', [d.title]);
+      if (!existing) {
         await query.run(`
           INSERT INTO documents (
             title, category, file_name, file_url, file_size, file_type,
-            effective_date, applicable_to, description, status, created_by,
+            effective_date, applicable_to, description, content, status, created_by,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           d.title, d.category, d.file_name, d.file_url, d.file_size, d.file_type,
-          d.effective_date, d.applicable_to, d.description, d.status, d.created_by,
+          d.effective_date, d.applicable_to, d.description, d.content, d.status, d.created_by,
           now, now
         ]);
+      } else {
+        await query.run(`
+          UPDATE documents SET
+            file_url = ?,
+            file_name = ?,
+            content = ?,
+            description = ?,
+            applicable_to = ?,
+            effective_date = ?,
+            updated_at = ?
+          WHERE id = ?
+        `, [d.file_url, d.file_name, d.content, d.description, d.applicable_to, d.effective_date, now, existing.id]);
       }
-      console.log('✓ Đã nạp thành công 8 tài liệu Phúc lợi - Quy định & Biểu mẫu 2026.');
     }
+    console.log('✓ Đã đồng bộ thành công 8 tài liệu Phúc lợi - Quy định & Biểu mẫu 2026 kèm nội dung đọc trực tuyến!');
 
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});

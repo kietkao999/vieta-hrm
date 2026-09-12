@@ -23,7 +23,12 @@ import {
   FileCheck,
   X,
   Upload,
-  ExternalLink
+  ExternalLink,
+  Printer,
+  FileDown,
+  Building2,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -84,9 +89,10 @@ export default function DocumentPage() {
 
   // Modals state
   const [selectedDoc, setSelectedDoc] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
+  const [fontSize, setFontSize] = useState(14);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -99,6 +105,7 @@ export default function DocumentPage() {
     effective_date: new Date().toISOString().split('T')[0],
     applicable_to: 'Toàn thể CBNV',
     description: '',
+    content: '',
     status: 'Đang hiệu lực'
   });
   const [uploading, setUploading] = useState(false);
@@ -142,6 +149,7 @@ export default function DocumentPage() {
       effective_date: new Date().toISOString().split('T')[0],
       applicable_to: 'Toàn thể CBNV',
       description: '',
+      content: '',
       status: 'Đang hiệu lực'
     });
     setFormError('');
@@ -160,6 +168,7 @@ export default function DocumentPage() {
       effective_date: doc.effective_date || '',
       applicable_to: doc.applicable_to || 'Toàn thể CBNV',
       description: doc.description || '',
+      content: doc.content || '',
       status: doc.status || 'Đang hiệu lực'
     });
     setFormError('');
@@ -238,12 +247,74 @@ export default function DocumentPage() {
     }
   };
 
-  const handleDownload = (doc) => {
-    if (doc.file_url) {
-      window.open(doc.file_url, '_blank');
-    } else {
-      alert(`Đang tải file: ${doc.file_name}\n(Tài liệu nội bộ đã được lưu trữ trong hệ thống lưu trữ tài liệu của công ty)`);
+  // Tải file trực tiếp
+  const handleDownload = async (doc) => {
+    try {
+      const response = await api.get(`/documents/${doc.id}/download`, {
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data], {
+        type: 'application/msword;charset=utf-8'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.file_name || `${doc.title}.doc`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Lỗi khi tải file:', error);
+      // Fallback tải qua file_url tĩnh
+      if (doc.file_url) {
+        window.open(doc.file_url, '_blank');
+      } else {
+        alert('Đã xảy ra lỗi khi tải tài liệu. Vui lòng thử lại.');
+      }
     }
+  };
+
+  // In tài liệu
+  const handlePrint = () => {
+    const printContent = document.getElementById('printable-doc-content');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${selectedDoc?.title || 'Văn bản'}</title>
+          <style>
+            body { font-family: 'Times New Roman', serif; padding: 40px; color: #000; line-height: 1.6; font-size: 13pt; }
+            h1 { text-align: center; color: #1e3a8a; font-size: 18pt; margin-bottom: 5px; }
+            h2 { color: #1e40af; font-size: 15pt; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 25px; }
+            h3 { color: #334155; font-size: 13pt; margin-top: 15px; }
+            .header-center { text-align: center; margin-bottom: 25px; }
+            .meta-box { border: 1px solid #e2e8f0; padding: 12px; background-color: #f8fafc; margin-bottom: 20px; font-size: 11pt; }
+            ul, ol { padding-left: 20px; }
+            li { margin-bottom: 6px; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-center">
+            <h3>CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á</h3>
+            <p>Hệ thống Quản trị Nhân sự & Tiền lương (HRM)</p>
+          </div>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   return (
@@ -260,7 +331,7 @@ export default function DocumentPage() {
               Văn Bản, Quy Định & Phúc Lợi
             </h1>
             <p className="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
-              Tra cứu đầy đủ Nội quy công ty, Quy chế phúc lợi, Biểu mẫu nhân sự, Bảng hệ số lương tầng bậc và Hướng dẫn an toàn lao động.
+              Đọc trực tuyến và tải về toàn bộ Nội quy công ty, Quy chế phúc lợi, Biểu mẫu nhân sự, Bảng hệ số lương tầng bậc và Hướng dẫn an toàn lao động.
             </p>
           </div>
 
@@ -451,7 +522,13 @@ export default function DocumentPage() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-900 transition-colors line-clamp-2">
+                  <h3
+                    onClick={() => {
+                      setSelectedDoc(doc);
+                      setIsPreviewOpen(true);
+                    }}
+                    className="text-base font-bold text-slate-900 group-hover:text-blue-900 transition-colors line-clamp-2 cursor-pointer hover:underline"
+                  >
                     {doc.title}
                   </h3>
 
@@ -481,7 +558,7 @@ export default function DocumentPage() {
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <FileText className="w-3.5 h-3.5 text-slate-400" />
-                        <span>File:</span>
+                        <span>Tệp đính kèm:</span>
                       </span>
                       <span className="text-slate-600 truncate max-w-[180px] font-mono text-[11px]" title={doc.file_name}>
                         {doc.file_name || 'Tài liệu chuẩn hóa'}
@@ -492,23 +569,23 @@ export default function DocumentPage() {
 
                 {/* Card Actions */}
                 <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
                         setSelectedDoc(doc);
-                        setIsDetailModalOpen(true);
+                        setIsPreviewOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Chi tiết</span>
+                      <Eye className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Xem & Đọc</span>
                     </button>
 
                     <button
                       onClick={() => handleDownload(doc)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Tải về</span>
                     </button>
                   </div>
@@ -563,7 +640,13 @@ export default function DocumentPage() {
                     <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-4 py-3 text-center font-bold text-slate-400">{idx + 1}</td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900 hover:text-blue-900 cursor-pointer" onClick={() => { setSelectedDoc(doc); setIsDetailModalOpen(true); }}>
+                        <div
+                          className="font-bold text-slate-900 hover:text-blue-900 cursor-pointer"
+                          onClick={() => {
+                            setSelectedDoc(doc);
+                            setIsPreviewOpen(true);
+                          }}
+                        >
                           {doc.title}
                         </div>
                         <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{doc.description}</div>
@@ -586,20 +669,25 @@ export default function DocumentPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => { setSelectedDoc(doc); setIsDetailModalOpen(true); }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                            title="Xem chi tiết"
+                            onClick={() => {
+                              setSelectedDoc(doc);
+                              setIsPreviewOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                            title="Xem & Đọc trực tuyến"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Đọc</span>
                           </button>
                           <button
                             onClick={() => handleDownload(doc)}
-                            className="p-1.5 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                            title="Tải về"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
+                            title="Tải về máy tính"
                           >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Tải</span>
                           </button>
                           {isAdminOrHR && (
                             <>
@@ -608,14 +696,14 @@ export default function DocumentPage() {
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                                 title="Sửa"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(doc.id, doc.title)}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                                 title="Xóa"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
                           )}
@@ -630,85 +718,146 @@ export default function DocumentPage() {
         </div>
       )}
 
-      {/* DETAIL MODAL */}
-      {isDetailModalOpen && selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                  <FileText className="w-5 h-5" />
+      {/* FULL DOCUMENT PREVIEW & READER MODAL */}
+      {isPreviewOpen && selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-100 rounded-2xl max-w-4xl w-full h-[92vh] shadow-2xl border border-slate-300 flex flex-col overflow-hidden">
+            {/* Top Toolbar */}
+            <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between gap-4 shrink-0 shadow-md">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Chi tiết văn bản quy định</h3>
-                  <p className="text-xs text-slate-500">Mã VB #{selectedDoc.id} • Ban hành năm 2026</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsDetailModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Tên văn bản</span>
-                <h2 className="text-lg font-bold text-slate-900 mt-1">{selectedDoc.title}</h2>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
-                <div>
-                  <span className="text-slate-400 font-medium">Danh mục:</span>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedDoc.category}</div>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-medium">Trạng thái:</span>
-                  <div className="font-bold text-emerald-600 mt-0.5">{selectedDoc.status || 'Đang hiệu lực'}</div>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-medium">Đối tượng áp dụng:</span>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedDoc.applicable_to || 'Toàn thể CBNV'}</div>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-medium">Ngày có hiệu lực:</span>
-                  <div className="font-bold text-slate-800 mt-0.5">{selectedDoc.effective_date || '2026'}</div>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Nội dung tóm tắt</span>
-                <div className="p-3.5 bg-slate-50 rounded-xl text-xs text-slate-700 leading-relaxed border border-slate-100">
-                  {selectedDoc.description || 'Chưa có thông tin mô tả chi tiết cho văn bản này.'}
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center justify-between">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <FileCheck className="w-5 h-5 text-blue-600 shrink-0" />
-                  <div className="overflow-hidden">
-                    <div className="text-xs font-bold text-slate-900 truncate">{selectedDoc.file_name}</div>
-                    <div className="text-[11px] text-slate-500">{selectedDoc.file_size || '1.5 MB'} • Định dạng Word/DOCX</div>
+                <div className="truncate">
+                  <h3 className="text-sm font-bold text-white truncate">{selectedDoc.title}</h3>
+                  <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span>{selectedDoc.category}</span>
+                    <span>•</span>
+                    <span>Áp dụng: {selectedDoc.effective_date}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Font Size Controls */}
+                <div className="hidden sm:flex items-center bg-slate-800 rounded-lg p-0.5 text-xs text-slate-300 border border-slate-700">
+                  <button
+                    onClick={() => setFontSize(Math.max(12, fontSize - 1))}
+                    className="p-1.5 hover:text-white"
+                    title="Giảm cỡ chữ"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="px-2 font-mono text-[11px]">{fontSize}px</span>
+                  <button
+                    onClick={() => setFontSize(Math.min(20, fontSize + 1))}
+                    className="p-1.5 hover:text-white"
+                    title="Tăng cỡ chữ"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={handlePrint}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
+                  title="In văn bản"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">In văn bản</span>
+                </button>
+
                 <button
                   onClick={() => handleDownload(selectedDoc)}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-colors cursor-pointer"
+                  title="Tải file về máy tính"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Tải file</span>
+                  <span>Tải về</span>
+                </button>
+
+                <button
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer ml-1"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setIsDetailModalOpen(false)}
-                className="px-5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+            {/* Document Reader Body (Styled Paper) */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-200/70">
+              <div
+                id="printable-doc-content"
+                className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 sm:p-12 border border-slate-200 min-h-full font-serif text-slate-800 space-y-6"
+                style={{ fontSize: `${fontSize}px`, lineHeight: '1.75' }}
               >
-                Đóng
-              </button>
+                {/* Official Letterhead */}
+                <div className="border-b-2 border-blue-900 pb-6 text-center space-y-2">
+                  <div className="text-xs font-sans font-bold tracking-widest text-slate-500 uppercase">
+                    CÔNG TY TNHH THƯƠNG MẠI SẢN XUẤT VIỆT Á
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-bold font-sans text-blue-900 uppercase tracking-tight">
+                    {selectedDoc.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-sans text-slate-500 pt-1">
+                    <span>Mã văn bản: <strong>#{selectedDoc.id}</strong></span>
+                    <span>•</span>
+                    <span>Danh mục: <strong>{selectedDoc.category}</strong></span>
+                    <span>•</span>
+                    <span>Hiệu lực từ: <strong>{selectedDoc.effective_date}</strong></span>
+                    <span>•</span>
+                    <span className="text-emerald-700 font-bold">● {selectedDoc.status || 'Đang hiệu lực'}</span>
+                  </div>
+                </div>
+
+                {/* Scope Box */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 font-sans text-xs space-y-1 text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <strong className="text-slate-900">Đối tượng áp dụng:</strong>
+                    <span>{selectedDoc.applicable_to || 'Toàn thể Cán bộ Công nhân viên'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-slate-900">Đơn vị ban hành:</strong>
+                    <span>{selectedDoc.created_by || 'Phòng Hành chính Nhân sự'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-slate-900">File lưu trữ:</strong>
+                    <span className="font-mono text-blue-700">{selectedDoc.file_name}</span>
+                  </div>
+                </div>
+
+                {/* Document Main Content */}
+                <div className="prose max-w-none text-slate-800 space-y-4 pt-2 whitespace-pre-line font-sans text-sm sm:text-base leading-relaxed">
+                  {selectedDoc.content ? (
+                    selectedDoc.content
+                  ) : (
+                    <div>
+                      <p className="font-sans text-sm text-slate-700 leading-relaxed">{selectedDoc.description}</p>
+                      <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 font-sans text-xs text-blue-800 mt-4">
+                        Tài liệu này đã được chuẩn hóa và lưu trữ tại hệ thống quản lý văn bản nội bộ Việt Á. Bạn có thể nhấn nút <strong>"Tải về"</strong> ở góc trên bên phải để lưu file về máy.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sign-off Footer */}
+                <div className="pt-10 border-t border-slate-200 grid grid-cols-2 text-center font-sans text-xs">
+                  <div>
+                    <strong className="text-slate-900 uppercase block">TRƯỞNG PHÒNG HCNS</strong>
+                    <span className="text-slate-400 italic block mt-1">(Đã ký duyệt)</span>
+                    <div className="h-12" />
+                    <span className="font-bold text-slate-800">Huỳnh Thị Trúc Xinh</span>
+                  </div>
+                  <div>
+                    <strong className="text-slate-900 uppercase block">BAN GIÁM ĐỐC</strong>
+                    <span className="text-slate-400 italic block mt-1">(Đã phê duyệt)</span>
+                    <div className="h-12" />
+                    <span className="font-bold text-slate-800">Võ Minh Cường</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -717,7 +866,7 @@ export default function DocumentPage() {
       {/* CREATE / EDIT MODAL (Admin & HR) */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">
                 {editingDoc ? 'Chỉnh sửa văn bản / quy định' : 'Thêm văn bản / quy định mới'}
@@ -823,11 +972,22 @@ export default function DocumentPage() {
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Nội dung tóm tắt / Ghi chú</label>
                 <textarea
-                  rows="3"
+                  rows="2"
                   placeholder="Tóm tắt các điểm chính hoặc điều khoản quan trọng trong văn bản..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Toàn văn nội dung văn bản (để đọc trực tuyến)</label>
+                <textarea
+                  rows="6"
+                  placeholder="Nhập toàn văn nội dung quy định, các chương, điều, khoản hoặc nội dung biểu mẫu..."
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-800 font-mono text-[11px]"
                 />
               </div>
 
