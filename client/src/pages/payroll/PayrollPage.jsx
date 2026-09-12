@@ -3,6 +3,22 @@ import api from '../../services/api';
 import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+const TIER_PRESETS = [
+  { label: 'Tầng 1 (4.500.000 đ) - Nhân viên mới (< 1 năm)', salary: 4500000, quota: 1000000 },
+  { label: 'Tầng 2 (5.000.000 đ) - Chuyên viên (1 - 3 năm)', salary: 5000000, quota: 1000000 },
+  { label: 'Tầng 3 (5.500.000 đ) - Chuyên viên cao cấp (≥ 3 năm)', salary: 5500000, quota: 1000000 },
+  { label: 'Tầng 4 (6.000.000 đ) - Phó phòng / Phó Quản lý', salary: 6000000, quota: 1500000 },
+  { label: 'Tầng 5 (6.500.000 đ) - Trưởng phòng / Quản lý', salary: 6500000, quota: 2000000 },
+  { label: 'Tầng 6 (8.000.000 đ) - Phó Giám đốc', salary: 8000000, quota: 2500000 },
+  { label: 'Tầng 7 (9.500.000 đ) - Giám đốc', salary: 9500000, quota: 0 }
+];
+
+const GRADE_PRESETS = Array.from({ length: 11 }, (_, i) => ({
+  label: i === 0 ? 'Bậc 0 (0 đ)' : `Bậc ${i} (+${(i * 400000).toLocaleString('vi-VN')} đ)`,
+  salary: i * 400000,
+  level: i
+}));
+
 const PayrollPage = () => {
   const { user } = useAuth();
   const [payrolls, setPayrolls] = useState([]);
@@ -42,6 +58,7 @@ const PayrollPage = () => {
   const [editForm, setEditForm] = useState({
     tier_salary: 0,
     grade_salary: 0,
+    sync_to_employee: false,
     work_days: 26,
     ot_hours: 0,
     responsibility_quota: 0,
@@ -134,6 +151,7 @@ const PayrollPage = () => {
     setEditForm({
       tier_salary: p.tier_salary || 0,
       grade_salary: p.grade_salary || 0,
+      sync_to_employee: false,
       work_days: p.work_days ?? 26,
       ot_hours: p.ot_hours || 0,
       responsibility_quota: quota,
@@ -159,6 +177,7 @@ const PayrollPage = () => {
       await api.put(`/payroll/${selectedPayroll.id}`, {
         tier_salary: editForm.tier_salary,
         grade_salary: editForm.grade_salary,
+        sync_to_employee: editForm.sync_to_employee,
         work_days: editForm.work_days,
         ot_hours: editForm.ot_hours,
         responsibility_quota: editForm.responsibility_quota,
@@ -693,9 +712,9 @@ const PayrollPage = () => {
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="px-3 py-3">Mã NV & Họ Tên</th>
-                    <th className="px-3 py-3">Phòng ban</th>
-                    <th className="px-3 py-3 text-right">Lương Cơ Sở & Ngày Công</th>
-                    <th className="px-3 py-3 text-right">Tăng Ca (OT)</th>
+                    <th className="px-3 py-3">Phòng ban & Chức vụ</th>
+                    <th className="px-3 py-3 text-right">Tầng & Bậc (Thâm Niên)</th>
+                    <th className="px-3 py-3 text-right">Lương Công & Tăng Ca</th>
                     <th className="px-3 py-3 text-right">KPI & Thưởng</th>
                     <th className="px-3 py-3 text-right">Phụ Cấp</th>
                     <th className="px-3 py-3 text-right text-red-600">Khấu Trừ</th>
@@ -745,18 +764,28 @@ const PayrollPage = () => {
                             </div>
                             <div className="text-[10px] text-slate-400 font-mono">{p.employee_code}</div>
                           </td>
-                          <td className="px-3 py-3 text-slate-600 font-medium">{p.department_name}</td>
+                          <td className="px-3 py-3">
+                            <div className="text-slate-700 font-semibold">{p.department_name}</div>
+                            <div className="text-[10px] text-slate-400">{p.position_name || 'Nhân viên'}</div>
+                          </td>
                           <td className="px-3 py-3 text-right">
-                            <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
-                            <div className="text-[10px] text-slate-400">
-                              {wDays} công | Gốc: {formatVND(totalBase)}
+                            <div className="flex items-center justify-end space-x-1">
+                              <span className="bg-blue-50 text-blue-800 font-bold px-1.5 py-0.5 rounded text-[10px]" title="Lương Tầng">
+                                {formatVND(p.tier_salary || 0)}
+                              </span>
+                              <span className="bg-indigo-50 text-indigo-800 font-bold px-1.5 py-0.5 rounded text-[10px]" title="Lương Bậc">
+                                +{formatVND(p.grade_salary || 0)}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                              {p.seniority_text ? `Thâm niên: ${p.seniority_text}` : `Gốc: ${formatVND(totalBase)}`}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-right">
-                            <div className={`font-semibold ${otSal > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
-                              {formatVND(otSal)}
+                            <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {wDays} công {otSal > 0 ? `| OT: +${formatVND(otSal)}` : ''}
                             </div>
-                            <div className="text-[10px] text-slate-400">{otHrs > 0 ? `${otHrs} giờ OT (150%)` : '-'}</div>
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-bold text-emerald-600">{formatVND(totalBonus)}</div>
@@ -802,8 +831,8 @@ const PayrollPage = () => {
                             {isAdmin && (
                               <button
                                 onClick={() => openEditModal(p)}
-                                className="text-brand-600 hover:text-brand-800 p-1.5 bg-brand-50 rounded-lg ml-1"
-                                title="Chỉnh sửa chi tiết"
+                                className="text-brand-600 hover:text-brand-900 p-1.5 bg-brand-50 rounded-lg ml-1"
+                                title="Chỉnh sửa Chi Tiết Lương & Tầng Bậc"
                               >
                                 <Edit2 size={14} />
                               </button>
@@ -829,8 +858,8 @@ const PayrollPage = () => {
                             {isAdmin && (
                               <button
                                 onClick={() => handleDelete(p)}
-                                className="text-slate-400 hover:text-red-600 p-1.5 border rounded-lg ml-1"
-                                title="Xóa"
+                                className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg ml-1"
+                                title="Xóa Phiếu Lương"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -854,7 +883,7 @@ const PayrollPage = () => {
           <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
             <div className="p-5 bg-slate-800 text-white flex justify-between items-center shrink-0">
               <div>
-                <h3 className="font-bold text-lg">Cập nhật Chi Tiết Lương & Khấu Trừ</h3>
+                <h3 className="font-bold text-lg">Cập nhật Chi Tiết Lương & Tầng - Bậc</h3>
                 <p className="text-xs text-slate-300 mt-0.5">
                   Nhân sự: <span className="text-amber-300 font-bold">{selectedPayroll.fullname}</span> ({selectedPayroll.employee_code}) - {selectedPayroll.department_name}
                 </p>
@@ -866,46 +895,110 @@ const PayrollPage = () => {
 
             <form onSubmit={handleEditSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Group I: Lương cơ sở & Công việc */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
-                    <Clock size={14} className="text-brand-600" />
-                    <span>I. Lương Cơ Sở, Ngày Công & Giờ Tăng Ca</span>
-                  </h4>
-                  <span className="text-[10px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded">
-                    Lương cơ sở lấy từ Hồ sơ NV | Ngày công & OT nhập tay
-                  </span>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock size={16} className="text-brand-600" />
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      I. Lương Cơ Sở (Tầng - Bậc - Thâm Niên) & Ngày Công
+                    </h4>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">
+                      Thâm niên: {selectedPayroll.seniority_text || 'Chưa xác định'}
+                    </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Cột 1: Lương Tầng */}
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-slate-600">Lương Tầng</label>
-                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                      <label className="text-xs font-bold text-blue-950">1. Lương Tầng (Theo chức vụ / thâm niên)</label>
+                      <span className="text-[10px] text-blue-600 font-medium">Chọn nhanh hoặc nhập</span>
                     </div>
-                    <input
-                      type="text"
-                      disabled
-                      value={formatVND(editForm.tier_salary)}
-                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-slate-600 cursor-not-allowed"
-                    />
+                    <select
+                      value={editForm.tier_salary}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const matched = TIER_PRESETS.find(t => t.salary === val);
+                        setEditForm(prev => ({
+                          ...prev,
+                          tier_salary: val,
+                          responsibility_quota: matched ? matched.quota : prev.responsibility_quota
+                        }));
+                      }}
+                      className="w-full border border-blue-200 bg-blue-50/50 rounded-lg p-2 text-xs font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                      {TIER_PRESETS.map((t, idx) => (
+                        <option key={idx} value={t.salary}>
+                          {t.label}
+                        </option>
+                      ))}
+                      {!TIER_PRESETS.some(t => t.salary === editForm.tier_salary) && (
+                        <option value={editForm.tier_salary}>
+                          Tùy chỉnh: {formatVND(editForm.tier_salary)}
+                        </option>
+                      )}
+                    </select>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[11px] text-slate-500 font-semibold whitespace-nowrap">Số tiền VND:</span>
+                      <input
+                        type="text"
+                        value={formatInputNumber(editForm.tier_salary)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({ ...editForm, tier_salary: raw === '' ? 0 : parseInt(raw, 10) });
+                        }}
+                        className="w-full border border-slate-200 rounded p-1.5 text-xs font-bold text-slate-800 outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
+
+                  {/* Cột 2: Lương Bậc */}
+                  <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-slate-600">Lương Bậc</label>
-                      <span className="text-[10px] text-slate-400 font-medium">🔒 Hệ thống</span>
+                      <label className="text-xs font-bold text-indigo-950">2. Lương Bậc (+400k / bậc)</label>
+                      <span className="text-[10px] text-indigo-600 font-medium">Chọn nhanh hoặc nhập</span>
                     </div>
-                    <input
-                      type="text"
-                      disabled
-                      value={formatVND(editForm.grade_salary)}
-                      className="w-full border border-slate-200 bg-slate-100/80 rounded-lg p-2 text-xs mt-1 font-bold text-slate-600 cursor-not-allowed"
-                    />
+                    <select
+                      value={editForm.grade_salary}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setEditForm(prev => ({ ...prev, grade_salary: val }));
+                      }}
+                      className="w-full border border-indigo-200 bg-indigo-50/50 rounded-lg p-2 text-xs font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      {GRADE_PRESETS.map((g, idx) => (
+                        <option key={idx} value={g.salary}>
+                          {g.label}
+                        </option>
+                      ))}
+                      {!GRADE_PRESETS.some(g => g.salary === editForm.grade_salary) && (
+                        <option value={editForm.grade_salary}>
+                          Tùy chỉnh: {formatVND(editForm.grade_salary)}
+                        </option>
+                      )}
+                    </select>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[11px] text-slate-500 font-semibold whitespace-nowrap">Số tiền VND:</span>
+                      <input
+                        type="text"
+                        value={formatInputNumber(editForm.grade_salary)}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          setEditForm({ ...editForm, grade_salary: raw === '' ? 0 : parseInt(raw, 10) });
+                        }}
+                        className="w-full border border-slate-200 rounded p-1.5 text-xs font-bold text-slate-800 outline-none"
+                      />
+                    </div>
                   </div>
+                </div>
+
+                {/* Ngày công & OT */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-blue-900">Ngày công thực tế (chuẩn 26)</label>
-                      <span className="text-[10px] text-blue-600 font-bold">✍️ Nhập tay</span>
-                    </div>
+                    <label className="text-xs font-semibold text-slate-700">Ngày công thực tế (chuẩn 26 ngày)</label>
                     <input
                       type="number"
                       step="0.5"
@@ -917,10 +1010,7 @@ const PayrollPage = () => {
                     />
                   </div>
                   <div>
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-semibold text-indigo-900">Giờ tăng ca (OT × 1.5)</label>
-                      <span className="text-[10px] text-indigo-600 font-bold">✍️ Nhập tay</span>
-                    </div>
+                    <label className="text-xs font-semibold text-slate-700">Giờ tăng ca (OT × 1.5)</label>
                     <input
                       type="number"
                       step="0.5"
@@ -931,6 +1021,17 @@ const PayrollPage = () => {
                     />
                   </div>
                 </div>
+
+                {/* Checkbox lưu vĩnh viễn vào hồ sơ nhân viên */}
+                <label className="flex items-center space-x-2.5 text-xs font-bold text-brand-900 bg-brand-50 p-2.5 rounded-lg border border-brand-200 cursor-pointer mt-2">
+                  <input
+                    type="checkbox"
+                    checked={editForm.sync_to_employee}
+                    onChange={(e) => setEditForm({ ...editForm, sync_to_employee: e.target.checked })}
+                    className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500 cursor-pointer"
+                  />
+                  <span>Lưu vĩnh viễn cấu hình Tầng & Bậc này vào Hồ sơ nhân sự (employees) để tự động áp dụng các tháng tiếp theo</span>
+                </label>
               </div>
 
               {/* Group II: KPI & Thưởng */}

@@ -296,29 +296,41 @@ export async function runMigration() {
         const emp = await query.get('SELECT id, base_salary, tier_salary, grade_salary FROM employees WHERE code = ?', [cleanCode]);
         if (!emp) continue;
 
-        const tierSalary = m8.tierSalary || emp.tier_salary || 0;
-        const gradeSalary = m8.gradeSalary || emp.grade_salary || 0;
+        const tierSalary = Number(m8.tierSalary) || emp.tier_salary || 0;
+        const gradeLevel = Number(m8.gradeLevel) || 0;
+        const gradeSalary = Number(m8.gradeSalary) || (gradeLevel * 400000) || emp.grade_salary || 0;
         const totalBase = (tierSalary + gradeSalary) || emp.base_salary || 0;
         const workDays = m8.workDays !== null && m8.workDays !== undefined ? m8.workDays : 26;
         const baseWorkSalary = m8.baseWorkSalary || Math.round((totalBase / 26) * workDays);
-        const respBonus = m8.respBonus || 0;
-        const respRate = m8.respRate !== undefined && m8.respRate !== null ? m8.respRate : 1.0;
-        const respAmount = m8.respAmount || Math.round(respBonus * respRate);
-        const perfBonus = m8.perfBonus || 0;
-        const otSalary = m8.otSalary || 0;
-        const otherBonus = m8.otherBonus || 0;
-        const otherAllow = m8.driverAllowance || 0;
-        const mealPhone = m8.mealPhoneAllowance || 0;
-        const socialIns = m8.socialInsurance || 0;
-        const unionFee = m8.unionFee || 0;
-        const hrDeduct = m8.hourDeduction || 0;
-        const advance = m8.advancePayment || 0;
-        const otherDeduct = m8.otherDeductions || 0;
-        const discDeduct = m8.disciplineDeduction || 0;
-        const uniformRefund = m8.uniformRefund || 0;
+        const respBonus = Number(m8.kpiQuota) || Number(m8.respBonus) || 0;
+        const respRate = m8.kpiRate !== undefined && m8.kpiRate !== null ? Number(m8.kpiRate) : (m8.respRate !== undefined ? Number(m8.respRate) : 1.0);
+        const respAmount = Number(m8.respAmount) || Math.round(respBonus * respRate);
+        const perfBonus = Number(m8.perfBonus) || 0;
+        const otSalary = Number(m8.otSalary) || 0;
+        const otherBonus = Number(m8.otherBonus) || 0;
+        const otherAllow = Number(m8.driverAllow) || Number(m8.driverAllowance) || 0;
+        const mealPhone = Number(m8.mealPhone) || Number(m8.mealPhoneAllowance) || 0;
+        const socialIns = Number(m8.socialIns) || Number(m8.socialInsurance) || 0;
+        const unionFee = Number(m8.unionFee) || 0;
+        const hrDeduct = Number(m8.hourDeduct) || Number(m8.hourDeduction) || 0;
+        const advance = Number(m8.advance) || Number(m8.advancePayment) || 0;
+        const otherDeduct = Number(m8.otherDeduct) || Number(m8.otherDeductions) || 0;
+        const discDeduct = Number(m8.perfDeduct) || Number(m8.disciplineDeduction) || 0;
+        const uniformRefund = Number(m8.uniformRefund) || 0;
 
         const totalDeductions = socialIns + unionFee + hrDeduct + advance + otherDeduct + discDeduct;
-        const netSalary = m8.netSalary || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + (otherBonus + uniformRefund) + mealPhone + otherAllow - totalDeductions);
+        const netSalary = Number(m8.netSalary) || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + (otherBonus + uniformRefund) + mealPhone + otherAllow - totalDeductions);
+
+        // Cập nhật lại thông tin tầng bậc vào hồ sơ nhân viên
+        await query.run(`
+          UPDATE employees SET
+            tier_salary = ?,
+            grade_salary = ?,
+            tier = ?,
+            grade = ?,
+            base_salary = ?
+          WHERE id = ?
+        `, [tierSalary, gradeSalary, m8.tierName || '', `Bậc ${gradeLevel}`, totalBase, emp.id]);
 
         await query.run(`
           INSERT INTO employee_monthly_kpis (

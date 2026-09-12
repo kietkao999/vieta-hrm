@@ -3,16 +3,20 @@ import api from '../../services/api';
 import { User, Briefcase, DollarSign, X } from 'lucide-react';
 
 const TIER_OPTIONS = [
-  'Tầng 1 - Lao động phổ thông',
-  'Tầng 2 - Nhân viên sơ cấp',
-  'Tầng 3 - Chuyên viên / Nhân viên',
-  'Tầng 4 - Trưởng nhóm / Giám sát',
-  'Tầng 5 - Quản lý / Trưởng phòng',
-  'Tầng 6 - Phó Giám đốc',
-  'Tầng 7 - Ban Tổng Giám đốc'
+  { label: 'Tầng 1 - Nhân viên mới (< 1 năm: 4.500.000 đ)', value: 'Tầng 1', salary: 4500000, kpi: 1000000 },
+  { label: 'Tầng 2 - Chuyên viên (1-3 năm: 5.000.000 đ)', value: 'Tầng 2', salary: 5000000, kpi: 1000000 },
+  { label: 'Tầng 3 - Chuyên viên cao cấp (≥ 3 năm: 5.500.000 đ)', value: 'Tầng 3', salary: 5500000, kpi: 1000000 },
+  { label: 'Tầng 4 - Phó phòng / Phó Quản lý (6.000.000 đ)', value: 'Tầng 4', salary: 6000000, kpi: 1500000 },
+  { label: 'Tầng 5 - Trưởng phòng / Quản lý (6.500.000 đ)', value: 'Tầng 5', salary: 6500000, kpi: 2000000 },
+  { label: 'Tầng 6 - Phó Giám đốc (8.000.000 đ)', value: 'Tầng 6', salary: 8000000, kpi: 2500000 },
+  { label: 'Tầng 7 - Giám đốc (9.500.000 đ)', value: 'Tầng 7', salary: 9500000, kpi: 0 }
 ];
 
-const GRADE_OPTIONS = Array.from({ length: 21 }, (_, i) => `Bậc ${i}`);
+const GRADE_OPTIONS = Array.from({ length: 21 }, (_, i) => ({
+  label: i === 0 ? 'Bậc 0 (0 đ)' : `Bậc ${i} (${new Intl.NumberFormat('vi-VN').format(i * 400000)} đ)`,
+  value: `Bậc ${i}`,
+  salary: i * 400000
+}));
 
 const formatInputNumber = (val) => {
   if (val === '' || val === null || val === undefined) return '';
@@ -123,12 +127,25 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
 
+      // Auto set tier_salary and kpi_bonus if tier changes
+      if (name === 'tier') {
+        const matched = TIER_OPTIONS.find(t => t.value === value || t.label === value);
+        if (matched) {
+          updated.tier_salary = matched.salary.toString();
+          if (matched.kpi > 0) {
+            updated.kpi_bonus = matched.kpi.toString();
+          }
+          const gSalary = parseFloat(prev.grade_salary) || 0;
+          updated.base_salary = (matched.salary + gSalary).toString();
+        }
+      }
+
       // Auto compute grade_salary if grade changes (mỗi bậc = 400.000 đ)
       if (name === 'grade') {
         const bacNum = parseInt(value.replace(/\D/g, '')) || 0;
         const gSalary = bacNum * 400000;
         updated.grade_salary = gSalary ? gSalary.toString() : '0';
-        const tSalary = parseFloat(prev.tier_salary) || 0;
+        const tSalary = parseFloat(updated.tier_salary || prev.tier_salary) || 0;
         if (tSalary || gSalary) {
           updated.base_salary = (tSalary + gSalary).toString();
         }
@@ -136,8 +153,8 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
 
       // Auto compute base_salary if tier_salary or grade_salary is changed
       if (name === 'tier_salary' || name === 'grade_salary') {
-        const tSalary = parseFloat(name === 'tier_salary' ? value : prev.tier_salary) || 0;
-        const gSalary = parseFloat(name === 'grade_salary' ? value : prev.grade_salary) || 0;
+        const tSalary = parseFloat(name === 'tier_salary' ? value : (updated.tier_salary || prev.tier_salary)) || 0;
+        const gSalary = parseFloat(name === 'grade_salary' ? value : (updated.grade_salary || prev.grade_salary)) || 0;
         if (tSalary || gSalary) {
           updated.base_salary = (tSalary + gSalary).toString();
         }
@@ -318,23 +335,20 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
               <div>
-                <label className="text-xs font-semibold text-slate-600">Tầng nhân sự</label>
+                <label className="text-xs font-semibold text-slate-600">Tầng nhân sự (Thông báo 18)</label>
                 <select name="tier" value={formData.tier} onChange={handleChange} className="w-full border rounded-lg p-2 text-xs mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none font-semibold text-blue-900">
                   <option value="">-- Chọn tầng --</option>
-                  {TIER_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TIER_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600">Bậc chuyên môn (+400k/bậc)</label>
-                <select name="grade" value={formData.grade} onChange={handleChange} className="w-full border rounded-lg p-2 text-xs mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none font-semibold text-blue-900">
-                  {GRADE_OPTIONS.map(g => {
-                    const num = parseInt(g.replace(/\D/g, '')) || 0;
-                    return (
-                      <option key={g} value={g}>
-                        {g} {num > 0 ? `(+${(num * 400000).toLocaleString('vi-VN')} đ)` : '(0 đ)'}
-                      </option>
-                    );
-                  })}
+                <select name="grade" value={formData.grade} onChange={handleChange} className="w-full border rounded-lg p-2 text-xs mt-1 bg-white focus:ring-2 focus:ring-brand-400 outline-none font-semibold text-indigo-900">
+                  {GRADE_OPTIONS.map(g => (
+                    <option key={g.value} value={g.value}>
+                      {g.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
