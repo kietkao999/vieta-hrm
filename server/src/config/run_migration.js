@@ -1,5 +1,6 @@
 import { query } from './database.js';
 import { danhSachNhanVienVaKPI } from '../data/danhSachNhanVienVaKPI.js';
+import { danhSachThang8 } from '../data/danhSachThang8.js';
 import bcrypt from 'bcryptjs';
 
 export const SEED_EMPLOYEES_RAW = danhSachNhanVienVaKPI.map(e => {
@@ -288,12 +289,129 @@ export async function runMigration() {
     await query.run('COMMIT');
     console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ VÀ TÀI KHOẢN PHÂN QUYỀN 3 CẤP ĐỘ ---');
 
-    // 5. Tự động đồng bộ dữ liệu Tháng 08/2026 từ file Excel chính thức nếu có
-    try {
-      const { syncMonth8Data } = await import('../../sync_month_8_from_excel.js');
-      await syncMonth8Data();
-    } catch (m8Err) {
-      console.log('Không tìm thấy hoặc bỏ qua đồng bộ file Tháng 8:', m8Err.message);
+    // 5. Đồng bộ dữ liệu KPI & Bảng Lương Tháng 08/2026 chính xác 100% từ danhSachThang8
+    if (Array.isArray(danhSachThang8) && danhSachThang8.length > 0) {
+      for (const m8 of danhSachThang8) {
+        const cleanCode = m8.code.trim();
+        const emp = await query.get('SELECT id, base_salary, tier_salary, grade_salary FROM employees WHERE code = ?', [cleanCode]);
+        if (!emp) continue;
+
+        const tierSalary = m8.tierSalary || emp.tier_salary || 0;
+        const gradeSalary = m8.gradeSalary || emp.grade_salary || 0;
+        const totalBase = (tierSalary + gradeSalary) || emp.base_salary || 0;
+        const workDays = m8.workDays !== null && m8.workDays !== undefined ? m8.workDays : 26;
+        const baseWorkSalary = m8.baseWorkSalary || Math.round((totalBase / 26) * workDays);
+        const respBonus = m8.respBonus || 0;
+        const respRate = m8.respRate !== undefined && m8.respRate !== null ? m8.respRate : 1.0;
+        const respAmount = m8.respAmount || Math.round(respBonus * respRate);
+        const perfBonus = m8.perfBonus || 0;
+        const otSalary = m8.otSalary || 0;
+        const otherBonus = m8.otherBonus || 0;
+        const otherAllow = m8.driverAllowance || 0;
+        const mealPhone = m8.mealPhoneAllowance || 0;
+        const socialIns = m8.socialInsurance || 0;
+        const unionFee = m8.unionFee || 0;
+        const hrDeduct = m8.hourDeduction || 0;
+        const advance = m8.advancePayment || 0;
+        const otherDeduct = m8.otherDeductions || 0;
+        const discDeduct = m8.disciplineDeduction || 0;
+        const uniformRefund = m8.uniformRefund || 0;
+
+        const totalDeductions = socialIns + unionFee + hrDeduct + advance + otherDeduct + discDeduct;
+        const netSalary = m8.netSalary || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + (otherBonus + uniformRefund) + mealPhone + otherAllow - totalDeductions);
+
+        await query.run(`
+          INSERT INTO employee_monthly_kpis (
+            employee_id, month, year,
+            responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
+            performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, '08', 2026, ?, 0, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(employee_id, month, year) DO UPDATE SET
+            responsibility_bonus = excluded.responsibility_bonus,
+            responsibility_rate = excluded.responsibility_rate,
+            responsibility_amount = excluded.responsibility_amount,
+            performance_bonus = excluded.performance_bonus,
+            discipline_deduction = excluded.discipline_deduction,
+            note = excluded.note,
+            updated_at = excluded.updated_at
+        `, [
+          emp.id,
+          respBonus,
+          respRate,
+          respAmount,
+          perfBonus,
+          discDeduct,
+          'Dữ liệu Tháng 08/2026 chính thức',
+          now,
+          now
+        ]);
+
+        await query.run(`
+          INSERT INTO payrolls (
+            employee_id, month, year,
+            tier_salary, grade_salary,
+            work_days, base_work_salary,
+            ot_hours, ot_salary,
+            responsibility_quota, responsibility_deduction_rate, responsibility_net, responsibility_kpi,
+            performance_bonus, discipline_deduction, performance_net, performance_kpi,
+            other_bonus, meal_phone_allowance, other_allowance,
+            social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
+            other_deductions, net_salary, status, created_at, updated_at
+          ) VALUES (?, '08', 2026, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'Đã chốt', ?, ?)
+          ON CONFLICT(employee_id, month, year) DO UPDATE SET
+            tier_salary = excluded.tier_salary,
+            grade_salary = excluded.grade_salary,
+            work_days = excluded.work_days,
+            base_work_salary = excluded.base_work_salary,
+            ot_salary = excluded.ot_salary,
+            responsibility_quota = excluded.responsibility_quota,
+            responsibility_deduction_rate = excluded.responsibility_deduction_rate,
+            responsibility_net = excluded.responsibility_net,
+            responsibility_kpi = excluded.responsibility_kpi,
+            performance_bonus = excluded.performance_bonus,
+            discipline_deduction = excluded.discipline_deduction,
+            performance_net = excluded.performance_net,
+            performance_kpi = excluded.performance_kpi,
+            other_bonus = excluded.other_bonus,
+            meal_phone_allowance = excluded.meal_phone_allowance,
+            other_allowance = excluded.other_allowance,
+            social_insurance = excluded.social_insurance,
+            union_fee = excluded.union_fee,
+            advance_payment = excluded.advance_payment,
+            hour_deduction = excluded.hour_deduction,
+            other_deductions = excluded.other_deductions,
+            net_salary = excluded.net_salary,
+            status = 'Đã chốt',
+            updated_at = excluded.updated_at
+        `, [
+          emp.id,
+          tierSalary,
+          gradeSalary,
+          workDays,
+          baseWorkSalary,
+          otSalary,
+          respBonus,
+          1 - respRate,
+          respAmount,
+          respAmount,
+          perfBonus,
+          discDeduct,
+          Math.max(0, perfBonus - discDeduct),
+          perfBonus,
+          otherBonus + uniformRefund,
+          mealPhone,
+          otherAllow,
+          socialIns,
+          unionFee,
+          advance,
+          hrDeduct,
+          otherDeduct,
+          netSalary,
+          now,
+          now
+        ]);
+      }
+      console.log('✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 từ danhSachThang8!');
     }
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
