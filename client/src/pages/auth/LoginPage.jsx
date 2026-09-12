@@ -31,32 +31,8 @@ const LoginPage = () => {
     }
   };
 
-  // Helper đăng nhập nhanh phục vụ kiểm thử
-  const handleQuickLogin = (userType) => {
-    switch (userType) {
-      case 'admin':
-        setUsername('admin');
-        setPassword('Admin@123');
-        break;
-      case 'hr':
-        setUsername('hr_manager');
-        setPassword('Hr@123');
-        break;
-      case 'manager':
-        setUsername('dept_manager');
-        setPassword('Manager@123');
-        break;
-      case 'employee':
-        setUsername('employee1');
-        setPassword('Emp@123');
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
-    <div className="flex min-h-screen w-screen items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-900 px-4">
+    <div className="flex min-h-screen w-screen items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 px-4 py-8">
       <div className="w-full max-w-md">
         {/* Main Card */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100">
@@ -70,7 +46,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="p-8 space-y-5">
             {error && (
               <div className="flex items-center space-x-2 rounded-lg bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
                 <AlertCircle size={16} className="text-red-500 shrink-0" />
@@ -86,7 +62,7 @@ const LoginPage = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-500 block">TÊN ĐĂNG NHẬP</label>
+              <label className="text-xs font-semibold text-slate-600 block">MÃ NHÂN VIÊN / TÊN ĐĂNG NHẬP</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <User size={16} />
@@ -94,16 +70,16 @@ const LoginPage = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Tên đăng nhập"
+                  placeholder="VD: VietA 002, VietA 032, VietA 003..."
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                  className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium text-slate-800"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-500 block">MẬT KHẨU</label>
+              <label className="text-xs font-semibold text-slate-600 block">MẬT KHẨU</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Lock size={16} />
@@ -122,7 +98,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-brand-700 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 disabled:bg-slate-400 shadow-md transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full rounded-lg bg-brand-700 py-3 text-sm font-semibold text-white hover:bg-brand-800 disabled:bg-slate-400 shadow-md transition-all duration-200 flex items-center justify-center space-x-2 cursor-pointer mt-4"
             >
               {loading ? (
                 <>
@@ -130,46 +106,15 @@ const LoginPage = () => {
                   <span>ĐANG ĐĂNG NHẬP...</span>
                 </>
               ) : (
-                <span>ĐĂNG NHẬP</span>
+                <span>ĐĂNG NHẬP HỆ THỐNG</span>
               )}
             </button>
           </form>
 
-          {/* Quick Login Section for Developer & User testing roles */}
-          <div className="border-t border-slate-100 bg-slate-50 p-6">
-            <p className="text-center text-[11px] font-semibold text-slate-400 tracking-wider uppercase mb-3">
-              TÀI KHOẢN THỬ NGHIỆM ĐĂNG NHẬP NHANH
+          <div className="border-t border-slate-100 bg-slate-50 py-3 text-center">
+            <p className="text-[11px] text-slate-400">
+              © 2026 CÔNG TY TNHH TM SX VIỆT Á • BẢO MẬT & PHÂN QUYỀN NỘI BỘ
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin')}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-300 text-center transition-all cursor-pointer"
-              >
-                ADMIN
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('hr')}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-300 text-center transition-all cursor-pointer"
-              >
-                HR MANAGER
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('manager')}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-300 text-center transition-all cursor-pointer"
-              >
-                QUẢN LÝ
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('employee')}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 hover:bg-slate-100 hover:border-slate-300 text-center transition-all cursor-pointer"
-              >
-                NHÂN VIÊN
-              </button>
-            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { query } from './database.js';
 import { danhSachNhanVienVaKPI } from '../data/danhSachNhanVienVaKPI.js';
+import bcrypt from 'bcryptjs';
 
 export const SEED_EMPLOYEES_RAW = danhSachNhanVienVaKPI.map(e => {
   return `${e["Mã NV"]} | ${e["Họ và Tên"]} | ${e["Giới tính"]} | ${e["Ngày sinh"]} | ${e["Số ĐT"]} | ${e["CCCD"]} | ${e["Địa chỉ"]} | ${e["Phòng ban"]} | ${e["Chức vụ"]} | ${e["Chi nhánh"]} | ${e["Ngày vào làm"]} | ${e["Trạng thái"]} | ${e["Loại hợp đồng"]} | ${e["Lương cơ bản"]} | ${e["Phụ cấp"] || 0} | ${e["Thưởng KPI"] || 0}`;
@@ -236,15 +237,57 @@ export async function runMigration() {
       }
     }
 
-    // 4. Cập nhật tài khoản admin mapping
+    // 4. Đồng bộ toàn bộ tài khoản đăng nhập theo Mã Nhân viên và phân quyền 3 cấp độ
+    const salt = bcrypt.genSaltSync(10);
+    const hashAdmin = bcrypt.hashSync('Admin@123', salt);
+    const hashManager = bcrypt.hashSync('Manager@123', salt);
+    const hashEmployee = bcrypt.hashSync('VietA@2026', salt);
+
+    const adminCodes = ['VietA 002', 'VietA 032', 'VietA 043'];
+    const managerCodes = [
+      'VietA 003', 'VietA 015', 'VietA 031', 'VietA 035',
+      'VietA 036', 'VietA 046', 'VietA 050', 'VietA 056'
+    ];
+
+    const currentEmps = await query.all('SELECT id, code, fullname FROM employees');
+    for (const emp of currentEmps) {
+      const cleanCode = emp.code.trim();
+      const username = cleanCode.toLowerCase().replace(/\s+/g, '');
+
+      let roleId = 4; // EMPLOYEE
+      let passwordHash = hashEmployee;
+
+      if (adminCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
+        roleId = 1; // ADMIN
+        passwordHash = hashAdmin;
+      } else if (managerCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
+        roleId = 3; // MANAGER
+        passwordHash = hashManager;
+      }
+
+      const existingUser = await query.get('SELECT id FROM users WHERE employee_id = ? OR username = ?', [emp.id, username]);
+      if (existingUser) {
+        await query.run(
+          'UPDATE users SET username = ?, password = ?, role_id = ?, employee_id = ?, is_active = 1, updated_at = ? WHERE id = ?',
+          [username, passwordHash, roleId, emp.id, now, existingUser.id]
+        );
+      } else {
+        await query.run(
+          'INSERT INTO users (username, password, role_id, employee_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)',
+          [username, passwordHash, roleId, emp.id, now, now]
+        );
+      }
+    }
+
+    // Cập nhật các alias admin tiện lợi nếu có
     const adminEmp = await query.get("SELECT id FROM employees WHERE code = 'VietA 032'");
     if (adminEmp) {
-      await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [adminEmp.id, 'admin']);
-      await query.run('UPDATE users SET employee_id = ? WHERE username = ?', [adminEmp.id, 'hr_manager']);
+      await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'admin'", [hashAdmin, adminEmp.id]);
+      await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'hr_manager'", [hashAdmin, adminEmp.id]);
     }
 
     await query.run('COMMIT');
-    console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ CHUẨN VÀ DỮ LIỆU KPI/LƯƠNG KÈM % TRÁCH NHIỆM ---');
+    console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ VÀ TÀI KHOẢN PHÂN QUYỀN 3 CẤP ĐỘ ---');
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);

@@ -14,20 +14,32 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng cung cấp tên đăng nhập và mật khẩu.' });
     }
 
-    // Tìm user và kèm role + employee info
+    // Tìm user và kèm role + employee info linh hoạt theo username hoặc mã nhân viên
+    const rawInput = username.trim();
+    const cleanInput = rawInput.toLowerCase().replace(/\s+/g, '');
+
     const user = await query.get(
       `SELECT u.id, u.username, u.password, u.is_active, u.role_id, r.name as roleName, r.display_name as roleDisplayName,
-              e.id as employeeId, e.code as employeeCode, e.fullname, e.email, e.avatar, e.department_id
+              e.id as employeeId, e.code as employeeCode, e.fullname, e.email, e.avatar, e.department_id,
+              d.name as department_name, p.name as position_name, b.name as branch_name
        FROM users u
        JOIN roles r ON u.role_id = r.id
        LEFT JOIN employees e ON u.employee_id = e.id
-       WHERE u.username = ?`,
-      [username.trim()]
+       LEFT JOIN departments d ON e.department_id = d.id
+       LEFT JOIN positions p ON e.position_id = p.id
+       LEFT JOIN branches b ON e.branch_id = b.id
+       WHERE LOWER(u.username) = LOWER(?)
+          OR LOWER(REPLACE(u.username, ' ', '')) = ?
+          OR LOWER(e.code) = LOWER(?)
+          OR LOWER(REPLACE(e.code, ' ', '')) = ?
+          OR LOWER(REPLACE(e.code, 'vieta', '')) = ?
+       LIMIT 1`,
+      [rawInput, cleanInput, rawInput, cleanInput, cleanInput]
     );
 
     if (!user) {
       await logAudit(null, username, 'Đăng nhập thất bại', ip, 'Tài khoản không tồn tại');
-      return res.status(401).json({ message: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
+      return res.status(401).json({ message: 'Mã nhân viên hoặc mật khẩu không chính xác.' });
     }
 
     if (!user.is_active) {
@@ -38,7 +50,7 @@ export const login = async (req, res) => {
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
       await logAudit(user.id, username, 'Đăng nhập thất bại', ip, 'Nhập sai mật khẩu');
-      return res.status(401).json({ message: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
+      return res.status(401).json({ message: 'Mã nhân viên hoặc mật khẩu không chính xác.' });
     }
 
     // Tạo token JWT
@@ -49,16 +61,19 @@ export const login = async (req, res) => {
       roleName: user.roleName,
       roleDisplayName: user.roleDisplayName,
       employeeId: user.employeeId,
+      employeeCode: user.employeeCode,
       fullname: user.fullname,
       email: user.email,
       avatar: user.avatar,
-      departmentId: user.department_id
+      departmentId: user.department_id,
+      departmentName: user.department_name,
+      positionName: user.position_name
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 
     // Ghi audit log đăng nhập thành công
-    await logAudit(user.id, user.username, 'Đăng nhập', ip, 'Đăng nhập hệ thống thành công');
+    await logAudit(user.id, user.username, 'Đăng nhập', ip, `Đăng nhập hệ thống thành công (${user.fullname || user.username})`);
 
     // Không trả về password hash
     delete user.password;
@@ -78,10 +93,14 @@ export const getMe = async (req, res) => {
   try {
     const user = await query.get(
       `SELECT u.id, u.username, u.is_active, u.role_id, r.name as roleName, r.display_name as roleDisplayName,
-              e.id as employeeId, e.code as employeeCode, e.fullname, e.email, e.avatar, e.department_id, e.position_id, e.branch_id
+              e.id as employeeId, e.code as employeeCode, e.fullname, e.email, e.avatar, e.department_id, e.position_id, e.branch_id,
+              d.name as department_name, p.name as position_name, b.name as branch_name
        FROM users u
        JOIN roles r ON u.role_id = r.id
        LEFT JOIN employees e ON u.employee_id = e.id
+       LEFT JOIN departments d ON e.department_id = d.id
+       LEFT JOIN positions p ON e.position_id = p.id
+       LEFT JOIN branches b ON e.branch_id = b.id
        WHERE u.id = ?`,
       [req.user.userId]
     );
