@@ -470,8 +470,22 @@ export async function runMigration() {
     const { DEFAULT_DOCUMENTS, ensurePhysicalFiles } = await import('../controllers/documentController.js');
     if (ensurePhysicalFiles) ensurePhysicalFiles();
 
+    // Deduplicate existing documents by file_name (keep the oldest one which has user edits)
+    try {
+      await query.run(`
+        DELETE FROM documents
+        WHERE id NOT IN (
+          SELECT MIN(id)
+          FROM documents
+          GROUP BY file_name
+        )
+      `);
+    } catch (e) {
+      console.log('Lỗi khi xóa tài liệu trùng lặp:', e.message);
+    }
+
     for (const d of DEFAULT_DOCUMENTS) {
-      const existing = await query.get('SELECT id FROM documents WHERE title = ?', [d.title]);
+      const existing = await query.get('SELECT id FROM documents WHERE file_name = ?', [d.file_name]);
       if (!existing) {
         await query.run(`
           INSERT INTO documents (
