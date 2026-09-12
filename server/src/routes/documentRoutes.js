@@ -32,23 +32,29 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'doc-' + uniqueSuffix + ext);
+    // Giữ nguyên tên file gốc (chỉ thay ký tự đặc biệt không hợp lệ với OS)
+    const safeName = file.originalname
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_') // loại ký tự không hợp lệ
+      .trim();
+    cb(null, safeName);
   }
 });
 
 const upload = multer({ storage });
 
-// Endpoint upload file (Admin / HR)
+// Endpoint upload file (Admin / HR) - lưu với tên file gốc
 router.post('/upload-file', requireRoles(['ADMIN', 'HR']), upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Không có file nào được tải lên.' });
   }
   const file_url = `/uploads/documents/${req.file.filename}`;
-  const file_size = (req.file.size / (1024 * 1024)).toFixed(2) + ' MB';
+  const file_size_bytes = req.file.size;
+  const file_size =
+    file_size_bytes >= 1024 * 1024
+      ? (file_size_bytes / (1024 * 1024)).toFixed(1) + ' MB'
+      : Math.round(file_size_bytes / 1024) + ' KB';
   const file_type = path.extname(req.file.originalname).replace('.', '').toLowerCase();
-  
+
   return res.json({
     success: true,
     file_url,
