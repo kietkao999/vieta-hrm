@@ -60,7 +60,7 @@ function App() {
             <Route path="branches" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><BranchPage /></ProtectedRoute>} />
             <Route path="departments" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><DepartmentPage /></ProtectedRoute>} />
             <Route path="positions" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><PositionPage /></ProtectedRoute>} />
-            <Route path="settings/departments-positions" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><DeptPosSettingsPage /></ProtectedRoute>} />
+            <Route path="settings/departments-positions" element={<DeptPosSettingsPage />} />
 
             {/* NHÂN SỰ Module */}
             <Route
@@ -89,11 +89,7 @@ function App() {
             />
             <Route
               path="payroll"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'EMPLOYEE']}>
-                  <PayrollPage />
-                </ProtectedRoute>
-              }
+              element={<PayrollPage />}
             />
             <Route
               path="seniority"

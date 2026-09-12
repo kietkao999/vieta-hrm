@@ -18,6 +18,9 @@ export const getPayroll = async (req, res) => {
       const mPad = mStr.padStart(2, '0');
       sql += ` AND (p.month = ? OR p.month = ?) AND p.year = ?`;
       params.push(mStr, mPad, year);
+    } else if (year) {
+      sql += ` AND p.year = ?`;
+      params.push(year);
     }
 
     // Phân quyền bảo mật lương tuyệt đối: Chỉ ADMIN mới được xem toàn bộ bảng lương

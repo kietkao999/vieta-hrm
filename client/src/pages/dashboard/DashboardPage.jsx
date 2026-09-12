@@ -75,7 +75,7 @@ const DashboardPage = () => {
 
         // 4. Lấy phiếu lương cá nhân (cho nhân viên / trưởng phòng)
         try {
-          const payrollRes = await api.get('/payroll?month=09&year=2026');
+          const payrollRes = await api.get('/payroll?year=2026');
           if (payrollRes.data && payrollRes.data.length > 0) {
             personalPayroll = payrollRes.data[0];
           }
@@ -391,10 +391,15 @@ const DashboardPage = () => {
             <DollarSign size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">PHIẾU LƯƠNG CÁ NHÂN</p>
-            <Link to="/payroll" className="text-xs font-bold text-brand-700 hover:underline flex items-center mt-1">
-              <span>Tra cứu phiếu lương</span>
-              <ChevronRight size={14} />
+            <p className="text-xs font-semibold text-slate-400 uppercase">
+              {stats.personalPayroll?.month ? `THỰC LĨNH THÁNG ${stats.personalPayroll.month}/${stats.personalPayroll.year}` : 'THỰC LĨNH THÁNG GẦN NHẤT'}
+            </p>
+            <p className="text-xl font-bold text-slate-800">
+              {stats.personalPayroll?.net_salary ? Number(stats.personalPayroll.net_salary).toLocaleString('vi-VN') + ' đ' : 'Chưa có phiếu'}
+            </p>
+            <Link to="/payroll" className="text-[11px] font-bold text-brand-700 hover:underline flex items-center mt-1">
+              <span>Xem chi tiết phiếu lương</span>
+              <ChevronRight size={13} />
             </Link>
           </div>
         </div>

@@ -246,13 +246,243 @@ const PayrollPage = () => {
     );
   });
 
+  // Giao diện Phiếu lương cá nhân dành cho Nhân viên & Quản lý (Cấp 2 & Cấp 3)
+  const renderPersonalPayrollView = () => {
+    const currentSlip = payrolls && payrolls.length > 0 ? payrolls[0] : null;
+
+    const totalBase = currentSlip ? (currentSlip.tier_salary || 0) + (currentSlip.grade_salary || 0) : 0;
+    const wDays = currentSlip?.work_days ?? 26;
+    const baseWork = currentSlip?.base_work_salary || (currentSlip ? Math.round((totalBase / 26) * wDays) : 0);
+    const otHrs = currentSlip?.ot_hours || 0;
+    const otSal = currentSlip?.ot_salary || (currentSlip ? Math.round((totalBase / 208) * otHrs * 1.5) : 0);
+    const respKpi = currentSlip?.responsibility_kpi || currentSlip?.responsibility_net || currentSlip?.responsibility_quota || 0;
+    const perfKpi = currentSlip?.performance_kpi || currentSlip?.performance_bonus || 0;
+    const oBonus = currentSlip?.other_bonus || 0;
+    const totalBonus = respKpi + perfKpi + oBonus;
+
+    const mealPhone = currentSlip?.meal_phone_allowance || 0;
+    const otherAllow = currentSlip?.other_allowance || 0;
+    const totalAllowances = mealPhone + otherAllow;
+
+    const socialIns = currentSlip?.social_insurance || 0;
+    const unionFee = currentSlip?.union_fee || 0;
+    const incTax = currentSlip?.income_tax || 0;
+    const advPay = currentSlip?.advance_payment || 0;
+    const hrDeduct = currentSlip?.hour_deduction || 0;
+    const otherDeduct = (currentSlip?.other_deductions || 0) + (currentSlip?.discipline_deduction || 0);
+    const totalDeductions = socialIns + unionFee + incTax + advPay + hrDeduct + otherDeduct;
+
+    const netSalary = currentSlip?.net_salary || (baseWork + otSal + totalBonus + totalAllowances - totalDeductions);
+
+    return (
+      <div className="space-y-6">
+        {/* Top Header Card */}
+        <div className="rounded-2xl bg-gradient-to-r from-brand-900 via-indigo-900 to-slate-900 p-6 md:p-8 text-white shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <div className="flex items-center space-x-2.5 mb-2">
+                <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-300 border border-emerald-400/30">
+                  PHIẾU LƯƠNG CÁ NHÂN
+                </span>
+                <span className="text-xs text-slate-300 font-mono">
+                  Mã NV: {user?.employeeCode || user?.username}
+                </span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+                {user?.fullname || user?.username}
+              </h2>
+              <p className="mt-1 text-xs md:text-sm text-slate-300">
+                Chức vụ: <strong className="text-white">{user?.positionName || user?.position_name || 'Nhân sự'}</strong> • Phòng ban: <strong className="text-white">{user?.departmentName || user?.department_name || 'Nệm Việt Á'}</strong>
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 text-right md:min-w-[240px]">
+              <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Thực Lĩnh Tháng {month < 10 ? `0${parseInt(month, 10)}` : month}/{year}
+              </p>
+              <p className="text-2xl md:text-3xl font-black text-emerald-300 mt-1">
+                {currentSlip ? formatVND(netSalary) : 'Chưa có dữ liệu'}
+              </p>
+              <div className="mt-2 flex justify-end space-x-2">
+                <button
+                  onClick={handlePrint}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  <Printer size={13} />
+                  <span>In phiếu lương</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Month Selector Pills */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Chọn kỳ lương cần tra cứu:
+            </span>
+            <span className="text-xs font-bold text-brand-700 font-mono">Năm {year}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              const isSelected = parseInt(month, 10) === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => setMonth(m.toString())}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-brand-700 text-white shadow-md ring-2 ring-brand-300'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  <span>Tháng {m < 10 ? `0${m}` : m}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Detailed Salary Breakdown Cards */}
+        {currentSlip ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1: Thu nhập cơ sở & Ngày công */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-brand-900 font-bold text-sm uppercase">
+                <Clock size={16} className="text-brand-600" />
+                <span>I. Lương Cơ Bản & Ngày Công</span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Lương tầng chức vụ:</span>
+                  <span className="font-bold text-slate-800">{formatVND(currentSlip.tier_salary)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Lương bậc chuyên môn:</span>
+                  <span className="font-bold text-slate-800">{formatVND(currentSlip.grade_salary)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50 bg-blue-50/50 px-2 rounded">
+                  <span className="font-semibold text-blue-900">Tổng lương cơ sở (chuẩn 26 ngày):</span>
+                  <span className="font-bold text-blue-900">{formatVND(totalBase)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Ngày công làm việc thực tế:</span>
+                  <span className="font-bold text-emerald-700">{wDays} ngày công</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Tiền lương theo ngày công:</span>
+                  <span className="font-bold text-slate-800">{formatVND(baseWork)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Giờ tăng ca (OT):</span>
+                  <span className="font-bold text-slate-800">{otHrs > 0 ? `${otHrs} giờ (150%)` : '0 giờ'}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 bg-slate-50 px-2 rounded">
+                  <span className="font-semibold text-slate-700">Tiền làm thêm giờ (OT):</span>
+                  <span className="font-bold text-indigo-600">{formatVND(otSal)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: KPI & Phụ Cấp */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-amber-900 font-bold text-sm uppercase">
+                <Award size={16} className="text-amber-600" />
+                <span>II. Thưởng KPI & Phụ Cấp</span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Thưởng KPI Trách nhiệm:</span>
+                  <span className="font-bold text-emerald-700">+{formatVND(respKpi)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Thưởng KPI Hiệu quả cá nhân:</span>
+                  <span className="font-bold text-amber-700">+{formatVND(perfKpi)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Thưởng khác / Sáng kiến:</span>
+                  <span className="font-bold text-slate-800">+{formatVND(oBonus)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50 bg-amber-50/50 px-2 rounded">
+                  <span className="font-semibold text-amber-900">Tổng thưởng KPI & Khen thưởng:</span>
+                  <span className="font-bold text-amber-900">+{formatVND(totalBonus)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Phụ cấp Cơm & Điện thoại:</span>
+                  <span className="font-bold text-slate-800">+{formatVND(mealPhone)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Phụ cấp khác:</span>
+                  <span className="font-bold text-slate-800">+{formatVND(otherAllow)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 bg-slate-50 px-2 rounded">
+                  <span className="font-semibold text-slate-700">Tổng phụ cấp:</span>
+                  <span className="font-bold text-slate-800">+{formatVND(totalAllowances)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Khấu Trừ & Tổng Thực Lĩnh */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-red-900 font-bold text-sm uppercase">
+                <ShieldAlert size={16} className="text-red-600" />
+                <span>III. Các Khoản Giảm Trừ</span>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Bảo hiểm Xã hội (BHXH, BHYT, BHTN):</span>
+                  <span className="font-bold text-red-600">-{formatVND(socialIns)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Đoàn phí công đoàn:</span>
+                  <span className="font-bold text-red-600">-{formatVND(unionFee)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Thuế thu nhập cá nhân (TNCN):</span>
+                  <span className="font-bold text-red-600">-{formatVND(incTax)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Tạm ứng trong tháng:</span>
+                  <span className="font-bold text-red-600">-{formatVND(advPay)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                  <span className="text-slate-500">Giảm trừ cắt giờ / Vi phạm:</span>
+                  <span className="font-bold text-red-600">-{formatVND(otherDeduct + hrDeduct)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 bg-red-50 px-2 rounded">
+                  <span className="font-semibold text-red-900">Tổng các khoản khấu trừ:</span>
+                  <span className="font-bold text-red-700">-{formatVND(totalDeductions)}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-200 mt-2">
+                  <span className="font-extrabold text-emerald-900 text-sm">THỰC LĨNH NHẬN:</span>
+                  <span className="font-black text-emerald-800 text-base">{formatVND(netSalary)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center space-y-3">
+            <DollarSign size={48} className="mx-auto text-slate-300" />
+            <h4 className="font-bold text-slate-700 text-base">
+              Chưa có dữ liệu bảng lương cho Tháng {month}/{year}
+            </h4>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Bạn vui lòng chọn các tháng khác (VD: Tháng 09, Tháng 07, Tháng 06,...) để tra cứu phiếu lương đã được chốt.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 print:hidden">
         <div>
           <h2 className="text-xl font-bold text-slate-800">
-            {isAdmin ? 'Quản Lý Bảng Lương' : 'Phiếu Lương Cá Nhân'}
+            {isAdmin ? 'Quản Lý Bảng Lương Toàn Công Ty' : 'Tra Cứu Phiếu Lương Cá Nhân'}
           </h2>
           <p className="text-xs text-slate-500">
             {isAdmin
@@ -286,247 +516,254 @@ const PayrollPage = () => {
         </div>
       )}
 
-      {/* Month Navigation Pills */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm print:hidden">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Chọn kỳ tính lương nhanh:</span>
-          <span className="text-xs font-semibold text-brand-700">Năm {year}</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
-            const isSelected = parseInt(month, 10) === m;
-            return (
-              <button
-                key={m}
-                onClick={() => setMonth(m.toString())}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-300'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                <span>Tháng {m < 10 ? `0${m}` : m}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-semibold text-slate-700">Tháng</span>
-            <select
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-brand-700"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>Tháng {m}</option>
-              ))}
-            </select>
+      {/* Phân nhánh giao diện: Nếu là Employee/Manager thì hiện view Phiếu lương cá nhân chuyên nghiệp */}
+      {!isAdmin ? (
+        renderPersonalPayrollView()
+      ) : (
+        <>
+          {/* Month Navigation Pills */}
+          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm print:hidden">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Chọn kỳ tính lương nhanh:</span>
+              <span className="text-xs font-semibold text-brand-700">Năm {year}</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                const isSelected = parseInt(month, 10) === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setMonth(m.toString())}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                      isSelected
+                        ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-300'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    <span>Tháng {m < 10 ? `0${m}` : m}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-semibold text-slate-700">Năm</span>
-            <select
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-slate-700"
-            >
-              {Array.from({ length: 12 }, (_, i) => 2024 + i).map((y) => (
-                <option key={y} value={y.toString()}>{y}</option>
-              ))}
-            </select>
+
+          {/* Filters Bar */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 print:hidden">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-slate-700">Tháng</span>
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-brand-700"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>Tháng {m}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-slate-700">Năm</span>
+                <select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-slate-700"
+                >
+                  {Array.from({ length: 12 }, (_, i) => 2024 + i).map((y) => (
+                    <option key={y} value={y.toString()}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex-1 max-w-xs">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Tìm theo tên, mã NV..."
+                  className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500"
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 max-w-xs">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo tên, mã NV..."
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand-500"
-            />
+          {/* Formula Summary Ribbon */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 rounded-xl text-xs text-slate-700 print:hidden">
+            <span className="font-bold text-brand-800">💡 Công thức chuẩn: </span>
+            <span className="text-slate-600 font-medium">
+              Tổng thực lĩnh = [((Lương tầng + Bậc)/26) × Ngày công] + [((Lương tầng + Bậc)/208) × Giờ OT × 1.5] + Thưởng KPI TN + Thưởng KPI HQ + Thưởng khác + PC Cơm & ĐT + PC khác - BHXH - Đoàn phí - Thuế TNCN - Tạm ứng - Trừ cắt giờ - Trừ khác
+            </span>
           </div>
-        </div>
-      </div>
 
-      {/* Formula Summary Ribbon */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 rounded-xl text-xs text-slate-700 print:hidden">
-        <span className="font-bold text-brand-800">💡 Công thức chuẩn: </span>
-        <span className="text-slate-600 font-medium">
-          Tổng thực lĩnh = [((Lương tầng + Bậc)/26) × Ngày công] + [((Lương tầng + Bậc)/208) × Giờ OT × 1.5] + Thưởng KPI TN + Thưởng KPI HQ + Thưởng khác + PC Cơm & ĐT + PC khác - BHXH - Đoàn phí - Thuế TNCN - Tạm ứng - Trừ cắt giờ - Trừ khác
-        </span>
-      </div>
-
-      {/* Main Table Container with Clear Horizontal Scrollbar */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden print:hidden">
-        {loading ? (
-          <div className="flex justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto custom-scroll-x">
-            <table className="w-full text-left text-sm border-collapse min-w-[1350px]">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="px-3 py-3">Mã NV & Họ Tên</th>
-                <th className="px-3 py-3">Phòng ban</th>
-                <th className="px-3 py-3 text-right">Lương Cơ Sở & Ngày Công</th>
-                <th className="px-3 py-3 text-right">Tăng Ca (OT)</th>
-                <th className="px-3 py-3 text-right">KPI & Thưởng</th>
-                <th className="px-3 py-3 text-right">Phụ Cấp</th>
-                <th className="px-3 py-3 text-right text-red-600">Khấu Trừ</th>
-                <th className="px-3 py-3 text-right text-brand-700 font-black">TỔNG THỰC LĨNH</th>
-                <th className="px-3 py-3 text-center">Trạng thái</th>
-                <th className="px-3 py-3 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredPayrolls.length === 0 ? (
-                <tr>
-                  <td colSpan="10" className="text-center py-8 text-slate-500">
-                    Chưa có bảng lương tháng {month}/{year}. Bấm "Tính Lương Tháng {month}/{year}" để khởi tạo.
-                  </td>
-                </tr>
-              ) : (
-                filteredPayrolls.map((p) => {
-                  const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
-                  const wDays = p.work_days ?? 26;
-                  const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
-                  const otHrs = p.ot_hours || 0;
-                  const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
-                  const respKpi = p.responsibility_kpi || p.responsibility_net || 0;
-                  const perfKpi = p.performance_kpi || p.performance_bonus || 0;
-                  const oBonus = p.other_bonus || 0;
-                  const totalBonus = respKpi + perfKpi + oBonus;
-
-                  const totalAllowances = (p.meal_phone_allowance || 0) + (p.other_allowance || 0);
-                  const totalDeductions =
-                    (p.social_insurance || 0) +
-                    (p.union_fee || 0) +
-                    (p.income_tax || 0) +
-                    (p.advance_payment || 0) +
-                    (p.hour_deduction || 0) +
-                    (p.other_deductions || 0) +
-                    (p.discipline_deduction || 0);
-
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50 transition">
-                      <td className="px-3 py-3">
-                        <div
-                          className="font-bold text-brand-700 hover:underline cursor-pointer"
-                          onClick={() => openPayslip(p)}
-                          title="Xem chi tiết Phiếu lương"
-                        >
-                          {p.fullname}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">{p.employee_code}</div>
-                      </td>
-                      <td className="px-3 py-3 text-slate-600 font-medium">{p.department_name}</td>
-                      <td className="px-3 py-3 text-right">
-                        <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {wDays} công | Gốc: {formatVND(totalBase)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <div className={`font-semibold ${otSal > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
-                          {formatVND(otSal)}
-                        </div>
-                        <div className="text-[10px] text-slate-400">{otHrs > 0 ? `${otHrs} giờ OT (150%)` : '-'}</div>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <div className="font-bold text-emerald-600">{formatVND(totalBonus)}</div>
-                        <div className="text-[10px] text-slate-400">
-                          TN: {formatVND(respKpi)} | HQ: {formatVND(perfKpi)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <div className="font-semibold text-slate-700">{formatVND(totalAllowances)}</div>
-                        <div className="text-[10px] text-slate-400">
-                          Cơm&ĐT: {formatVND(p.meal_phone_allowance || 0)}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <div className={`font-semibold ${totalDeductions > 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                          {totalDeductions > 0 ? `-${formatVND(totalDeductions)}` : '0 đ'}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <div className="font-black text-brand-700 text-sm">{formatVND(p.net_salary)}</div>
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            p.status === 'Đã chi trả'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : p.status === 'Đã duyệt'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-right space-x-1 whitespace-nowrap">
-                        <button
-                          onClick={() => openPayslip(p)}
-                          className="text-slate-600 hover:text-slate-900 p-1.5 bg-slate-100 rounded-lg"
-                          title="Xem Phiếu Lương"
-                        >
-                          <DollarSign size={14} />
-                        </button>
-                        {isAdmin && (
-                          <button
-                            onClick={() => openEditModal(p)}
-                            className="text-brand-600 hover:text-brand-800 p-1.5 bg-brand-50 rounded-lg ml-1"
-                            title="Chỉnh sửa chi tiết"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                        )}
-                        {isAdmin && p.status === 'Dự thảo' && (
-                          <button
-                            onClick={() => handleUpdateStatus(p.id, 'Đã duyệt')}
-                            className="text-blue-600 hover:text-blue-800 p-1.5 bg-blue-50 rounded-lg ml-1"
-                            title="Duyệt"
-                          >
-                            <CheckCircle size={14} />
-                          </button>
-                        )}
-                        {isAdmin && p.status === 'Đã duyệt' && (
-                          <button
-                            onClick={() => handleUpdateStatus(p.id, 'Đã chi trả')}
-                            className="text-emerald-600 hover:text-emerald-800 p-1.5 bg-emerald-50 rounded-lg ml-1"
-                            title="Đánh dấu đã chi trả"
-                          >
-                            <CheckCircle size={14} />
-                          </button>
-                        )}
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDelete(p)}
-                            className="text-slate-400 hover:text-red-600 p-1.5 border rounded-lg ml-1"
-                            title="Xóa"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+          {/* Main Table Container with Clear Horizontal Scrollbar */}
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden print:hidden">
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto custom-scroll-x">
+                <table className="w-full text-left text-sm border-collapse min-w-[1350px]">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <tr>
+                    <th className="px-3 py-3">Mã NV & Họ Tên</th>
+                    <th className="px-3 py-3">Phòng ban</th>
+                    <th className="px-3 py-3 text-right">Lương Cơ Sở & Ngày Công</th>
+                    <th className="px-3 py-3 text-right">Tăng Ca (OT)</th>
+                    <th className="px-3 py-3 text-right">KPI & Thưởng</th>
+                    <th className="px-3 py-3 text-right">Phụ Cấp</th>
+                    <th className="px-3 py-3 text-right text-red-600">Khấu Trừ</th>
+                    <th className="px-3 py-3 text-right text-brand-700 font-black">TỔNG THỰC LĨNH</th>
+                    <th className="px-3 py-3 text-center">Trạng thái</th>
+                    <th className="px-3 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredPayrolls.length === 0 ? (
+                    <tr>
+                      <td colSpan="10" className="text-center py-8 text-slate-500">
+                        Chưa có bảng lương tháng {month}/{year}. Bấm "Tính Lương Tháng {month}/{year}" để khởi tạo.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    filteredPayrolls.map((p) => {
+                      const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
+                      const wDays = p.work_days ?? 26;
+                      const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
+                      const otHrs = p.ot_hours || 0;
+                      const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
+                      const respKpi = p.responsibility_kpi || p.responsibility_net || 0;
+                      const perfKpi = p.performance_kpi || p.performance_bonus || 0;
+                      const oBonus = p.other_bonus || 0;
+                      const totalBonus = respKpi + perfKpi + oBonus;
+
+                      const totalAllowances = (p.meal_phone_allowance || 0) + (p.other_allowance || 0);
+                      const totalDeductions =
+                        (p.social_insurance || 0) +
+                        (p.union_fee || 0) +
+                        (p.income_tax || 0) +
+                        (p.advance_payment || 0) +
+                        (p.hour_deduction || 0) +
+                        (p.other_deductions || 0) +
+                        (p.discipline_deduction || 0);
+
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50 transition">
+                          <td className="px-3 py-3">
+                            <div
+                              className="font-bold text-brand-700 hover:underline cursor-pointer"
+                              onClick={() => openPayslip(p)}
+                              title="Xem chi tiết Phiếu lương"
+                            >
+                              {p.fullname}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono">{p.employee_code}</div>
+                          </td>
+                          <td className="px-3 py-3 text-slate-600 font-medium">{p.department_name}</td>
+                          <td className="px-3 py-3 text-right">
+                            <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {wDays} công | Gốc: {formatVND(totalBase)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <div className={`font-semibold ${otSal > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>
+                              {formatVND(otSal)}
+                            </div>
+                            <div className="text-[10px] text-slate-400">{otHrs > 0 ? `${otHrs} giờ OT (150%)` : '-'}</div>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <div className="font-bold text-emerald-600">{formatVND(totalBonus)}</div>
+                            <div className="text-[10px] text-slate-400">
+                              TN: {formatVND(respKpi)} | HQ: {formatVND(perfKpi)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <div className="font-semibold text-slate-700">{formatVND(totalAllowances)}</div>
+                            <div className="text-[10px] text-slate-400">
+                              Cơm&ĐT: {formatVND(p.meal_phone_allowance || 0)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <div className={`font-semibold ${totalDeductions > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                              {totalDeductions > 0 ? `-${formatVND(totalDeductions)}` : '0 đ'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <div className="font-black text-brand-700 text-sm">{formatVND(p.net_salary)}</div>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                p.status === 'Đã chi trả'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : p.status === 'Đã duyệt'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}
+                            >
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-right space-x-1 whitespace-nowrap">
+                            <button
+                              onClick={() => openPayslip(p)}
+                              className="text-slate-600 hover:text-slate-900 p-1.5 bg-slate-100 rounded-lg"
+                              title="Xem Phiếu Lương"
+                            >
+                              <DollarSign size={14} />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => openEditModal(p)}
+                                className="text-brand-600 hover:text-brand-800 p-1.5 bg-brand-50 rounded-lg ml-1"
+                                title="Chỉnh sửa chi tiết"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                            )}
+                            {isAdmin && p.status === 'Dự thảo' && (
+                              <button
+                                onClick={() => handleUpdateStatus(p.id, 'Đã duyệt')}
+                                className="text-blue-600 hover:text-blue-800 p-1.5 bg-blue-50 rounded-lg ml-1"
+                                title="Duyệt"
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            )}
+                            {isAdmin && p.status === 'Đã duyệt' && (
+                              <button
+                                onClick={() => handleUpdateStatus(p.id, 'Đã chi trả')}
+                                className="text-emerald-600 hover:text-emerald-800 p-1.5 bg-emerald-50 rounded-lg ml-1"
+                                title="Đánh dấu đã chi trả"
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDelete(p)}
+                                className="text-slate-400 hover:text-red-600 p-1.5 border rounded-lg ml-1"
+                                title="Xóa"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Edit Salary Modal */}
       {editModalOpen && selectedPayroll && (
