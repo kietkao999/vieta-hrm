@@ -219,23 +219,7 @@ async function seed() {
       now
     ]);
 
-    // Lấy employee_id vừa insert/update để đồng bộ KPI tháng 09/2026
-    const emp = await get('SELECT id FROM employees WHERE code = ?', [code]);
-    if (emp) {
-      // Upsert vào bảng employee_monthly_kpis cho tháng 09/2026
-      await run(`
-        INSERT INTO employee_monthly_kpis (
-          employee_id, month, year,
-          responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
-          performance_bonus, discipline_deduction, note, created_at, updated_at
-        ) VALUES (?, '09', 2026, ?, 0, 1.0, ?, ?, 0, 'Nạp tự động tháng 09/2026', ?, ?)
-        ON CONFLICT(employee_id, month, year) DO UPDATE SET
-          responsibility_bonus = excluded.responsibility_bonus,
-          responsibility_amount = excluded.responsibility_amount,
-          performance_bonus = excluded.performance_bonus,
-          updated_at = excluded.updated_at
-      `, [emp.id, kpiBonus, kpiBonus, kpiBonus, now, now]);
-    }
+    // Bỏ nạp KPI ảo tháng 09/2026 theo yêu cầu người dùng
 
     upsertCount++;
     console.log(`✓ Đã nạp/cập nhật [${code}] - ${fullname} (Lương CB: ${baseSalary.toLocaleString('vi-VN')} đ, KPI: ${kpiBonus.toLocaleString('vi-VN')} đ)`);

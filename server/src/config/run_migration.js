@@ -49,6 +49,15 @@ export async function runMigration() {
 
     await query.run('BEGIN TRANSACTION');
 
+    // === CLEANUP FAKE/ACCIDENTAL FUTURE DATA ===
+    // Người dùng phản ánh: "tháng 9 10 11 12 làm gì có dữ liệu mà sao tự ý thêm vậy"
+    try {
+      await query.run(`DELETE FROM employee_monthly_kpis WHERE month IN ('09', '10', '11', '12') AND year = 2026`);
+      await query.run(`DELETE FROM payrolls WHERE month IN ('09', '10', '11', '12') AND year = 2026`);
+    } catch (cleanupError) {
+      console.log('Lỗi dọn dẹp dữ liệu tương lai:', cleanupError.message);
+    }
+
     // 1. DỌN DẸP SẠCH: Xóa tất cả nhân sự ngoài 57 mã chuẩn
     const allEmps = await query.all('SELECT id, code FROM employees');
     if (allEmps && allEmps.length > 0) {

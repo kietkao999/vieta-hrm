@@ -25,9 +25,11 @@ const PayrollPage = () => {
   const [departments, setDepartments] = useState([]);
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  
-  const currentMonth = new Date().getMonth() + 1;
+
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const maxDisplayMonth = parseInt(year, 10) >= currentYear ? currentMonth : 12;
+  
   
   const [month, setMonth] = useState(currentMonth.toString());
   const [year, setYear] = useState(currentYear.toString());
@@ -360,7 +362,7 @@ const PayrollPage = () => {
             <span className="text-xs font-bold text-brand-700 font-mono">Năm {year}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+            {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map((m) => {
               const isSelected = parseInt(month, 10) === m;
               return (
                 <button
@@ -563,7 +565,7 @@ const PayrollPage = () => {
               <span className="text-xs font-semibold text-brand-700">Năm {year}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map((m) => {
                 const isSelected = parseInt(month, 10) === m;
                 return (
                   <button
@@ -592,7 +594,7 @@ const PayrollPage = () => {
                   onChange={(e) => setMonth(e.target.value)}
                   className="border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm outline-none font-bold text-brand-700 bg-white"
                 >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map((m) => (
                     <option key={m} value={m}>Tháng {m < 10 ? `0${m}` : m}</option>
                   ))}
                 </select>

@@ -55,6 +55,10 @@ const KpiPage = () => {
   const [month, setMonth] = useState((currentDate.getMonth() + 1).toString());
   const [year, setYear] = useState(currentDate.getFullYear().toString());
 
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const maxDisplayMonth = parseInt(year, 10) >= currentYear ? currentMonth : 12;
+
   const [kpiList, setKpiList] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
@@ -511,7 +515,7 @@ const KpiPage = () => {
       <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between overflow-x-auto gap-1">
         <div className="flex items-center space-x-1 min-w-max">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2 ml-1">Chọn tháng:</span>
-          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+          {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map(m => {
             const isSelected = month.toString() === m.toString();
             const hasData = availableMonths.includes(m);
             return (
@@ -556,7 +560,7 @@ const KpiPage = () => {
                 onChange={e => setMonth(e.target.value)}
                 className="bg-transparent font-bold text-sm text-slate-800 outline-none cursor-pointer"
               >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map(m => (
                   <option key={m} value={m}>
                     {m < 10 ? `0${m}` : m}
                   </option>
