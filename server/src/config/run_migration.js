@@ -170,7 +170,11 @@ export async function runMigration() {
         { month: '05', rate: rateT5, amount: Number(item["KPI T5"]) || 0, quota: kpiBonus, hq: Number(item["Hiệu quả T5"]) || 0 },
         { month: '06', rate: rateT6, amount: Number(item["KPI T6"]) || 0, quota: quotaT6, hq: Number(item["Hiệu quả T6"]) || 0 },
         { month: '07', rate: rateT7, amount: Number(item["KPI T7"]) || 0, quota: quotaT7, hq: Number(item["Hiệu quả T7"]) || 0 },
-        { month: '09', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 }
+        { month: '08', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 },
+        { month: '09', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 },
+        { month: '10', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 },
+        { month: '11', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 },
+        { month: '12', rate: 1.0, amount: kpiBonus, quota: kpiBonus, hq: 0 }
       ];
 
       for (const m of monthlyData) {
