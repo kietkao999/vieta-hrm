@@ -287,6 +287,14 @@ export async function runMigration() {
 
     await query.run('COMMIT');
     console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ VÀ TÀI KHOẢN PHÂN QUYỀN 3 CẤP ĐỘ ---');
+
+    // 5. Tự động đồng bộ dữ liệu Tháng 08/2026 từ file Excel chính thức nếu có
+    try {
+      const { syncMonth8Data } = await import('../../sync_month_8_from_excel.js');
+      await syncMonth8Data();
+    } catch (m8Err) {
+      console.log('Không tìm thấy hoặc bỏ qua đồng bộ file Tháng 8:', m8Err.message);
+    }
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);
