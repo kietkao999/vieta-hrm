@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import XLSX from 'xlsx';
+import { ensurePayrollData } from './payrollController.js';
 
 // Helper tạo điều kiện lọc theo phòng ban
 const getDeptFilterClause = async (department_id) => {
@@ -125,6 +126,9 @@ export const getPayrollReport = async (req, res) => {
     const monthRawList = selectedMonths.map(m => parseInt(m, 10).toString());
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
+
+    // Tự động đảm bảo dữ liệu đầy đủ cho tất cả các tháng được báo cáo
+    await Promise.all(selectedMonths.map(m => ensurePayrollData(m, targetYear)));
 
     const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
@@ -288,6 +292,9 @@ export const getKpiReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
+    // Tự động đảm bảo dữ liệu đầy đủ cho tất cả các tháng được báo cáo
+    await Promise.all(selectedMonths.map(m => ensurePayrollData(m, targetYear)));
+
     const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
     // Thống kê tổng hợp KPI
@@ -406,6 +413,9 @@ export const exportReportExcel = async (req, res) => {
     const monthListRaw = monthList.map(m => parseInt(m, 10).toString());
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
+
+    // Tự động đảm bảo dữ liệu đầy đủ cho tất cả các tháng được xuất Excel
+    await Promise.all(monthList.map(m => ensurePayrollData(m, targetYear)));
 
     const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 

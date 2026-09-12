@@ -1,8 +1,106 @@
 import { query } from '../config/database.js';
 
+// Tự động khởi tạo dữ liệu bảng lương và KPI chuẩn nếu tháng được chọn chưa có dữ liệu
+export const ensurePayrollData = async (month, year) => {
+  if (!month || !year) return;
+  const mStr = month.toString();
+  const mPad = mStr.padStart(2, '0');
+  
+  try {
+    const existingCount = await query.get(
+      `SELECT COUNT(*) as count FROM payrolls WHERE (month = ? OR month = ?) AND year = ?`,
+      [mStr, mPad, year]
+    );
+    
+    if (existingCount && existingCount.count > 0) return;
+    
+    // Lấy danh sách toàn bộ nhân viên đang làm việc
+    const employees = await query.all(`
+      SELECT id, tier_salary, grade_salary, base_salary, kpi_bonus, allowance 
+      FROM employees 
+      WHERE status = 'Đang làm việc' OR status = 'Thử việc'
+    `);
+    
+    if (!employees || employees.length === 0) return;
+    
+    const now = new Date().toISOString();
+    for (const emp of employees) {
+      // 1. Kiểm tra / khởi tạo KPI tháng nếu chưa có
+      let kpi = await query.get(`
+        SELECT responsibility_bonus, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction
+        FROM employee_monthly_kpis
+        WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?
+      `, [emp.id, mPad, mStr, year]);
+      
+      if (!kpi) {
+        const respBonus = emp.kpi_bonus || 0;
+        await query.run(`
+          INSERT INTO employee_monthly_kpis (
+            employee_id, month, year,
+            responsibility_bonus, responsibility_rate, responsibility_amount,
+            performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, 1.0, ?, 0, 0, ?, ?, ?)
+        `, [emp.id, mPad, year, respBonus, respBonus, `Tự động khởi tạo T${mPad}/${year}`, now, now]);
+        kpi = { responsibility_bonus: respBonus, responsibility_rate: 1.0, responsibility_amount: respBonus, performance_bonus: 0, discipline_deduction: 0 };
+      }
+      
+      const respQuota = parseFloat(kpi.responsibility_bonus || 0);
+      const respRate = parseFloat(kpi.responsibility_rate ?? 1.0);
+      const respKpi = kpi.responsibility_amount !== undefined && kpi.responsibility_amount !== null
+        ? parseFloat(kpi.responsibility_amount)
+        : Math.round(respQuota * respRate);
+      const deductRate = 1.0 - respRate;
+      const perfKpi = parseFloat(kpi.performance_bonus || 0);
+      const discDeduct = parseFloat(kpi.discipline_deduction || 0);
+      
+      const tierSalary = parseFloat(emp.tier_salary || 0);
+      const gradeSalary = parseFloat(emp.grade_salary || 0);
+      const totalBase = tierSalary + gradeSalary || parseFloat(emp.base_salary || 0);
+      const workDays = 26;
+      const baseWorkSalary = Math.round((totalBase / 26) * workDays);
+      const otSalary = 0;
+      const otherBonus = 0;
+      const mealPhone = 0;
+      const otherAllow = parseFloat(emp.allowance || 0);
+      const performanceNet = Math.max(0, perfKpi - discDeduct);
+      const netSalary = Math.round(baseWorkSalary + otSalary + respKpi + perfKpi + otherBonus + mealPhone + otherAllow - discDeduct);
+      
+      await query.run(`
+        INSERT INTO payrolls (
+          employee_id, month, year,
+          tier_salary, grade_salary,
+          work_days, base_work_salary,
+          ot_hours, ot_salary,
+          responsibility_quota, responsibility_deduction_rate, responsibility_net, responsibility_kpi,
+          performance_bonus, discipline_deduction, performance_net, performance_kpi,
+          other_bonus, meal_phone_allowance, other_allowance,
+          social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
+          other_deductions, net_salary, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, 0, 0, 0, 0, ?, ?, 'Dự thảo', ?, ?)
+      `, [
+        emp.id, mPad, year,
+        tierSalary, gradeSalary,
+        workDays, baseWorkSalary,
+        respQuota, deductRate, respKpi, respKpi,
+        perfKpi, discDeduct, performanceNet, perfKpi,
+        mealPhone, otherAllow,
+        discDeduct, netSalary,
+        now, now
+      ]);
+    }
+  } catch (err) {
+    console.error(`Lỗi tự động khởi tạo dữ liệu tháng ${month}/${year}:`, err);
+  }
+};
+
 export const getPayroll = async (req, res) => {
   try {
     const { month, year, employee_id, department_id } = req.query;
+    
+    // Tự động kiểm tra và khởi tạo dữ liệu bảng lương nếu tháng mới được gọi
+    if (month && year) {
+      await ensurePayrollData(month, year);
+    }
     
     let sql = `
       SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, e.department_id, d.name as department_name
