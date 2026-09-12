@@ -12,7 +12,7 @@ export const getPayroll = async (req, res) => {
     
     let sql = `
       SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, 
-             e.start_date, e.department_id, d.name as department_name, pos.name as position_name
+             e.join_date, e.department_id, d.name as department_name, pos.name as position_name
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
@@ -51,7 +51,7 @@ export const getPayroll = async (req, res) => {
 
     // Tính toán bổ sung thông tin thâm niên tự động cho từng bản ghi
     const enrichedRecords = (records || []).map(r => {
-      const seniority = calculateSeniority(r.start_date, r.month || month || 8, r.year || year || 2026);
+      const seniority = calculateSeniority(r.join_date, r.month || month || 8, r.year || year || 2026);
       return {
         ...r,
         seniority_text: seniority.seniorityText,
@@ -76,7 +76,7 @@ export const generatePayroll = async (req, res) => {
   try {
     // 1. Lấy danh sách nhân viên đang làm việc kèm chức danh và ngày vào làm
     const employees = await query.all(`
-      SELECT e.id, e.code, e.fullname, e.start_date, e.tier, e.tier_salary, e.grade, e.grade_salary,
+      SELECT e.id, e.code, e.fullname, e.join_date as start_date, e.tier, e.tier_salary, e.grade, e.grade_salary,
              pos.name as position_name
       FROM employees e
       LEFT JOIN positions pos ON e.position_id = pos.id
