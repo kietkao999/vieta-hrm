@@ -413,6 +413,46 @@ export async function runMigration() {
       }
       console.log('✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 từ danhSachThang8!');
     }
+
+    // 4. KHỞI TẠO VÀ ĐỒNG BỘ BẢNG VĂN BẢN, QUY ĐỊNH & PHÚC LỢI 2026
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        file_name TEXT,
+        file_url TEXT,
+        file_size TEXT,
+        file_type TEXT,
+        effective_date TEXT,
+        applicable_to TEXT DEFAULT 'Toàn thể CBNV',
+        description TEXT,
+        status TEXT DEFAULT 'Đang hiệu lực',
+        created_by TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      )
+    `);
+
+    const docCount = await query.get('SELECT COUNT(*) as total FROM documents');
+    if (!docCount || docCount.total === 0) {
+      const { DEFAULT_DOCUMENTS } = await import('../controllers/documentController.js');
+      for (const d of DEFAULT_DOCUMENTS) {
+        await query.run(`
+          INSERT INTO documents (
+            title, category, file_name, file_url, file_size, file_type,
+            effective_date, applicable_to, description, status, created_by,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          d.title, d.category, d.file_name, d.file_url, d.file_size, d.file_type,
+          d.effective_date, d.applicable_to, d.description, d.status, d.created_by,
+          now, now
+        ]);
+      }
+      console.log('✓ Đã nạp thành công 8 tài liệu Phúc lợi - Quy định & Biểu mẫu 2026.');
+    }
+
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);

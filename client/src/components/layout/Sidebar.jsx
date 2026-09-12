@@ -17,7 +17,8 @@ import {
   Layers,
   Building2,
   ClipboardList,
-  Landmark
+  Landmark,
+  BookOpen
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -47,7 +48,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: 'TỔ CHỨC',
       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
+        { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Văn bản & Quy định', path: '/documents', icon: BookOpen, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {

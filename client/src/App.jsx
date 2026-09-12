@@ -35,6 +35,7 @@ import InnovationPage from './pages/innovations/InnovationPage';
 
 // Giai đoạn 6
 import ReportPage from './pages/reports/ReportPage';
+import DocumentPage from './pages/documents/DocumentPage';
 
 function App() {
   return (
@@ -61,6 +62,8 @@ function App() {
             <Route path="departments" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><DepartmentPage /></ProtectedRoute>} />
             <Route path="positions" element={<ProtectedRoute allowedRoles={['ADMIN', 'HR']}><PositionPage /></ProtectedRoute>} />
             <Route path="settings/departments-positions" element={<DeptPosSettingsPage />} />
+            <Route path="documents" element={<DocumentPage />} />
+            <Route path="policies" element={<Navigate to="/documents" replace />} />
 
             {/* NHÂN SỰ Module */}
             <Route

@@ -19,6 +19,7 @@ import disciplineRoutes from './routes/disciplineRoutes.js';
 import innovationRoutes from './routes/innovationRoutes.js';
 import seniorityRoutes from './routes/seniorityRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import documentRoutes from './routes/documentRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -61,6 +62,7 @@ app.use('/api/discipline', disciplineRoutes);
 app.use('/api/innovations', innovationRoutes);
 app.use('/api/seniority', seniorityRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
