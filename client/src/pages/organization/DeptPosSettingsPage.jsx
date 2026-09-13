@@ -29,7 +29,10 @@ import {
   ChevronUp,
   Filter,
   DollarSign,
-  ArrowDown
+  ArrowDown,
+  Package,
+  Wrench,
+  Laptop
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -201,20 +204,26 @@ const DeptPosSettingsPage = () => {
   const [posDeptFilter, setPosDeptFilter] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
 
+  const [allAssets, setAllAssets] = useState([]);
+  const [assetSearch, setAssetSearch] = useState('');
+  const [deptModalTab, setDeptModalTab] = useState('employees'); // 'employees' or 'assets'
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [deptRes, posRes, branchRes, empRes] = await Promise.all([
+      const [deptRes, posRes, branchRes, empRes, assetRes] = await Promise.all([
         api.get('/departments'),
         api.get('/positions'),
         api.get('/branches'),
-        api.get('/employees?limit=1000')
+        api.get('/employees?limit=1000'),
+        api.get('/assets')
       ]);
       setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
       setPositions(Array.isArray(posRes.data) ? posRes.data : []);
       setBranches(Array.isArray(branchRes.data) ? branchRes.data : []);
       const empList = empRes.data?.data || (Array.isArray(empRes.data) ? empRes.data : []);
       setAllEmployees(empList);
+      setAllAssets(Array.isArray(assetRes.data) ? assetRes.data : []);
     } catch (err) {
       console.error(err);
       setError('Không thể tải dữ liệu danh mục.');
@@ -507,6 +516,17 @@ const DeptPosSettingsPage = () => {
           >
             <Briefcase size={18} />
             <span>Danh mục Chức vụ ({positions.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('dept_assets')}
+            className={`flex-1 min-w-[200px] py-4 text-center font-bold text-sm border-b-2 transition-all flex justify-center items-center space-x-2 cursor-pointer ${
+              activeTab === 'dept_assets'
+                ? 'border-brand-700 text-brand-700 bg-white shadow-sm'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'
+            }`}
+          >
+            <Package size={18} className={activeTab === 'dept_assets' ? 'text-amber-500' : ''} />
+            <span>Thiết Bị Theo Sơ Đồ Tổ Chức ({allAssets.length})</span>
           </button>
         </div>
 
@@ -1086,157 +1106,478 @@ const DeptPosSettingsPage = () => {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Modal: Danh sách Nhân sự thuộc Phòng ban */}
-      {viewDeptEmployeesModalOpen && viewDeptData.department && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-5xl lg:max-w-6xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden my-6 max-h-[90vh] flex flex-col animate-scaleUp">
-            {/* Modal Header */}
-            <div className="p-5 bg-gradient-to-r from-brand-800 via-brand-700 to-slate-800 text-white flex justify-between items-center shrink-0">
-              <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
-                  <Layers size={22} className="text-amber-300" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg leading-tight flex items-center space-x-2">
-                    <span>Phòng ban: {viewDeptData.department.name}</span>
-                    <span className="text-xs bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full shadow-sm">
-                      {viewDeptData.employees?.length || 0} nhân sự
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-200 mt-0.5 font-medium">
-                    {viewDeptData.department.branch_name || 'Văn phòng Trụ sở chính'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewDeptEmployeesModalOpen(false)}
-                className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
-                title="Đóng modal"
-              >
-                <XCircle size={24} />
-              </button>
-            </div>
-
-            {/* Modal Search & Filter */}
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
-              <div className="flex items-center space-x-2 max-w-md w-full bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-                <Search size={16} className="text-slate-400" />
+        {/* Tab 3: Thiết Bị Theo Sơ Đồ Tổ Chức */}
+        {activeTab === 'dept_assets' && (
+          <div className="p-5 sm:p-7 space-y-6 bg-slate-50/50">
+            {/* Header & Bộ lọc thiết bị */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+              <div className="flex items-center space-x-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                <Search size={15} className="text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Tìm nhân viên trong phòng ban này (tên, mã, chức vụ, SĐT)..."
-                  value={empSearch}
-                  onChange={(e) => setEmpSearch(e.target.value)}
-                  className="outline-none text-xs w-full bg-transparent text-slate-700"
+                  placeholder="Tìm thiết bị, xe tải, mã máy, người giữ..."
+                  value={assetSearch}
+                  onChange={(e) => setAssetSearch(e.target.value)}
+                  className="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none"
                 />
               </div>
-              <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">
-                Hiển thị: <b className="text-brand-700 font-bold">{modalFilteredEmployees.length}</b> / {viewDeptData.employees?.length || 0} nhân sự
-              </span>
+
+              <div className="flex items-center space-x-2 text-xs text-slate-500">
+                <span className="p-1.5 rounded-lg bg-brand-50 text-brand-700 font-bold">
+                  📦 Tổng cộng: {allAssets.length} thiết bị
+                </span>
+                <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold">
+                  💰 Giá trị: {allAssets.reduce((sum, a) => sum + (Number(a.purchase_price) || 0), 0).toLocaleString('vi-VN')} đ
+                </span>
+              </div>
             </div>
 
-            {/* Modal Body / Table */}
-            <div className="p-4 overflow-y-auto flex-1 custom-scroll">
-              {viewDeptLoading ? (
-                <div className="flex justify-center p-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+            {/* Cấu trúc Sơ Đồ Thiết Bị Theo 4 Khối Hoạt Động */}
+            <div className="space-y-6">
+              {/* KHỐI 1: BAN TỔNG GIÁM ĐỐC */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-slate-800 font-black text-xs sm:text-sm uppercase tracking-wide border-b border-slate-200 pb-2">
+                  <Crown className="text-amber-500" size={18} />
+                  <span>1. BAN TỔNG GIÁM ĐỐC & LÃNH ĐẠO</span>
                 </div>
-              ) : modalFilteredEmployees.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <Users size={36} className="mx-auto mb-2 text-slate-300" />
-                  <p className="font-semibold text-sm">Chưa có nhân sự nào trong phòng ban này.</p>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-slate-200 overflow-x-auto custom-scroll-x shadow-sm">
-                  <table className="w-full text-left text-xs border-collapse min-w-[800px] whitespace-nowrap">
-                    <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b whitespace-nowrap">
-                      <tr>
-                        <th className="px-4 py-3.5 text-center w-12">STT</th>
-                        <th className="px-5 py-3.5">Mã NV & Họ Tên</th>
-                        <th className="px-5 py-3.5">Chức vụ</th>
-                        <th className="px-4 py-3.5 text-center">Giới tính</th>
-                        <th className="px-5 py-3.5">Liên hệ (SĐT / Email)</th>
-                        <th className="px-4 py-3.5 text-center">Trạng thái</th>
-                        <th className="px-5 py-3.5 text-right">Ngày vào làm</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 whitespace-nowrap">
-                      {modalFilteredEmployees.map((emp, idx) => (
-                        <tr key={emp.id} className="hover:bg-brand-50/30 transition">
-                          <td className="px-4 py-3 text-slate-400 font-bold text-center">{idx + 1}</td>
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <div className="font-bold text-slate-800 text-sm">
-                              {emp.fullname}
-                            </div>
-                            <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200/60 inline-block mt-0.5">
-                              {emp.code}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <span className="font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md inline-block">
-                              {emp.position_name || 'Chưa phân chức vụ'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center text-slate-600 font-medium whitespace-nowrap">
-                            {emp.gender || '-'}
-                          </td>
-                          <td className="px-5 py-3 space-y-1 whitespace-nowrap">
-                            {emp.phone ? (
-                              <div className="flex items-center space-x-1.5 text-slate-700 font-medium">
-                                <Phone size={12} className="text-slate-400 shrink-0" />
-                                <span>{emp.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 italic">-</span>
-                            )}
-                            {emp.email && (
-                              <div className="flex items-center space-x-1.5 text-slate-500 text-[10px]">
-                                <Mail size={12} className="text-slate-400 shrink-0" />
-                                <span>{emp.email}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold inline-block whitespace-nowrap ${
-                              emp.status === 'Đang làm việc'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : emp.status === 'Thử việc'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-slate-100 text-slate-500 border border-slate-200'
-                            }`}>
-                              {emp.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-right text-slate-600 font-medium whitespace-nowrap">
-                            {emp.join_date ? (
-                              <span className="inline-flex items-center space-x-1.5">
-                                <Calendar size={12} className="text-slate-400 shrink-0" />
-                                <span>{emp.join_date}</span>
-                              </span>
-                            ) : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewDeptEmployeesModalOpen(false)}
-                className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-sm"
-              >
-                Đóng
-              </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {['Ban giám đốc'].map(deptName => {
+                    const deptAssets = allAssets.filter(a => 
+                      (a.department_name?.toLowerCase().includes('giám đốc') || a.department_name === deptName) &&
+                      (!assetSearch || a.name?.toLowerCase().includes(assetSearch.toLowerCase()) || a.code?.toLowerCase().includes(assetSearch.toLowerCase()) || a.assigned_to_name?.toLowerCase().includes(assetSearch.toLowerCase()))
+                    );
+                    const totalVal = deptAssets.reduce((sum, a) => sum + (Number(a.purchase_price) || 0), 0);
+
+                    return (
+                      <div key={deptName} className="p-4 rounded-2xl bg-white border border-amber-200 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b pb-2 border-amber-100">
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900 flex items-center space-x-1.5">
+                            <Crown size={15} className="text-amber-600" />
+                            <span>{deptName}</span>
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                            {deptAssets.length} thiết bị
+                          </span>
+                        </div>
+
+                        {deptAssets.length === 0 ? (
+                          <div className="text-center py-4 text-slate-400 text-xs italic">
+                            Chưa phân bổ tài sản cố định
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {deptAssets.map(asset => (
+                              <div key={asset.id} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-mono font-bold text-brand-700">{asset.code}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">{asset.status}</span>
+                                </div>
+                                <div className="font-bold text-xs text-slate-900 leading-snug">{asset.name}</div>
+                                <div className="text-[10px] text-slate-500 flex justify-between">
+                                  <span>Phụ trách: <strong>{asset.assigned_to_name || 'Chưa gán'}</strong></span>
+                                  <span className="font-semibold text-slate-700">{Number(asset.purchase_price || 0).toLocaleString('vi-VN')} đ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* KHỐI 2: KHỐI VĂN PHÒNG & THAM MƯU */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-slate-800 font-black text-xs sm:text-sm uppercase tracking-wide border-b border-slate-200 pb-2">
+                  <Building2 className="text-blue-600" size={18} />
+                  <span>2. KHỐI VĂN PHÒNG, KINH DOANH & MARKETING</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {['Khối văn phòng', 'Phòng kinh doanh', 'Phòng Marketing'].map(deptName => {
+                    const deptAssets = allAssets.filter(a => 
+                      a.department_name === deptName &&
+                      (!assetSearch || a.name?.toLowerCase().includes(assetSearch.toLowerCase()) || a.code?.toLowerCase().includes(assetSearch.toLowerCase()) || a.assigned_to_name?.toLowerCase().includes(assetSearch.toLowerCase()))
+                    );
+
+                    return (
+                      <div key={deptName} className="p-4 rounded-2xl bg-white border border-blue-200 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b pb-2 border-blue-100">
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900 flex items-center space-x-1.5">
+                            <Building2 size={15} className="text-blue-600" />
+                            <span>{deptName}</span>
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-900 border border-blue-200">
+                            {deptAssets.length} thiết bị
+                          </span>
+                        </div>
+
+                        {deptAssets.length === 0 ? (
+                          <div className="text-center py-4 text-slate-400 text-xs italic">
+                            Chưa phân bổ tài sản
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {deptAssets.map(asset => (
+                              <div key={asset.id} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-mono font-bold text-brand-700">{asset.code}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">{asset.status}</span>
+                                </div>
+                                <div className="font-bold text-xs text-slate-900 leading-snug">{asset.name}</div>
+                                {asset.serial_number && (
+                                  <div className="text-[10px] text-slate-400 font-mono">Seri: {asset.serial_number}</div>
+                                )}
+                                <div className="text-[10px] text-slate-500 flex justify-between pt-0.5 border-t border-slate-200/60">
+                                  <span>Phụ trách: <strong>{asset.assigned_to_name || 'Chưa gán'}</strong></span>
+                                  <span className="font-semibold text-slate-700">{Number(asset.purchase_price || 0).toLocaleString('vi-VN')} đ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* KHỐI 3: NHÀ MÁY SẢN XUẤT */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-slate-800 font-black text-xs sm:text-sm uppercase tracking-wide border-b border-slate-200 pb-2">
+                  <Factory className="text-amber-600" size={18} />
+                  <span>3. KHỐI NHÀ MÁY SẢN XUẤT (XƯỞNG NỆM & GỐI)</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Xưởng sản xuất nệm', 'Xưởng sản xuất gối'].map(deptName => {
+                    const deptAssets = allAssets.filter(a => 
+                      a.department_name === deptName &&
+                      (!assetSearch || a.name?.toLowerCase().includes(assetSearch.toLowerCase()) || a.code?.toLowerCase().includes(assetSearch.toLowerCase()) || a.assigned_to_name?.toLowerCase().includes(assetSearch.toLowerCase()))
+                    );
+
+                    return (
+                      <div key={deptName} className="p-4 rounded-2xl bg-white border border-amber-300 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b pb-2 border-amber-100">
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900 flex items-center space-x-1.5">
+                            <Wrench size={15} className="text-amber-600" />
+                            <span>{deptName}</span>
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                            {deptAssets.length} máy móc
+                          </span>
+                        </div>
+
+                        {deptAssets.length === 0 ? (
+                          <div className="text-center py-4 text-slate-400 text-xs italic">
+                            Chưa phân bổ máy móc
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {deptAssets.map(asset => (
+                              <div key={asset.id} className="p-2.5 rounded-xl border border-slate-200 bg-amber-50/20 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-mono font-bold text-amber-800">{asset.code}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">{asset.status}</span>
+                                </div>
+                                <div className="font-bold text-xs text-slate-900 leading-snug">{asset.name}</div>
+                                {asset.location && (
+                                  <div className="text-[10px] text-slate-500">📍 {asset.location}</div>
+                                )}
+                                <div className="text-[10px] text-slate-500 flex justify-between pt-0.5 border-t border-slate-200/60">
+                                  <span>Phụ trách: <strong>{asset.assigned_to_name || 'Xưởng'}</strong></span>
+                                  <span className="font-bold text-slate-800">{Number(asset.purchase_price || 0).toLocaleString('vi-VN')} đ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* KHỐI 4: KHO VẬN & LOGISTICS */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-slate-800 font-black text-xs sm:text-sm uppercase tracking-wide border-b border-slate-200 pb-2">
+                  <Truck className="text-emerald-600" size={18} />
+                  <span>4. KHỐI KHO VẬN & LOGISTICS (ĐỘI XE TẢI & THIẾT BỊ KHO)</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Kho Cần Thơ', 'Kho Mỹ Tho'].map(deptName => {
+                    const deptAssets = allAssets.filter(a => 
+                      a.department_name === deptName &&
+                      (!assetSearch || a.name?.toLowerCase().includes(assetSearch.toLowerCase()) || a.code?.toLowerCase().includes(assetSearch.toLowerCase()) || a.assigned_to_name?.toLowerCase().includes(assetSearch.toLowerCase()) || a.serial_number?.toLowerCase().includes(assetSearch.toLowerCase()))
+                    );
+
+                    return (
+                      <div key={deptName} className="p-4 rounded-2xl bg-white border border-emerald-300 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b pb-2 border-emerald-100">
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900 flex items-center space-x-1.5">
+                            <Truck size={15} className="text-emerald-600" />
+                            <span>{deptName}</span>
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                            {deptAssets.length} xe & thiết bị
+                          </span>
+                        </div>
+
+                        {deptAssets.length === 0 ? (
+                          <div className="text-center py-4 text-slate-400 text-xs italic">
+                            Chưa phân bổ xe / thiết bị kho
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {deptAssets.map(asset => (
+                              <div key={asset.id} className="p-2.5 rounded-xl border border-slate-200 bg-emerald-50/20 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-mono font-bold text-emerald-800">{asset.code}</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">{asset.status}</span>
+                                </div>
+                                <div className="font-bold text-xs text-slate-900 leading-snug">{asset.name}</div>
+                                {asset.serial_number && (
+                                  <div className="text-[10px] text-emerald-800 font-mono font-bold">Biển số/Seri: {asset.serial_number}</div>
+                                )}
+                                <div className="text-[10px] text-slate-500 flex justify-between pt-0.5 border-t border-slate-200/60">
+                                  <span>Phụ trách: <strong>{asset.assigned_to_name || 'Kho'}</strong></span>
+                                  <span className="font-bold text-slate-800">{Number(asset.purchase_price || 0).toLocaleString('vi-VN')} đ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Modal: Danh sách Nhân sự & Thiết bị thuộc Phòng ban */}
+      {viewDeptEmployeesModalOpen && viewDeptData.department && (() => {
+        const deptAssets = allAssets.filter(a => 
+          Number(a.department_id) === Number(viewDeptData.department.id) ||
+          a.department_name === viewDeptData.department.name
+        );
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="w-full max-w-5xl lg:max-w-6xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden my-6 max-h-[90vh] flex flex-col animate-scaleUp">
+              {/* Modal Header */}
+              <div className="p-5 bg-gradient-to-r from-brand-800 via-brand-700 to-slate-800 text-white flex justify-between items-center shrink-0">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                    <Layers size={22} className="text-amber-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight flex items-center space-x-2">
+                      <span>Phòng ban: {viewDeptData.department.name}</span>
+                      <span className="text-xs bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full shadow-sm">
+                        {viewDeptData.employees?.length || 0} nhân sự • {deptAssets.length} thiết bị
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-200 mt-0.5 font-medium">
+                      {viewDeptData.department.branch_name || 'Văn phòng Trụ sở chính'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewDeptEmployeesModalOpen(false)}
+                  className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                  title="Đóng modal"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+
+              {/* Sub-tabs trong Modal: Nhân sự vs Thiết bị */}
+              <div className="px-5 pt-3 border-b border-slate-200 bg-slate-50 flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setDeptModalTab('employees')}
+                  className={`pb-2.5 px-3 font-bold text-xs flex items-center space-x-1.5 border-b-2 transition cursor-pointer ${
+                    deptModalTab === 'employees'
+                      ? 'border-brand-700 text-brand-800'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Users size={14} />
+                  <span>Danh Sách Nhân Sự ({viewDeptData.employees?.length || 0})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDeptModalTab('assets')}
+                  className={`pb-2.5 px-3 font-bold text-xs flex items-center space-x-1.5 border-b-2 transition cursor-pointer ${
+                    deptModalTab === 'assets'
+                      ? 'border-brand-700 text-brand-800'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Package size={14} />
+                  <span>Công Cụ & Thiết Bị Phòng Ban ({deptAssets.length})</span>
+                </button>
+              </div>
+
+              {/* Sub-tab 1: Nhân Sự */}
+              {deptModalTab === 'employees' && (
+                <>
+                  <div className="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+                    <div className="flex items-center space-x-2 max-w-md w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+                      <Search size={15} className="text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Tìm nhân viên trong phòng ban này (tên, mã, chức vụ, SĐT)..."
+                        value={empSearch}
+                        onChange={(e) => setEmpSearch(e.target.value)}
+                        className="outline-none text-xs w-full bg-transparent text-slate-700"
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+                      Hiển thị: <b className="text-brand-700 font-bold">{modalFilteredEmployees.length}</b> / {viewDeptData.employees?.length || 0} nhân sự
+                    </span>
+                  </div>
+
+                  <div className="p-4 overflow-y-auto flex-1 custom-scroll">
+                    {viewDeptLoading ? (
+                      <div className="flex justify-center p-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+                      </div>
+                    ) : modalFilteredEmployees.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400">
+                        <Users size={36} className="mx-auto mb-2 text-slate-300" />
+                        <p className="font-semibold text-sm">Chưa có nhân sự nào trong phòng ban này.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-slate-200 overflow-x-auto custom-scroll-x shadow-sm">
+                        <table className="w-full text-left text-xs border-collapse min-w-[800px] whitespace-nowrap">
+                          <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b whitespace-nowrap">
+                            <tr>
+                              <th className="px-4 py-3.5 text-center w-12">STT</th>
+                              <th className="px-5 py-3.5">Mã NV & Họ Tên</th>
+                              <th className="px-5 py-3.5">Chức vụ</th>
+                              <th className="px-4 py-3.5 text-center">Giới tính</th>
+                              <th className="px-5 py-3.5">Liên hệ (SĐT / Email)</th>
+                              <th className="px-4 py-3.5 text-center">Trạng thái</th>
+                              <th className="px-5 py-3.5 text-right">Ngày vào làm</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 whitespace-nowrap">
+                            {modalFilteredEmployees.map((emp, idx) => (
+                              <tr key={emp.id} className="hover:bg-brand-50/30 transition">
+                                <td className="px-4 py-3 text-slate-400 font-bold text-center">{idx + 1}</td>
+                                <td className="px-5 py-3 whitespace-nowrap">
+                                  <div className="font-bold text-slate-800 text-sm">{emp.fullname}</div>
+                                  <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200/60 inline-block mt-0.5">
+                                    {emp.code}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 whitespace-nowrap">
+                                  <span className="font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md inline-block">
+                                    {emp.position_name || 'Chưa phân chức vụ'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center text-slate-600 font-medium whitespace-nowrap">
+                                  {emp.gender || '-'}
+                                </td>
+                                <td className="px-5 py-3 space-y-1 whitespace-nowrap">
+                                  {emp.phone ? (
+                                    <div className="flex items-center space-x-1.5 text-slate-700 font-medium">
+                                      <Phone size={12} className="text-slate-400 shrink-0" />
+                                      <span>{emp.phone}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 italic">-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-center whitespace-nowrap">
+                                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold inline-block whitespace-nowrap ${
+                                    emp.status === 'Đang làm việc'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                  }`}>
+                                    {emp.status}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 text-right text-slate-600 font-medium whitespace-nowrap">
+                                  {emp.join_date || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Sub-tab 2: Thiết Bị & Tài Sản Trực Thuộc */}
+              {deptModalTab === 'assets' && (
+                <div className="p-5 overflow-y-auto flex-1 custom-scroll space-y-3">
+                  {deptAssets.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                      <Package size={36} className="mx-auto mb-2 text-slate-300" />
+                      <p className="font-semibold text-sm">Chưa có máy móc hay thiết bị nào được bàn giao cho phòng ban này.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {deptAssets.map(asset => (
+                        <div key={asset.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                              {asset.code}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                              {asset.status}
+                            </span>
+                          </div>
+
+                          <h4 className="font-bold text-xs sm:text-sm text-slate-900 leading-snug">{asset.name}</h4>
+                          {asset.serial_number && (
+                            <p className="text-[11px] text-slate-500 font-mono">Seri/Biển số: {asset.serial_number}</p>
+                          )}
+                          {asset.specifications && (
+                            <p className="text-[11px] text-slate-600 line-clamp-2">{asset.specifications}</p>
+                          )}
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span className="text-slate-500 text-[11px]">
+                              Người giữ: <strong>{asset.assigned_to_name || 'Chưa bàn giao'}</strong>
+                            </span>
+                            <span className="font-bold text-slate-800">
+                              {Number(asset.purchase_price || 0).toLocaleString('vi-VN')} đ
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewDeptEmployeesModalOpen(false)}
+                  className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Department Form Modal */}
       {deptModalOpen && (
