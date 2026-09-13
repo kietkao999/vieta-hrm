@@ -109,8 +109,8 @@ const LEVEL_TITLE_CONFIGS = [
     badgeClass: 'bg-teal-100 text-teal-900 border-teal-300',
     accentText: 'text-teal-300',
     roles: [
-      { name: 'Phó Trưởng Phòng Chuyên Môn', dept: 'Khối Văn Phòng', desc: 'Hỗ trợ quản lý điều phối nghiệp vụ chuyên môn phòng ban' },
-      { name: 'Phó Trưởng Phòng / Trưởng Nhóm KD & MKT', dept: 'Kinh Doanh & Marketing', desc: 'Phụ trách nhóm kinh doanh và chiến dịch tiếp thị' },
+      { name: 'Phó Trưởng Phòng / Trưởng Nhóm Kinh Doanh', dept: 'Phòng Kinh Doanh', desc: 'Phụ trách nhóm kinh doanh và phát triển thị trường' },
+      { name: 'Phó Trưởng Phòng / Trưởng Nhóm Marketing', dept: 'Phòng Marketing', desc: 'Phụ trách chiến dịch tiếp thị, quảng cáo & thương hiệu' },
       { name: 'Phó Quản Lý Kho Mỹ Tho', dept: 'Kho Mỹ Tho', desc: 'Phụ trách điều phối xuất nhập kho & an toàn vận tải' },
       { name: 'Phó Quản Lý Xưởng Nệm', dept: 'Xưởng Nệm', desc: 'Kiểm soát tiến độ may, dán, keo, đóng gói & an toàn xưởng' },
       { name: 'Trưởng Nhóm Thổi Gối', dept: 'Xưởng Gối', desc: 'Phụ trách trực tiếp dây chuyền thổi gòn định lượng và may hoàn thiện' }
