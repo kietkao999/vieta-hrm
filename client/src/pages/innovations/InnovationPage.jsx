@@ -76,7 +76,8 @@ const RECIPIENT_GROUPS = [
   {
     groupLabel: 'Trưởng Phòng Ban & Đơn Vị',
     options: [
-      { id: 'Trưởng Phòng Kinh Doanh & Marketing', label: '🏬 Phòng Kinh Doanh & Marketing' },
+      { id: 'Trưởng Phòng Kinh Doanh', label: '🏬 Phòng Kinh Doanh' },
+      { id: 'Trưởng Phòng Marketing', label: '🏬 Phòng Marketing' },
       { id: 'Trưởng Phòng Kế Toán', label: '🏬 Phòng Kế Toán' },
       { id: 'Trưởng Phòng R&D', label: '🏬 Phòng R&D' },
       { id: 'Quản Lý Kho Cần Thơ', label: '🏬 Quản Lý Kho Cần Thơ' },
