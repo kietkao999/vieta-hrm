@@ -281,31 +281,31 @@ const ReportPage = () => {
         {/* Top Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-lg bg-blue-50 p-3 text-blue-600"><Users size={24} /></div>
+            <div className="rounded-xl bg-blue-50 p-3 text-blue-600 shrink-0"><Users size={24} /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-400">NHÂN SỰ ĐANG LÀM VIỆC</p>
-              <p className="text-2xl font-bold text-slate-800">{displayTotalActive}</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">NHÂN SỰ ĐANG LÀM VIỆC</p>
+              <p className="text-2xl font-black text-slate-900">{displayTotalActive}</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-lg bg-emerald-50 p-3 text-emerald-600"><TrendingUp size={24} /></div>
+            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 shrink-0"><TrendingUp size={24} /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-400">THÂM NIÊN TRUNG BÌNH</p>
-              <p className="text-2xl font-bold text-slate-800">{displaySeniority} năm</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">THÂM NIÊN TRUNG BÌNH</p>
+              <p className="text-2xl font-black text-slate-900">{displaySeniority} năm</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-lg bg-purple-50 p-3 text-purple-600"><PieChart size={24} /></div>
+            <div className="rounded-xl bg-purple-50 p-3 text-purple-600 shrink-0"><PieChart size={24} /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-400">SỐ PHÒNG BAN</p>
-              <p className="text-2xl font-bold text-slate-800">{selectedDepartment ? 1 : (displayDeptStats?.length || 0)}</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">SỐ PHÒNG BAN</p>
+              <p className="text-2xl font-black text-slate-900">{selectedDepartment ? 1 : (displayDeptStats?.length || 0)}</p>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-lg bg-amber-50 p-3 text-amber-600"><AlertTriangle size={24} /></div>
+            <div className="rounded-xl bg-amber-50 p-3 text-amber-600 shrink-0"><AlertTriangle size={24} /></div>
             <div>
-              <p className="text-xs font-semibold text-slate-400">HĐ SẮP HẾT HẠN</p>
-              <p className="text-2xl font-bold text-slate-800">{summaryData?.expiringContracts?.length || 0}</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">HĐ SẮP HẾT HẠN</p>
+              <p className="text-2xl font-black text-slate-900">{summaryData?.expiringContracts?.length || 0}</p>
             </div>
           </div>
         </div>
@@ -610,8 +610,8 @@ const ReportPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Báo cáo & Thống kê HRM</h2>
-          <p className="text-xs text-slate-500">Tổng hợp dữ liệu nhân sự, quỹ lương, chấm công và hiệu suất KPI</p>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Báo cáo & Thống kê HRM</h2>
+          <p className="text-xs font-medium text-slate-600 mt-0.5">Tổng hợp dữ liệu nhân sự, quỹ lương, chấm công và hiệu suất KPI</p>
         </div>
 
         {/* Top Actions */}
@@ -622,9 +622,9 @@ const ReportPage = () => {
               setExportYear(year);
               setShowExportModal(true);
             }}
-            className="inline-flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-brand-700 to-brand-900 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg hover:from-brand-800 hover:to-brand-950 transition-all cursor-pointer"
+            className="inline-flex items-center space-x-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all cursor-pointer border border-slate-700 active:scale-[0.98]"
           >
-            <FileSpreadsheet size={16} className="text-emerald-300" />
+            <FileSpreadsheet size={16} className="text-emerald-400" />
             <span>Xuất Báo Cáo Excel</span>
           </button>
         </div>

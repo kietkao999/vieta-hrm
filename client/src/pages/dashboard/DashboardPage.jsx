@@ -230,32 +230,32 @@ const DashboardPage = () => {
       {/* Grid Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-blue-50 p-3 text-blue-600">
+          <div className="rounded-xl bg-blue-50 p-3 text-blue-600 shrink-0">
             <Users size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">TỔNG NHÂN SỰ TOÀN CÔNG TY</p>
-            <p className="text-xl font-bold text-slate-800">{stats.totalEmployees} nhân sự</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">TỔNG NHÂN SỰ TOÀN CÔNG TY</p>
+            <p className="text-2xl font-black text-slate-900">{stats.totalEmployees} nhân sự</p>
           </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-emerald-50 p-3 text-emerald-600">
+          <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 shrink-0">
             <FileText size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">HỢP ĐỒNG HIỆU LỰC</p>
-            <p className="text-xl font-bold text-slate-800">{stats.activeContracts} hợp đồng</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">HỢP ĐỒNG HIỆU LỰC</p>
+            <p className="text-2xl font-black text-slate-900">{stats.activeContracts} hợp đồng</p>
           </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-amber-50 p-3 text-amber-600">
+          <div className="rounded-xl bg-amber-50 p-3 text-amber-600 shrink-0">
             <Clock size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ĐƠN NGHỈ PHÉP CHỜ DUYỆT</p>
-            <p className="text-xl font-bold text-slate-800">{stats.pendingLeaves} đơn</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">ĐƠN NGHỈ PHÉP CHỜ DUYỆT</p>
+            <p className="text-2xl font-black text-slate-900">{stats.pendingLeaves} đơn</p>
           </div>
         </div>
       </div>
@@ -267,30 +267,42 @@ const DashboardPage = () => {
         {/* Quick Access Menu */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Các phân hệ quản lý chính</h3>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Link to="/employees" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <Users className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Hồ sơ Nhân sự</span>
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
+            <Link to="/employees" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-blue-500 hover:bg-blue-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <Users size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700">Hồ sơ Nhân sự</span>
             </Link>
-            <Link to="/attendance" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <Calendar className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Chấm công tháng</span>
+            <Link to="/attendance" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-emerald-500 hover:bg-emerald-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <Calendar size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700">Chấm công tháng</span>
             </Link>
-            <Link to="/payroll" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <DollarSign className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Bảng lương Công ty</span>
+            <Link to="/payroll" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-amber-500 hover:bg-amber-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <DollarSign size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-amber-700">Bảng lương Công ty</span>
             </Link>
-            <Link to="/kpi" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <TrendingUp className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Đánh giá KPI</span>
+            <Link to="/kpi" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-indigo-500 hover:bg-indigo-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <TrendingUp size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-700">Đánh giá KPI</span>
             </Link>
-            <Link to="/rewards" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <Award className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Khen thưởng & Kỷ luật</span>
+            <Link to="/rewards" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-purple-500 hover:bg-purple-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <Award size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-purple-700">Khen thưởng & Kỷ luật</span>
             </Link>
-            <Link to="/users" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 hover:border-brand-500 hover:bg-brand-50/50 group transition-all text-center">
-              <Shield className="text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" size={28} />
-              <span className="text-xs font-semibold text-slate-700 group-hover:text-brand-700">Phân quyền tài khoản</span>
+            <Link to="/users" className="flex flex-col items-center justify-center p-4 rounded-2xl border border-slate-200/80 bg-white hover:border-rose-500 hover:bg-rose-50/40 group transition-all text-center shadow-2xs hover:shadow-sm">
+              <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <Shield size={22} />
+              </div>
+              <span className="text-xs font-bold text-slate-800 group-hover:text-rose-700">Phân quyền tài khoản</span>
             </Link>
           </div>
         </div>
