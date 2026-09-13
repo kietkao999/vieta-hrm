@@ -87,6 +87,41 @@ const InnovationPage = () => {
     is_anonymous: false
   });
 
+  // Evaluate / Management Modal state
+  const [evalModalOpen, setEvalModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [evalData, setEvalData] = useState({
+    status: 'Đang thẩm định',
+    response_notes: '',
+    reward_amount: 0
+  });
+
+  // Management Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  // Fetch data
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [allRes, myRes] = await Promise.all([
+        api.get('/innovations'),
+        api.get('/innovations?scope=my')
+      ]);
+      setAllInnovations(allRes.data || []);
+      setMyInnovations(myRes.data || []);
+    } catch (err) {
+      console.error('Lỗi tải dữ liệu:', err);
+      setError('Không thể tải danh sách ý kiến đóng góp.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   // Submit ý kiến
   const handleSubmitIdea = async (e) => {
     e.preventDefault();
