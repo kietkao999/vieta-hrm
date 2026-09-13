@@ -319,33 +319,99 @@ const DashboardPage = () => {
       </div>
 
       {/* Admin Audit Logs section */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Nhật ký thao tác hệ thống gần đây</h3>
-          <span className="text-xs text-slate-500">Ghi nhận bảo mật</span>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Nhật ký thao tác hệ thống gần đây</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">Ghi nhận bảo mật truy vết thời gian thực</p>
+          </div>
+          <Link to="/audit-logs" className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
+            <span>Tất cả</span>
+            <ChevronRight size={14} />
+          </Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+
+        {/* Mobile View: Log Cards (block md:hidden) */}
+        <div className="block md:hidden space-y-2.5">
+          {stats.recentLogs.length === 0 ? (
+            <div className="text-center py-6 text-slate-400 text-xs">Không có nhật ký thao tác nào.</div>
+          ) : (
+            stats.recentLogs.map((log) => {
+              const isPost = log.action?.includes('POST') || log.action?.includes('Thêm') || log.action?.includes('Tạo');
+              const isPut = log.action?.includes('PUT') || log.action?.includes('Cập nhật') || log.action?.includes('Sửa');
+              const isDelete = log.action?.includes('DELETE') || log.action?.includes('Xóa');
+              const isLogin = log.action?.includes('Đăng nhập') || log.action?.includes('login');
+
+              const badgeColor = isDelete
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                : isPut
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : isPost
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : isLogin
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-slate-100 text-slate-700 border-slate-200';
+
+              return (
+                <div key={log.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${badgeColor}`}>
+                      {log.action}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {new Date(log.created_at).toLocaleString('vi-VN')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 text-xs">
+                    <span className="text-slate-400 text-[11px]">Tài khoản:</span>
+                    <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200/60 font-mono text-[11px]">
+                      {log.username}
+                    </span>
+                  </div>
+
+                  {log.details && (
+                    <div className="pt-1.5 border-t border-slate-200/60 text-[11px] text-slate-600 break-words leading-relaxed font-sans">
+                      {log.details}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop View: Table (hidden md:block) */}
+        <div className="hidden md:block overflow-x-auto custom-scroll-x">
+          <table className="w-full text-left text-xs border-collapse min-w-[650px]">
             <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-2.5">Thời gian</th>
-                <th className="py-2.5">Người dùng</th>
-                <th className="py-2.5">Thao tác</th>
-                <th className="py-2.5">Chi tiết</th>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider">
+                <th className="px-4 py-3">Thời gian</th>
+                <th className="px-4 py-3">Người dùng</th>
+                <th className="px-4 py-3">Thao tác</th>
+                <th className="px-4 py-3">Chi tiết</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {stats.recentLogs.map((log) => (
-                <tr key={log.id} className="border-b border-slate-50 text-slate-600 hover:bg-slate-50/50">
-                  <td className="py-2">{new Date(log.created_at).toLocaleString('vi-VN')}</td>
-                  <td className="py-2 font-semibold text-slate-700">{log.username}</td>
-                  <td className="py-2">{log.action}</td>
-                  <td className="py-2 text-slate-500">{log.details}</td>
+                <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono">
+                    {new Date(log.created_at).toLocaleString('vi-VN')}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap font-bold text-slate-800 font-mono">
+                    {log.username}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                      {log.action}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 max-w-md break-words">{log.details}</td>
                 </tr>
               ))}
               {stats.recentLogs.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-4 text-slate-400">Không có nhật ký thao tác nào.</td>
+                  <td colSpan={4} className="text-center py-6 text-slate-400">Không có nhật ký thao tác nào.</td>
                 </tr>
               )}
             </tbody>
@@ -410,27 +476,56 @@ const DashboardPage = () => {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        {/* Mobile View: Staff Cards (block md:hidden) */}
+        <div className="block md:hidden space-y-2.5">
+          {stats.deptEmployees.length === 0 ? (
+            <div className="text-center py-6 text-slate-400 text-xs">Không có nhân viên nào trong phòng ban.</div>
+          ) : (
+            stats.deptEmployees.map((emp) => (
+              <div key={emp.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
+                    {emp.code}
+                  </span>
+                  <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
+                    {emp.status || 'Đang làm việc'}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{emp.fullname}</h4>
+                  <p className="text-xs text-slate-500">{emp.position_name || 'Nhân viên'}</p>
+                </div>
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600">
+                  <span>SĐT: {emp.phone || '---'}</span>
+                  <span>Vào làm: {emp.join_date || '---'}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop View: Table (hidden md:block) */}
+        <div className="hidden md:block overflow-x-auto custom-scroll-x">
+          <table className="w-full text-left text-xs border-collapse min-w-[700px]">
             <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-2.5">Mã NV</th>
-                <th className="py-2.5">Họ tên</th>
-                <th className="py-2.5">Chức vụ</th>
-                <th className="py-2.5">Số điện thoại</th>
-                <th className="py-2.5">Ngày vào làm</th>
-                <th className="py-2.5 text-center">Trạng thái</th>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-bold uppercase tracking-wider">
+                <th className="px-4 py-3">Mã NV</th>
+                <th className="px-4 py-3">Họ tên</th>
+                <th className="px-4 py-3">Chức vụ</th>
+                <th className="px-4 py-3">Số điện thoại</th>
+                <th className="px-4 py-3">Ngày vào làm</th>
+                <th className="px-4 py-3 text-center">Trạng thái</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {stats.deptEmployees.map((emp) => (
-                <tr key={emp.id} className="border-b border-slate-50 text-slate-600 hover:bg-slate-50/50">
-                  <td className="py-2.5 font-bold text-brand-700 font-mono">{emp.code}</td>
-                  <td className="py-2.5 font-semibold text-slate-800">{emp.fullname}</td>
-                  <td className="py-2.5">{emp.position_name || 'Nhân viên'}</td>
-                  <td className="py-2.5 font-mono">{emp.phone || '---'}</td>
-                  <td className="py-2.5">{emp.join_date || '---'}</td>
-                  <td className="py-2.5 text-center">
+                <tr key={emp.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="px-4 py-3 font-bold text-brand-700 font-mono">{emp.code}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-800">{emp.fullname}</td>
+                  <td className="px-4 py-3">{emp.position_name || 'Nhân viên'}</td>
+                  <td className="px-4 py-3 font-mono">{emp.phone || '---'}</td>
+                  <td className="px-4 py-3">{emp.join_date || '---'}</td>
+                  <td className="px-4 py-3 text-center">
                     <span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
                       {emp.status || 'Đang làm việc'}
                     </span>
