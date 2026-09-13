@@ -517,19 +517,16 @@ const DeptPosSettingsPage = () => {
             <div className="space-y-4">
               {/* CẤP 1: BAN TỔNG GIÁM ĐỐC */}
               <div className="flex flex-col items-center">
-                <div className="w-full max-w-2xl bg-white rounded-2xl border-2 border-amber-300/80 shadow-md overflow-hidden">
+                <div className="w-full max-w-lg bg-white rounded-2xl border-2 border-amber-300/80 shadow-md overflow-hidden text-center">
                   <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white px-4 py-2.5 text-center flex items-center justify-center space-x-2">
                     <Crown size={18} className="text-amber-400" />
                     <span className="text-sm sm:text-base font-black text-amber-300 tracking-wider uppercase">
                       BAN TỔNG GIÁM ĐỐC
                     </span>
                   </div>
-                  <div className="p-3.5 bg-amber-50/20 grid grid-cols-2 gap-3.5 text-center">
+                  <div className="p-3 bg-amber-50/20">
                     <div className="py-3 px-4 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 transition">
                       <div className="font-black text-slate-900 text-sm sm:text-base">TỔNG GIÁM ĐỐC</div>
-                    </div>
-                    <div className="py-3 px-4 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 transition">
-                      <div className="font-black text-slate-900 text-sm sm:text-base">TRỢ LÝ GIÁM ĐỐC</div>
                     </div>
                   </div>
                 </div>
@@ -588,6 +585,9 @@ const DeptPosSettingsPage = () => {
                       </span>
                     </div>
                     <div className="p-3 space-y-2.5 flex-1 bg-blue-50/20">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-blue-300 transition">
+                        Trợ Lý Giám Đốc
+                      </div>
                       <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-blue-300 transition">
                         Trưởng Phòng Hành Chính Nhân Sự
                       </div>
