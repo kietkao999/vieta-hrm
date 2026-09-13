@@ -4,27 +4,47 @@ import api from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Khởi tạo ngay lập tức từ bộ nhớ máy (0ms) tránh hiện tượng màn hình trắng chờ mạng
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('viet_a_hrm_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
-  // Kiểm tra token hiện tại khi khởi chạy ứng dụng
+  const [loading, setLoading] = useState(() => {
+    const token = localStorage.getItem('viet_a_hrm_token');
+    const savedUser = localStorage.getItem('viet_a_hrm_user');
+    // Nếu đã có token và user trong máy, cho vào ngay (loading = false)
+    return !(token && savedUser);
+  });
+
+  // Xác thực ngầm trong nền (non-blocking background verification)
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthInBackground = async () => {
       const token = localStorage.getItem('viet_a_hrm_token');
       if (token) {
         try {
           const res = await api.get('/auth/me');
-          setUser(res.data);
+          if (res.data) {
+            setUser(res.data);
+            localStorage.setItem('viet_a_hrm_user', JSON.stringify(res.data));
+          }
         } catch (error) {
-          console.error('Không thể xác thực token hiện tại:', error);
-          localStorage.removeItem('viet_a_hrm_token');
-          localStorage.removeItem('viet_a_hrm_user');
+          // Chỉ logout nếu thực sự lỗi 401 token hết hạn
+          if (error.response && error.response.status === 401) {
+            localStorage.removeItem('viet_a_hrm_token');
+            localStorage.removeItem('viet_a_hrm_user');
+            setUser(null);
+          }
         }
       }
       setLoading(false);
     };
 
-    checkAuth();
+    checkAuthInBackground();
   }, []);
 
   const login = async (username, password) => {
@@ -35,6 +55,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('viet_a_hrm_token', token);
       localStorage.setItem('viet_a_hrm_user', JSON.stringify(userData));
       setUser(userData);
+      setLoading(false);
       
       return userData;
     } catch (error) {

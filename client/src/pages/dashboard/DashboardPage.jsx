@@ -38,49 +38,43 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        const isAdminOrHR = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
+
+        // Tải đồng thời tất cả dữ liệu qua Promise.allSettled (siêu tốc, không bị nghẽn dây chuyền)
+        const [empResult, leaveResult, contractResult, logResult, payrollResult] = await Promise.allSettled([
+          api.get('/employees?limit=100'),
+          api.get('/leave-requests?status=Chờ duyệt'),
+          isAdminOrHR ? api.get('/contracts?status=Có hiệu lực') : Promise.resolve({ data: [] }),
+          isAdminOrHR ? api.get('/system/audit-logs') : Promise.resolve({ data: [] }),
+          api.get('/payroll?year=2026')
+        ]);
+
         let totalEmployees = 0;
-        let activeContracts = 0;
-        let pendingLeaves = 0;
         let deptEmployees = [];
-        let personalPayroll = null;
-        let personalAttendance = 26;
-        let recentLogs = [];
-
-        // 1. Lấy danh sách nhân viên (Backend tự động phân quyền theo role & department)
-        try {
-          const empRes = await api.get('/employees?limit=100');
-          if (empRes.data) {
-            deptEmployees = empRes.data.data || [];
-            totalEmployees = empRes.data.pagination?.total || deptEmployees.length;
-          }
-        } catch (e) { console.error(e); }
-
-        // 2. Lấy đơn nghỉ phép
-        try {
-          const leaveRes = await api.get('/leave-requests?status=Chờ duyệt');
-          pendingLeaves = leaveRes.data?.length || 0;
-        } catch (e) { console.error(e); }
-
-        // 3. Lấy số hợp đồng hiệu lực (Admin/HR)
-        if (user.roleName === 'ADMIN' || user.roleName === 'HR') {
-          try {
-            const contractRes = await api.get('/contracts?status=Có hiệu lực');
-            activeContracts = contractRes.data?.length || 0;
-          } catch (e) { console.error(e); }
-
-          try {
-            const logRes = await api.get('/system/audit-logs');
-            recentLogs = (logRes.data || []).slice(0, 5);
-          } catch (e) { console.error(e); }
+        if (empResult.status === 'fulfilled' && empResult.value?.data) {
+          deptEmployees = empResult.value.data.data || (Array.isArray(empResult.value.data) ? empResult.value.data : []);
+          totalEmployees = empResult.value.data.pagination?.total || deptEmployees.length;
         }
 
-        // 4. Lấy phiếu lương cá nhân (cho nhân viên / trưởng phòng)
-        try {
-          const payrollRes = await api.get('/payroll?year=2026');
-          if (payrollRes.data && payrollRes.data.length > 0) {
-            personalPayroll = payrollRes.data[0];
-          }
-        } catch (e) { console.error(e); }
+        let pendingLeaves = 0;
+        if (leaveResult.status === 'fulfilled' && leaveResult.value?.data) {
+          pendingLeaves = Array.isArray(leaveResult.value.data) ? leaveResult.value.data.length : 0;
+        }
+
+        let activeContracts = 0;
+        if (contractResult.status === 'fulfilled' && contractResult.value?.data) {
+          activeContracts = Array.isArray(contractResult.value.data) ? contractResult.value.data.length : 0;
+        }
+
+        let recentLogs = [];
+        if (logResult.status === 'fulfilled' && logResult.value?.data) {
+          recentLogs = (Array.isArray(logResult.value.data) ? logResult.value.data : []).slice(0, 5);
+        }
+
+        let personalPayroll = null;
+        if (payrollResult.status === 'fulfilled' && payrollResult.value?.data && payrollResult.value.data.length > 0) {
+          personalPayroll = payrollResult.value.data[0];
+        }
 
         setStats({
           totalEmployees,
@@ -88,7 +82,7 @@ const DashboardPage = () => {
           pendingLeaves,
           deptEmployees,
           personalPayroll,
-          personalAttendance,
+          personalAttendance: 26,
           recentLogs,
           recentNotifications: [
             { id: 1, title: 'Hệ thống HRM 2026', content: 'Chào mừng bạn đến với hệ thống quản trị nhân sự Nệm Việt Á.', date: 'Hôm nay' },
