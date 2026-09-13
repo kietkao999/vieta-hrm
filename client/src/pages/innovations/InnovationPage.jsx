@@ -52,76 +52,6 @@ const RECIPIENT_GROUPS = [
   }
 ];
 
-// MẪU GÓP Ý DÙNG CHUNG CÓ SẴN (1-CLICK TEMPLATES)
-const SAMPLE_TEMPLATES = [
-  {
-    id: 'sx',
-    title: '🏭 Cải tiến Sản xuất (Xưởng Nệm / Gối)',
-    category: 'Cải tiến sản xuất nệm/gối',
-    target_unit: 'Quản Lý Xưởng Sản Xuất Nệm',
-    defaultTitle: 'Đề xuất cải tiến thao tác / quy trình sản xuất tại xưởng',
-    templateContent: `1. Khó khăn / Vấn đề hiện tại:
-(Ví dụ: Thao tác may viền/dán keo bị vướng, tốn thời gian...)
-
-2. Cách thức / Đề xuất mới:
-(Ví dụ: Sắp xếp lại vị trí bàn may, dụng cụ cắt...)
-
-3. Lợi ích mang lại:
-(Giúp thao tác nhanh hơn, giảm mệt mỏi, tăng năng suất)`
-  },
-  {
-    id: 'vatlieu',
-    title: '♻️ Tiết kiệm Nguyên Vật Liệu',
-    category: 'Tiết kiệm nguyên vật liệu',
-    target_unit: 'Quản Lý Xưởng Sản Xuất Nệm',
-    defaultTitle: 'Đề xuất giải pháp giảm hao hụt nguyên vật liệu mút / vải / gòn',
-    templateContent: `1. Vật liệu đang bị hao hụt / lãng phí:
-(Ví dụ: Vải may áo nệm, mút vụn, gòn dính...)
-
-2. Đề xuất cách tiết kiệm / tận dụng:
-(Ví dụ: Cắt rập tối ưu hơn, tận dụng mút vụn...)
-
-3. Dự kiến tiết kiệm:
-(Ước tính giảm hao hụt, tiết kiệm chi phí)`
-  },
-  {
-    id: 'khovan',
-    title: '🚚 Giao Hàng & Kho Vận',
-    category: 'Tối ưu kho vận & giao hàng',
-    target_unit: 'Quản Lý Kho Cần Thơ',
-    defaultTitle: 'Đề xuất tuyến đường giao hàng / sắp xếp hàng kho bãi',
-    templateContent: `1. Điểm nghẽn giao hàng / xếp kho:
-(Ví dụ: Lộ trình giao đại lý bị chồng chéo, bốc dỡ hàng chậm...)
-
-2. Đề xuất cách làm mới:
-(Ví dụ: Ghép đơn theo cung đường, xếp hàng theo thứ tự giao...)
-
-3. Lợi ích:
-(Giao nhanh hơn, tiết kiệm nhiên liệu)`
-  },
-  {
-    id: 'moitruong',
-    title: '🌟 Môi Trường Làm Việc & Phúc Lợi',
-    category: 'Văn hóa & Môi trường làm việc',
-    target_unit: 'Ban Giám Đốc',
-    defaultTitle: 'Góp ý về môi trường làm việc / bữa ăn ca / điều kiện xưởng',
-    templateContent: `1. Vấn đề muốn góp ý:
-(Ví dụ: Bữa ăn ca, nước uống, quạt thông gió tại xưởng, bảo hộ lao động...)
-
-2. Mong muốn Ban Giám Đốc / Trưởng phòng xem xét cải thiện:
-(Đề xuất cụ thể...)`
-  },
-  {
-    id: 'khac',
-    title: '💬 Ý Kiến Đóng Góp Chung',
-    category: 'Ý kiến đóng góp khác',
-    target_unit: 'Ban Giám Đốc',
-    defaultTitle: 'Ý kiến đóng góp chung',
-    templateContent: `Nội dung đóng góp ý kiến:
-(Nhập tự do ý kiến của bạn gửi đến Ban Giám Đốc hoặc Trưởng phòng...)`
-  }
-];
-
 const STATUS_CONFIGS = {
   'Chờ tiếp nhận': { label: 'Chờ tiếp nhận', badge: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
   'Đề xuất': { label: 'Chờ tiếp nhận', badge: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
@@ -148,64 +78,14 @@ const InnovationPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Selected Template Indicator
-  const [selectedTemplateId, setSelectedTemplateId] = useState('sx');
-
   // Simple Form state
   const [formData, setFormData] = useState({
-    title: SAMPLE_TEMPLATES[0].defaultTitle,
-    content: SAMPLE_TEMPLATES[0].templateContent,
-    category: SAMPLE_TEMPLATES[0].category,
-    target_unit: SAMPLE_TEMPLATES[0].target_unit,
+    title: '',
+    content: '',
+    category: 'Ý kiến đóng góp khác',
+    target_unit: 'Ban Giám Đốc',
     is_anonymous: false
   });
-
-  // Evaluate / Management Modal state
-  const [evalModalOpen, setEvalModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [evalData, setEvalData] = useState({
-    status: 'Đang thẩm định',
-    response_notes: '',
-    reward_amount: 0
-  });
-
-  // Management Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-
-  // Fetch data
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [allRes, myRes] = await Promise.all([
-        api.get('/innovations'),
-        api.get('/innovations?scope=my')
-      ]);
-      setAllInnovations(allRes.data || []);
-      setMyInnovations(myRes.data || []);
-    } catch (err) {
-      console.error('Lỗi tải dữ liệu:', err);
-      setError('Không thể tải danh sách ý kiến đóng góp.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Chọn mẫu có sẵn (1-click fill)
-  const handleSelectTemplate = (tpl) => {
-    setSelectedTemplateId(tpl.id);
-    setFormData({
-      title: tpl.defaultTitle,
-      content: tpl.templateContent,
-      category: tpl.category,
-      target_unit: tpl.target_unit,
-      is_anonymous: formData.is_anonymous
-    });
-  };
 
   // Submit ý kiến
   const handleSubmitIdea = async (e) => {
@@ -373,40 +253,19 @@ const InnovationPage = () => {
           {/* Cột trái: Form Góp Ý */}
           <div className="lg:col-span-7 space-y-4">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="bg-slate-900 px-5 py-3 text-white flex items-center justify-between">
+              <div className="bg-slate-900 px-5 py-3.5 text-white flex items-center justify-between">
                 <span className="text-xs sm:text-sm font-black flex items-center space-x-2">
-                  <FileText size={16} className="text-amber-400" />
-                  <span>1. CHỌN MẪU GÓP Ý CÓ SẴN (ĐIỀN NHANH)</span>
+                  <Send size={16} className="text-amber-400" />
+                  <span>HÒM THƯ GÓP Ý & ĐÓNG GÓP Ý KIẾN</span>
                 </span>
-              </div>
-
-              {/* Dải nút chọn mẫu nhanh */}
-              <div className="p-4 bg-slate-50 border-b border-slate-200">
-                <p className="text-xs font-bold text-slate-600 mb-2">💡 Bấm vào mẫu phù hợp để tự động điền sẵn:</p>
-                <div className="flex flex-wrap gap-2">
-                  {SAMPLE_TEMPLATES.map(tpl => (
-                    <button
-                      key={tpl.id}
-                      type="button"
-                      onClick={() => handleSelectTemplate(tpl)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center space-x-1.5 ${
-                        selectedTemplateId === tpl.id
-                          ? 'bg-brand-600 text-white border-brand-700 shadow-xs'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-brand-300 hover:bg-brand-50/50'
-                      }`}
-                    >
-                      <span>{tpl.title}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Form nhập đơn giản */}
               <form onSubmit={handleSubmitIdea} className="p-5 space-y-4">
-                {/* 2. CHỌN NGƯỜI NHẬN: BAN GIÁM ĐỐC HOẶC TRƯỞNG PHÒNG BAN */}
+                {/* 1. CHỌN NGƯỜI NHẬN: BAN GIÁM ĐỐC HOẶC TRƯỞNG PHÒNG BAN */}
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                    2. Gửi Cho Ai? (Ban Giám Đốc Hoặc Trưởng Phòng Ban) *
+                    1. Gửi Cho Ai? (Ban Giám Đốc Hoặc Trưởng Phòng Ban) *
                   </label>
                   <select
                     value={formData.target_unit}
@@ -423,10 +282,10 @@ const InnovationPage = () => {
                   </select>
                 </div>
 
-                {/* 3. TÙY CHỌN BẢO MẬT: CÔNG KHAI HOẶC NẶC DANH */}
+                {/* 2. TÙY CHỌN BẢO MẬT: CÔNG KHAI HOẶC NẶC DANH */}
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                    3. Hình Thức Gửi (Công Khai Hoặc Nặc Danh) *
+                    2. Hình Thức Gửi (Công Khai Hoặc Nặc Danh) *
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Nặc danh */}
@@ -477,34 +336,33 @@ const InnovationPage = () => {
                   </div>
                 </div>
 
-                {/* 4. Tiêu đề */}
+                {/* 3. Tiêu đề */}
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                    4. Tiêu Đề Ý Kiến / Sáng Kiến *
+                    3. Tiêu Đề Ý Kiến / Sáng Kiến *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Tiêu đề ngắn gọn..."
+                    placeholder="Nhập tiêu đề ngắn gọn..."
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
-                {/* 5. Nội dung */}
+                {/* 4. Nội dung */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1 flex items-center justify-between">
-                    <span>5. Nội Dung Chi Tiết (Điền vào các mục bên dưới) *</span>
-                    <span className="text-[11px] font-normal text-slate-400">Có thể chỉnh sửa tự do</span>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
+                    4. Nội Dung Đóng Góp Ý Kiến *
                   </label>
                   <textarea
-                    rows={8}
+                    rows={7}
                     required
-                    placeholder="Nhập nội dung đóng góp của bạn..."
+                    placeholder="Nhập chi tiết ý kiến đóng góp hoặc đề xuất cải tiến của bạn..."
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 p-3 text-xs sm:text-sm text-slate-800 leading-relaxed font-mono focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 p-3 text-xs sm:text-sm text-slate-800 leading-relaxed focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
