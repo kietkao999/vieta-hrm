@@ -22,9 +22,35 @@ import {
   Zap,
   Gift,
   XCircle,
-  FileText
+  FileText,
+  UserCheck,
+  UserX,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+
+// DANH SÁCH NGƯỜI NHẬN / CẤP TIẾP NHẬN
+const RECIPIENT_GROUPS = [
+  {
+    groupLabel: '👑 BAN GIÁM ĐỐC',
+    options: [
+      { id: 'Ban Giám Đốc', label: 'Ban Tổng Giám Đốc (Chỉ đạo & Xem xét toàn diện)' }
+    ]
+  },
+  {
+    groupLabel: '👔 CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ',
+    options: [
+      { id: 'Trưởng Phòng Hành Chính Nhân Sự', label: 'Trưởng Phòng Hành Chính Nhân Sự' },
+      { id: 'Trưởng Phòng Kế Toán', label: 'Trưởng Phòng Kế Toán' },
+      { id: 'Trưởng Phòng Kinh Doanh & Marketing', label: 'Trưởng Phòng Kinh Doanh & Marketing' },
+      { id: 'Trưởng Phòng R&D', label: 'Trưởng Phòng R&D' },
+      { id: 'Quản Lý Kho Cần Thơ', label: 'Quản Lý Kho Cần Thơ' },
+      { id: 'Quản Lý Kho Mỹ Tho', label: 'Quản Lý Kho Mỹ Tho' },
+      { id: 'Quản Lý Xưởng Sản Xuất Nệm', label: 'Quản Lý Xưởng Sản Xuất Nệm' },
+      { id: 'Quản Lý Xưởng Gối', label: 'Quản Lý Xưởng Gối' }
+    ]
+  }
+];
 
 // MẪU GÓP Ý DÙNG CHUNG CÓ SẴN (1-CLICK TEMPLATES)
 const SAMPLE_TEMPLATES = [
@@ -32,7 +58,7 @@ const SAMPLE_TEMPLATES = [
     id: 'sx',
     title: '🏭 Cải tiến Sản xuất (Xưởng Nệm / Gối)',
     category: 'Cải tiến sản xuất nệm/gối',
-    target_unit: 'Xưởng Sản Xuất Nệm',
+    target_unit: 'Quản Lý Xưởng Sản Xuất Nệm',
     defaultTitle: 'Đề xuất cải tiến thao tác / quy trình sản xuất tại xưởng',
     templateContent: `1. Khó khăn / Vấn đề hiện tại:
 (Ví dụ: Thao tác may viền/dán keo bị vướng, tốn thời gian...)
@@ -47,7 +73,7 @@ const SAMPLE_TEMPLATES = [
     id: 'vatlieu',
     title: '♻️ Tiết kiệm Nguyên Vật Liệu',
     category: 'Tiết kiệm nguyên vật liệu',
-    target_unit: 'Xưởng Sản Xuất Nệm',
+    target_unit: 'Quản Lý Xưởng Sản Xuất Nệm',
     defaultTitle: 'Đề xuất giải pháp giảm hao hụt nguyên vật liệu mút / vải / gòn',
     templateContent: `1. Vật liệu đang bị hao hụt / lãng phí:
 (Ví dụ: Vải may áo nệm, mút vụn, gòn dính...)
@@ -62,7 +88,7 @@ const SAMPLE_TEMPLATES = [
     id: 'khovan',
     title: '🚚 Giao Hàng & Kho Vận',
     category: 'Tối ưu kho vận & giao hàng',
-    target_unit: 'Kho Cần Thơ',
+    target_unit: 'Quản Lý Kho Cần Thơ',
     defaultTitle: 'Đề xuất tuyến đường giao hàng / sắp xếp hàng kho bãi',
     templateContent: `1. Điểm nghẽn giao hàng / xếp kho:
 (Ví dụ: Lộ trình giao đại lý bị chồng chéo, bốc dỡ hàng chậm...)
@@ -82,32 +108,18 @@ const SAMPLE_TEMPLATES = [
     templateContent: `1. Vấn đề muốn góp ý:
 (Ví dụ: Bữa ăn ca, nước uống, quạt thông gió tại xưởng, bảo hộ lao động...)
 
-2. Mong muốn Ban Giám Đốc xem xét cải thiện:
+2. Mong muốn Ban Giám Đốc / Trưởng phòng xem xét cải thiện:
 (Đề xuất cụ thể...)`
   },
   {
     id: 'khac',
     title: '💬 Ý Kiến Đóng Góp Chung',
     category: 'Ý kiến đóng góp khác',
-    target_unit: 'Toàn công ty',
-    defaultTitle: 'Ý kiến đóng góp chung gửi Ban Giám Đốc',
+    target_unit: 'Ban Giám Đốc',
+    defaultTitle: 'Ý kiến đóng góp chung',
     templateContent: `Nội dung đóng góp ý kiến:
-(Nhập tự do ý kiến của bạn gửi đến Ban Giám Đốc...)`
+(Nhập tự do ý kiến của bạn gửi đến Ban Giám Đốc hoặc Trưởng phòng...)`
   }
-];
-
-const TARGET_UNITS = [
-  'Toàn công ty',
-  'Xưởng Sản Xuất Nệm',
-  'Xưởng Gối',
-  'Kho Cần Thơ',
-  'Kho Mỹ Tho',
-  'Khối Văn Phòng',
-  'Phòng Kinh Doanh',
-  'Phòng Kế Toán',
-  'Phòng Hành Chính Nhân Sự',
-  'Phòng R&D',
-  'Ban Giám Đốc'
 ];
 
 const STATUS_CONFIGS = {
@@ -195,7 +207,7 @@ const InnovationPage = () => {
     });
   };
 
-  // Submit ý kiến đơn giản
+  // Submit ý kiến
   const handleSubmitIdea = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -218,9 +230,12 @@ const InnovationPage = () => {
         is_anonymous: formData.is_anonymous
       });
 
-      setSuccess('Cảm ơn bạn! Ý kiến đóng góp đã được gửi đến Ban Giám Đốc thành công!');
+      const recipientText = formData.target_unit.includes('Ban Giám Đốc') ? 'Ban Giám Đốc' : formData.target_unit;
+      const privacyText = formData.is_anonymous ? '(Chế độ Nặc Danh 🔒)' : '(Chế độ Công Khai 👤)';
+      setSuccess(`Cảm ơn bạn! Ý kiến đóng góp đã được gửi đến ${recipientText} thành công ${privacyText}!`);
+
       fetchData();
-      setTimeout(() => setSuccess(''), 5000);
+      setTimeout(() => setSuccess(''), 6000);
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi gửi đề xuất.');
     } finally {
@@ -304,13 +319,13 @@ const InnovationPage = () => {
         <div className="space-y-1.5">
           <div className="inline-flex items-center space-x-2 rounded-full bg-brand-500/20 border border-brand-400/30 px-3 py-0.5 text-xs font-semibold text-brand-300">
             <Lightbulb size={13} className="text-amber-400" />
-            <span>Hòm Thư Nội Bộ Nệm Việt Á</span>
+            <span>Hòm Thư Góp Ý & Sáng Kiến Nội Bộ</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
             HÒM THƯ GÓP Ý & SÁNG KIẾN CẢI TIẾN
           </h1>
           <p className="text-xs sm:text-sm text-slate-300">
-            Chọn mẫu có sẵn bên dưới, điền ý kiến và gửi nhanh đến Ban Giám Đốc. Hỗ trợ gửi ẩn danh bảo mật 100%!
+            Gửi ý kiến trực tiếp cho <strong>Ban Giám Đốc</strong> hoặc <strong>Trưởng Phòng Ban</strong> với tùy chọn <strong>Công Khai</strong> hoặc <strong>Nặc Danh</strong> bảo mật 100%!
           </p>
         </div>
 
@@ -352,7 +367,7 @@ const InnovationPage = () => {
         </div>
       )}
 
-      {/* ================= TAB 1: FORM GÓP Ý ĐƠN GIẢN VỚI MẪU CÓ SẴN ================= */}
+      {/* ================= TAB 1: FORM GÓP Ý ĐƠN GIẢN ================= */}
       {activeTab === 'box' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Cột trái: Form Góp Ý */}
@@ -361,13 +376,13 @@ const InnovationPage = () => {
               <div className="bg-slate-900 px-5 py-3 text-white flex items-center justify-between">
                 <span className="text-xs sm:text-sm font-black flex items-center space-x-2">
                   <FileText size={16} className="text-amber-400" />
-                  <span>MẪU GÓP Ý DÙNG CHUNG (CHỌN MẪU ĐỂ ĐIỀN NHANH)</span>
+                  <span>1. CHỌN MẪU GÓP Ý CÓ SẴN (ĐIỀN NHANH)</span>
                 </span>
               </div>
 
               {/* Dải nút chọn mẫu nhanh */}
               <div className="p-4 bg-slate-50 border-b border-slate-200">
-                <p className="text-xs font-bold text-slate-600 mb-2">💡 Bấm vào mẫu bạn muốn đóng góp:</p>
+                <p className="text-xs font-bold text-slate-600 mb-2">💡 Bấm vào mẫu phù hợp để tự động điền sẵn:</p>
                 <div className="flex flex-wrap gap-2">
                   {SAMPLE_TEMPLATES.map(tpl => (
                     <button
@@ -388,26 +403,84 @@ const InnovationPage = () => {
 
               {/* Form nhập đơn giản */}
               <form onSubmit={handleSubmitIdea} className="p-5 space-y-4">
-                {/* Đơn vị tiếp nhận */}
+                {/* 2. CHỌN NGƯỜI NHẬN: BAN GIÁM ĐỐC HOẶC TRƯỞNG PHÒNG BAN */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Gửi đến bộ phận / xưởng:
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
+                    2. Gửi Cho Ai? (Ban Giám Đốc Hoặc Trưởng Phòng Ban) *
                   </label>
                   <select
                     value={formData.target_unit}
                     onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
                   >
-                    {TARGET_UNITS.map(u => (
-                      <option key={u} value={u}>{u}</option>
+                    {RECIPIENT_GROUPS.map((grp, idx) => (
+                      <optgroup key={idx} label={grp.groupLabel}>
+                        {grp.options.map(opt => (
+                          <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
 
-                {/* Tiêu đề */}
+                {/* 3. TÙY CHỌN BẢO MẬT: CÔNG KHAI HOẶC NẶC DANH */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Tiêu đề ý kiến / sáng kiến:
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
+                    3. Hình Thức Gửi (Công Khai Hoặc Nặc Danh) *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Nặc danh */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, is_anonymous: true })}
+                      className={`p-3.5 rounded-xl border text-left transition flex items-start space-x-3 cursor-pointer ${
+                        formData.is_anonymous
+                          ? 'border-amber-500 bg-amber-50/80 ring-2 ring-amber-400/20 shadow-xs'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-lg shrink-0 ${formData.is_anonymous ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <EyeOff size={18} />
+                      </div>
+                      <div>
+                        <div className={`text-xs font-black ${formData.is_anonymous ? 'text-amber-950' : 'text-slate-800'}`}>
+                          🔒 Gửi Nặc Danh
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                          Giấu hoàn toàn tên, mã nhân viên. Người nhận chỉ thấy nội dung góp ý.
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Công khai */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, is_anonymous: false })}
+                      className={`p-3.5 rounded-xl border text-left transition flex items-start space-x-3 cursor-pointer ${
+                        !formData.is_anonymous
+                          ? 'border-brand-600 bg-brand-50/80 ring-2 ring-brand-500/20 shadow-xs'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-lg shrink-0 ${!formData.is_anonymous ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <Eye size={18} />
+                      </div>
+                      <div>
+                        <div className={`text-xs font-black ${!formData.is_anonymous ? 'text-brand-950' : 'text-slate-800'}`}>
+                          👤 Gửi Công Khai
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                          Hiển thị tên để trao đổi trực tiếp, ghi nhận công sức & nhận thưởng.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Tiêu đề */}
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
+                    4. Tiêu Đề Ý Kiến / Sáng Kiến *
                   </label>
                   <input
                     type="text"
@@ -415,15 +488,15 @@ const InnovationPage = () => {
                     placeholder="Tiêu đề ngắn gọn..."
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
-                {/* Nội dung mẫu */}
+                {/* 5. Nội dung */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Nội dung chi tiết (Điền vào các mục bên dưới):</span>
-                    <span className="text-[11px] font-normal text-slate-400">Có thể sửa tự do</span>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1 flex items-center justify-between">
+                    <span>5. Nội Dung Chi Tiết (Điền vào các mục bên dưới) *</span>
+                    <span className="text-[11px] font-normal text-slate-400">Có thể chỉnh sửa tự do</span>
                   </label>
                   <textarea
                     rows={8}
@@ -435,47 +508,20 @@ const InnovationPage = () => {
                   />
                 </div>
 
-                {/* Switch Ẩn Danh */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center space-x-2.5">
-                    {formData.is_anonymous ? (
-                      <EyeOff size={18} className="text-amber-600" />
-                    ) : (
-                      <Eye size={18} className="text-blue-600" />
-                    )}
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block">
-                        {formData.is_anonymous ? 'Gửi Ẩn Danh (Giấu tên & mã nhân viên)' : 'Gửi Công Khai (Hiển thị tên để vinh danh)'}
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        {formData.is_anonymous ? 'Bảo mật danh tính 100%' : 'Nhận khen thưởng khi được duyệt'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_anonymous}
-                      onChange={(e) => setFormData({ ...formData, is_anonymous: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-10 h-5 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                  </label>
-                </div>
-
                 {/* Nút gửi */}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                   ) : (
                     <>
-                      <Send size={15} />
-                      <span>GỬI Ý KIẾN ĐẾN BAN GIÁM ĐỐC</span>
+                      <Send size={16} />
+                      <span>
+                        GỬI Ý KIẾN ĐẾN {formData.target_unit.toUpperCase()} {formData.is_anonymous ? '(NẶC DANH 🔒)' : '(CÔNG KHAI 👤)'}
+                      </span>
                     </>
                   )}
                 </button>
@@ -492,7 +538,7 @@ const InnovationPage = () => {
                   <Lightbulb size={16} className="text-brand-600" />
                   <span>Ý Kiến Của Bạn ({myInnovations.length})</span>
                 </span>
-                <span className="text-[11px] text-slate-400">Tự động lưu</span>
+                <span className="text-[11px] text-slate-400">Theo dõi kết quả</span>
               </div>
 
               {myInnovations.length === 0 ? (
@@ -514,6 +560,15 @@ const InnovationPage = () => {
                           <span className="text-[10px] text-slate-400">{item.date}</span>
                         </div>
 
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded">
+                            Gửi đến: {item.target_unit}
+                          </span>
+                          <span className="text-slate-400">
+                            {item.is_anonymous === 1 ? '🔒 Nặc danh' : '👤 Công khai'}
+                          </span>
+                        </div>
+
                         <p className="font-bold text-xs text-slate-900 leading-snug">{item.title}</p>
                         <p className="text-[11px] text-slate-600 line-clamp-2 whitespace-pre-line">{item.content}</p>
 
@@ -521,7 +576,7 @@ const InnovationPage = () => {
                         {item.response_notes && (
                           <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 space-y-0.5">
                             <span className="font-bold block text-emerald-800">
-                              💬 Phản hồi từ {item.response_by || 'Ban Giám Đốc'}:
+                              💬 Phản hồi từ {item.response_by || 'Ban Quản Lý'}:
                             </span>
                             <p className="italic text-slate-700">"{item.response_notes}"</p>
                             {item.reward_amount > 0 && (
@@ -615,7 +670,7 @@ const InnovationPage = () => {
                   <tr>
                     <th className="px-4 py-3">Ngày</th>
                     <th className="px-4 py-3">Người gửi</th>
-                    <th className="px-4 py-3">Bộ phận</th>
+                    <th className="px-4 py-3">Gửi đến</th>
                     <th className="px-4 py-3">Tiêu đề & Nội dung</th>
                     <th className="px-4 py-3 text-center">Trạng thái</th>
                     <th className="px-4 py-3 text-right">Khen thưởng</th>
@@ -647,11 +702,16 @@ const InnovationPage = () => {
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex items-center space-x-1.5">
                               {item.is_anonymous === 1 ? (
-                                <EyeOff size={13} className="text-amber-600" />
+                                <span className="inline-flex items-center space-x-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
+                                  <EyeOff size={13} />
+                                  <span>Nặc danh</span>
+                                </span>
                               ) : (
-                                <Eye size={13} className="text-blue-600" />
+                                <span className="inline-flex items-center space-x-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold">
+                                  <Eye size={13} />
+                                  <span>{item.fullname}</span>
+                                </span>
                               )}
-                              <span className="font-bold text-xs text-slate-900">{item.fullname}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -718,6 +778,10 @@ const InnovationPage = () => {
 
             <form onSubmit={handleSaveEval} className="p-5 space-y-3.5">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex justify-between items-center text-slate-500">
+                  <span>Gửi đến: <strong className="text-slate-900">{selectedItem.target_unit}</strong></span>
+                  <span>{selectedItem.is_anonymous === 1 ? '🔒 Nặc danh' : `👤 ${selectedItem.fullname}`}</span>
+                </div>
                 <p className="font-bold text-slate-900">{selectedItem.title}</p>
                 <p className="text-slate-600 whitespace-pre-wrap">{selectedItem.content}</p>
               </div>
@@ -730,7 +794,7 @@ const InnovationPage = () => {
                   className="w-full rounded-xl border border-slate-300 p-2 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none"
                 >
                   <option value="Chờ tiếp nhận">Chờ tiếp nhận</option>
-                  <option value="Đang thẩm định">Đang thẩm định (Ban QL đang xem xét)</option>
+                  <option value="Đang thẩm định">Đang thẩm định (Đang xem xét)</option>
                   <option value="Thử nghiệm">Thử nghiệm (Áp dụng thử tại xưởng/kho)</option>
                   <option value="Đã áp dụng thành công">Đã áp dụng thành công</option>
                   <option value="Khen thưởng">Khen thưởng xuất sắc</option>

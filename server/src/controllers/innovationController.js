@@ -64,18 +64,17 @@ export const getInnovations = async (req, res) => {
     sql += ` ORDER BY i.date DESC, i.id DESC`;
     const records = await query.all(sql, params);
 
-    // Xử lý bảo mật danh tính cho các bài gửi ẩn danh
+    // Xử lý bảo mật danh tính cho các bài gửi nặc danh
     const sanitizedRecords = records.map(record => {
       const isAuthor = record.employee_id === req.user.employeeId;
-      const isAdmin = req.user.roleName === 'ADMIN';
 
-      if (record.is_anonymous === 1 && !isAuthor && !isAdmin) {
+      if (record.is_anonymous === 1 && !isAuthor) {
         return {
           ...record,
-          fullname: 'Thành viên Việt Á (Ẩn danh)',
+          fullname: 'Thành viên Việt Á (Nặc danh)',
           employee_code: '***',
           avatar: null,
-          department_name: 'Bộ phận nội bộ'
+          department_name: 'Bảo mật'
         };
       }
       return record;
