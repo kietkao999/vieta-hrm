@@ -418,26 +418,21 @@ const DeptPosSettingsPage = () => {
 
             {/* Tree Container */}
             <div className="space-y-8 flex flex-col items-center">
-              {/* Level 1: BAN GIÁM ĐỐC (Root Node) */}
+              {/* Level 1: BAN GIÁM ĐỐC (TẦNG 7 - LÃNH ĐẠO CAO NHẤT) */}
               <div className="w-full max-w-xl text-center">
-                <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-blue-950 text-white p-6 rounded-2xl shadow-xl border-2 border-brand-500/40 relative transform hover:scale-[1.01] transition-all">
-                  <div className="inline-flex items-center space-x-2 bg-brand-500/30 border border-brand-400/50 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-300 mb-2">
+                <div className="bg-gradient-to-r from-slate-900 via-brand-950 to-blue-950 text-white p-6 rounded-2xl shadow-xl border-2 border-amber-400/50 relative transform hover:scale-[1.01] transition-all">
+                  <div className="inline-flex items-center space-x-2 bg-amber-400/20 border border-amber-400/40 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-amber-300 mb-2">
                     <Sparkles size={14} />
-                    <span>Cơ Quan Điều Hành Cao Nhất</span>
+                    <span>TẦNG 7 • BAN ĐIỀU HÀNH CAO NHẤT</span>
                   </div>
                   <h3 className="text-xl md:text-2xl font-black tracking-tight text-white">
                     BAN GIÁM ĐỐC CÔNG TY TNHH TM SX VIỆT Á
                   </h3>
-                  <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-center gap-4 text-xs">
-                    <div className="bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                      <span className="text-slate-300">Phó Giám đốc:</span>
-                      <strong className="text-white font-bold">Võ Minh Cường</strong>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                      <span className="text-slate-300">Trưởng phòng HCNS:</span>
-                      <strong className="text-white font-bold">Huỳnh Thị Trúc Xinh</strong>
+                  <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-center text-xs">
+                    <div className="bg-white/15 backdrop-blur-md px-5 py-2 rounded-xl border border-white/20 flex items-center space-x-2.5 shadow">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                      <span className="text-slate-200">Phó Giám đốc điều hành:</span>
+                      <strong className="text-amber-300 font-black text-sm">Võ Minh Cường</strong>
                     </div>
                   </div>
                 </div>
@@ -457,38 +452,74 @@ const DeptPosSettingsPage = () => {
                 </div>
               </div>
 
-              {/* Level 2: 4 Khối Chức Năng Chiến Lược */}
+              {/* Level 2: 4 Khối Chức Năng Chiến Lược (TẦNG 5 - CẤP TRƯỞNG PHÒNG / QUẢN LÝ) */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl">
                 {/* Pillar 1: Khối Văn Phòng & Quản Trị */}
                 <div className="bg-white rounded-2xl border-2 border-blue-200/80 shadow-md overflow-hidden flex flex-col">
                   <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-4">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Building2 size={18} className="text-blue-200" />
-                      <span className="text-xs font-black uppercase tracking-wider text-blue-200">Khối 01</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <Building2 size={18} className="text-blue-200" />
+                        <span className="text-xs font-black uppercase tracking-wider text-blue-200">Khối 01</span>
+                      </div>
+                      <span className="bg-blue-900/60 text-blue-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-400/30">
+                        Tầng 5
+                      </span>
                     </div>
                     <h4 className="font-black text-base text-white">VĂN PHÒNG & QUẢN TRỊ</h4>
                     <p className="text-[11px] text-blue-100 mt-0.5">Trụ sở chính & Vận hành chung</p>
                   </div>
 
                   <div className="p-4 space-y-3 flex-1">
-                    {departments.filter(d => 
-                      d.name.includes('văn phòng') || 
-                      d.name.includes('Marketing') || 
-                      d.name.includes('R&D') ||
-                      d.name.includes('giám đốc')
-                    ).map(dept => {
-                      const deptEmps = allEmployees.filter(e => 
-                        Number(e.department_id) === Number(dept.id) ||
-                        e.department_name === dept.name ||
-                        e.department_id === dept.name
-                      );
-                      return (
-                        <div 
-                          key={dept.id}
-                          className="p-3 rounded-xl border border-slate-200/90 hover:border-blue-400 hover:shadow-sm transition-all bg-slate-50/50 space-y-2"
+                    {/* Phòng HCNS & Khối Văn Phòng */}
+                    <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="text-xs font-black text-slate-800">Phòng Hành Chính Nhân Sự</h5>
+                          <p className="text-[11px] text-blue-900 font-bold mt-0.5">
+                            Trưởng phòng: <span className="text-brand-800 font-black">Huỳnh Thị Trúc Xinh</span>
+                          </p>
+                          <p className="text-[10px] text-slate-500">Phụ trách: Cổ Hoàn Lâm, Lê Thị Mỹ Phúc, Quốc Huy...</p>
+                        </div>
+                        <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          {allEmployees.filter(e => e.department_name?.includes('văn phòng') || e.department_name?.includes('HCNS')).length} NS
+                        </span>
+                      </div>
+                      {departments.find(d => d.name.includes('văn phòng')) && (
+                        <button
+                          onClick={() => handleViewDeptEmployees(departments.find(d => d.name.includes('văn phòng')))}
+                          className="w-full text-center py-1.5 bg-white hover:bg-blue-100/60 text-blue-800 text-[11px] font-bold rounded-lg border border-blue-200 transition flex items-center justify-center space-x-1 cursor-pointer"
                         >
+                          <Eye size={12} />
+                          <span>Xem nhân sự Khối Văn Phòng</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Phòng Kế Toán */}
+                    <div className="p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-1.5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="text-xs font-bold text-slate-800">Bộ phận Kế Toán Doanh Nghiệp</h5>
+                          <p className="text-[11px] text-slate-700 font-bold mt-0.5">
+                            Trưởng phòng: <span className="text-slate-900 font-black">Nguyễn Quốc Hùng</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Phòng Marketing */}
+                    {departments.filter(d => d.name.includes('Marketing')).map(dept => {
+                      const deptEmps = allEmployees.filter(e => Number(e.department_id) === Number(dept.id) || e.department_name === dept.name);
+                      return (
+                        <div key={dept.id} className="p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-2">
                           <div className="flex justify-between items-start">
-                            <h5 className="text-xs font-bold text-slate-800">{dept.name}</h5>
+                            <div>
+                              <h5 className="text-xs font-bold text-slate-800">{dept.name}</h5>
+                              <p className="text-[11px] text-slate-700 font-bold mt-0.5">
+                                Trưởng phòng: <span className="text-slate-900 font-black">Phan Tuấn Kiệt</span>
+                              </p>
+                            </div>
                             <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full">
                               {deptEmps.length} NS
                             </span>
@@ -503,15 +534,32 @@ const DeptPosSettingsPage = () => {
                         </div>
                       );
                     })}
+
+                    {/* Phòng R&D */}
+                    <div className="p-3 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-1.5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="text-xs font-bold text-slate-800">Phòng Nghiên Cứu & Phát Triển (R&D)</h5>
+                          <p className="text-[11px] text-slate-700 font-bold mt-0.5">
+                            Trưởng phòng: <span className="text-slate-900 font-black">Lê Huy Hoàng</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Pillar 2: Khối Kinh Doanh & Thị Trường */}
                 <div className="bg-white rounded-2xl border-2 border-amber-200/80 shadow-md overflow-hidden flex flex-col">
                   <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white p-4">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Award size={18} className="text-amber-200" />
-                      <span className="text-xs font-black uppercase tracking-wider text-amber-200">Khối 02</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <Award size={18} className="text-amber-200" />
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-200">Khối 02</span>
+                      </div>
+                      <span className="bg-amber-900/60 text-amber-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-400/30">
+                        Tầng 5
+                      </span>
                     </div>
                     <h4 className="font-black text-base text-white">KINH DOANH & PHÂN PHỐI</h4>
                     <p className="text-[11px] text-amber-100 mt-0.5">Phát triển đại lý & Doanh số</p>
@@ -527,23 +575,26 @@ const DeptPosSettingsPage = () => {
                       return (
                         <div 
                           key={dept.id}
-                          className="p-3 rounded-xl border border-slate-200/90 hover:border-amber-400 hover:shadow-sm transition-all bg-slate-50/50 space-y-2"
+                          className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2.5"
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h5 className="text-xs font-bold text-slate-800">{dept.name}</h5>
-                              <p className="text-[10px] text-slate-500 font-medium">Trưởng phòng: Phạm Tấn Hưng</p>
+                              <h5 className="text-xs font-black text-slate-800">{dept.name}</h5>
+                              <p className="text-[11px] text-amber-950 font-bold mt-0.5">
+                                Trưởng phòng: <span className="text-amber-900 font-black">Phạm Tấn Hưng</span>
+                              </p>
+                              <p className="text-[10px] text-slate-500 mt-1">Đội ngũ NVKD phụ trách các tỉnh Miền Tây & Đông Nam Bộ</p>
                             </div>
-                            <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">
                               {deptEmps.length} NS
                             </span>
                           </div>
                           <button
                             onClick={() => handleViewDeptEmployees(dept)}
-                            className="w-full text-center py-1.5 bg-white hover:bg-amber-50 text-amber-800 text-[11px] font-bold rounded-lg border border-amber-200 transition flex items-center justify-center space-x-1 cursor-pointer"
+                            className="w-full text-center py-1.5 bg-white hover:bg-amber-100/60 text-amber-900 text-[11px] font-bold rounded-lg border border-amber-200 transition flex items-center justify-center space-x-1 cursor-pointer"
                           >
                             <Eye size={12} />
-                            <span>Xem danh sách nhân sự</span>
+                            <span>Xem danh sách nhân sự ({deptEmps.length})</span>
                           </button>
                         </div>
                       );
@@ -554,9 +605,14 @@ const DeptPosSettingsPage = () => {
                 {/* Pillar 3: Khối Kho Vận & Vận Tải */}
                 <div className="bg-white rounded-2xl border-2 border-emerald-200/80 shadow-md overflow-hidden flex flex-col">
                   <div className="bg-gradient-to-r from-emerald-600 to-teal-800 text-white p-4">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Truck size={18} className="text-emerald-200" />
-                      <span className="text-xs font-black uppercase tracking-wider text-emerald-200">Khối 03</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <Truck size={18} className="text-emerald-200" />
+                        <span className="text-xs font-black uppercase tracking-wider text-emerald-200">Khối 03</span>
+                      </div>
+                      <span className="bg-emerald-900/60 text-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/30">
+                        Tầng 5
+                      </span>
                     </div>
                     <h4 className="font-black text-base text-white">KHO VẬN & LOGISTICS</h4>
                     <p className="text-[11px] text-emerald-100 mt-0.5">Kho Cần Thơ & Kho Mỹ Tho</p>
@@ -573,25 +629,28 @@ const DeptPosSettingsPage = () => {
                       return (
                         <div 
                           key={dept.id}
-                          className="p-3 rounded-xl border border-slate-200/90 hover:border-emerald-400 hover:shadow-sm transition-all bg-slate-50/50 space-y-2"
+                          className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-2.5"
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h5 className="text-xs font-bold text-slate-800">{dept.name}</h5>
-                              <p className="text-[10px] text-slate-500 font-medium">
-                                QL: {isCanTho ? 'Nguyễn Thị Thu Tâm' : 'Dương Thị Tuyết Hường'}
+                              <h5 className="text-xs font-black text-slate-800">{dept.name}</h5>
+                              <p className="text-[11px] text-emerald-950 font-bold mt-0.5">
+                                Quản lý kho: <span className="text-emerald-900 font-black">{isCanTho ? 'Nguyễn Thị Thu Tâm' : 'Dương Thị Tuyết Hường'}</span>
                               </p>
+                              {!isCanTho && (
+                                <p className="text-[10px] text-slate-500">Phó QL: Nguyễn Thị Huỳnh Như • Đội trưởng xe: Đoàn Hoài Linh</p>
+                              )}
                             </div>
-                            <span className="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            <span className="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">
                               {deptEmps.length} NS
                             </span>
                           </div>
                           <button
                             onClick={() => handleViewDeptEmployees(dept)}
-                            className="w-full text-center py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 text-[11px] font-bold rounded-lg border border-emerald-200 transition flex items-center justify-center space-x-1 cursor-pointer"
+                            className="w-full text-center py-1.5 bg-white hover:bg-emerald-100/60 text-emerald-900 text-[11px] font-bold rounded-lg border border-emerald-200 transition flex items-center justify-center space-x-1 cursor-pointer"
                           >
                             <Eye size={12} />
-                            <span>Xem danh sách nhân sự</span>
+                            <span>Xem danh sách nhân sự ({deptEmps.length})</span>
                           </button>
                         </div>
                       );
@@ -602,9 +661,14 @@ const DeptPosSettingsPage = () => {
                 {/* Pillar 4: Khối Nhà Máy & Xưởng Sản Xuất */}
                 <div className="bg-white rounded-2xl border-2 border-purple-200/80 shadow-md overflow-hidden flex flex-col">
                   <div className="bg-gradient-to-r from-purple-700 to-fuchsia-800 text-white p-4">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <Factory size={18} className="text-purple-200" />
-                      <span className="text-xs font-black uppercase tracking-wider text-purple-200">Khối 04</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <Factory size={18} className="text-purple-200" />
+                        <span className="text-xs font-black uppercase tracking-wider text-purple-200">Khối 04</span>
+                      </div>
+                      <span className="bg-purple-900/60 text-purple-100 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-400/30">
+                        Tầng 5
+                      </span>
                     </div>
                     <h4 className="font-black text-base text-white">NHÀ MÁY SẢN XUẤT</h4>
                     <p className="text-[11px] text-purple-100 mt-0.5">Xưởng Nệm & Xưởng Gối</p>
@@ -621,25 +685,30 @@ const DeptPosSettingsPage = () => {
                       return (
                         <div 
                           key={dept.id}
-                          className="p-3 rounded-xl border border-slate-200/90 hover:border-purple-400 hover:shadow-sm transition-all bg-slate-50/50 space-y-2"
+                          className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2.5"
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <h5 className="text-xs font-bold text-slate-800">{dept.name}</h5>
-                              <p className="text-[10px] text-slate-500 font-medium">
-                                QL: {isNem ? 'Trần Minh Lý' : 'Trần Thị Bảo Châu'}
+                              <h5 className="text-xs font-black text-slate-800">{dept.name}</h5>
+                              <p className="text-[11px] text-purple-950 font-bold mt-0.5">
+                                Quản lý xưởng: <span className="text-purple-900 font-black">{isNem ? 'Trần Minh Lý' : 'Trần Thị Bảo Châu'}</span>
                               </p>
+                              {isNem ? (
+                                <p className="text-[10px] text-slate-500">Phó QL xưởng: Võ Huỳnh Đông Nghi</p>
+                              ) : (
+                                <p className="text-[10px] text-slate-500">Trưởng nhóm thổi gối: Nguyễn Thái Cần</p>
+                              )}
                             </div>
-                            <span className="bg-purple-100 text-purple-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            <span className="bg-purple-100 text-purple-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">
                               {deptEmps.length} NS
                             </span>
                           </div>
                           <button
                             onClick={() => handleViewDeptEmployees(dept)}
-                            className="w-full text-center py-1.5 bg-white hover:bg-purple-50 text-purple-800 text-[11px] font-bold rounded-lg border border-purple-200 transition flex items-center justify-center space-x-1 cursor-pointer"
+                            className="w-full text-center py-1.5 bg-white hover:bg-purple-100/60 text-purple-900 text-[11px] font-bold rounded-lg border border-purple-200 transition flex items-center justify-center space-x-1 cursor-pointer"
                           >
                             <Eye size={12} />
-                            <span>Xem danh sách nhân sự</span>
+                            <span>Xem danh sách nhân sự ({deptEmps.length})</span>
                           </button>
                         </div>
                       );
