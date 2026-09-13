@@ -667,11 +667,7 @@ const DeptPosSettingsPage = () => {
               </div>
 
               {/* CẤP 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
-                  <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">Văn Phòng</span>
-                  <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó Trưởng Phòng Chuyên Môn</div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 max-w-5xl mx-auto w-full">
                 <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
                   <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">KD & MKT</span>
                   <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó TP / Trưởng Nhóm KD & MKT</div>
