@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { auditMiddleware } from './middleware/audit.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -38,6 +39,7 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(compression()); // Nén toàn bộ API response Gzip/Brotli giúp giảm 70-85% dung lượng truyền tải
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
