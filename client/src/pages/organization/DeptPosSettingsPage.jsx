@@ -83,14 +83,14 @@ const TIER_TITLE_CONFIGS = [
         roles: [
           { name: 'Trưởng Phòng Hành Chính Nhân Sự', dept: 'Phòng HCNS', desc: 'Quản trị nhân sự, tuyển dụng, tiền lương, chính sách & hành chính' },
           { name: 'Trưởng Phòng Kế Toán Doanh Nghiệp', dept: 'Phòng Kế Toán', desc: 'Quản trị tài chính, báo cáo thuế, ngân sách & hạch toán kế toán' },
-          { name: 'Trưởng Phòng Marketing', dept: 'Phòng Marketing', desc: 'Phát triển thương hiệu, truyền thông & chiến dịch tiếp thị' },
           { name: 'Trưởng Phòng R&D', dept: 'Phòng R&D', desc: 'Nghiên cứu phát triển sản phẩm nệm gối & cải tiến quy trình' }
         ]
       },
       {
-        groupName: '📈 KHỐI KINH DOANH & THỊ TRƯỜNG',
+        groupName: '📈 KHỐI KINH DOANH & MARKETING',
         roles: [
-          { name: 'Trưởng Phòng Kinh Doanh', dept: 'Phòng Kinh Doanh', desc: 'Chỉ đạo kinh doanh, phát triển hệ thống đại lý & phân phối' }
+          { name: 'Trưởng Phòng Kinh Doanh', dept: 'Phòng Kinh Doanh', desc: 'Chỉ đạo kinh doanh, phát triển hệ thống đại lý & phân phối' },
+          { name: 'Trưởng Phòng Marketing', dept: 'Phòng Marketing', desc: 'Phát triển thương hiệu, truyền thông & chiến dịch tiếp thị' }
         ]
       },
       {
@@ -711,19 +711,13 @@ const DeptPosSettingsPage = () => {
                       <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">Tầng 5</span>
                         <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Hành Chính Nhân Sự</h5>
-                        <p className="text-[10px] text-slate-500">Quản trị nhân sự, tiền lương & hành chính</p>
+                        <p className="text-[10px] text-slate-500">Quản trị nhân sự, tiền lương, chính sách & hành chính</p>
                       </div>
 
                       <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">Tầng 5</span>
                         <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Kế Toán Doanh Nghiệp</h5>
-                        <p className="text-[10px] text-slate-500">Tài chính, thuế, ngân sách & dòng tiền</p>
-                      </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">Tầng 5</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Marketing</h5>
-                        <p className="text-[10px] text-slate-500">Phát triển thương hiệu & truyền thông</p>
+                        <p className="text-[10px] text-slate-500">Tài chính, thuế, ngân sách & hạch toán</p>
                       </div>
 
                       <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
@@ -734,22 +728,29 @@ const DeptPosSettingsPage = () => {
                     </div>
                   </div>
 
-                  {/* Nhánh 2: Khối Kinh Doanh & Thị Trường */}
+                  {/* Nhánh 2: Khối Kinh Doanh & Marketing */}
                   <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-md overflow-hidden flex flex-col">
                     <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white p-3.5 text-center">
                       <div className="flex items-center justify-center space-x-1.5 text-xs font-black text-amber-200 uppercase">
                         <Award size={16} />
-                        <span>KHỐI KINH DOANH & PHÂN PHỐI</span>
+                        <span>KHỐI KINH DOANH & MARKETING</span>
                       </div>
                     </div>
                     <div className="p-3.5 space-y-2.5 flex-1 bg-amber-50/20">
                       <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded">Tầng 5</span>
                         <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Kinh Doanh</h5>
-                        <p className="text-[10px] text-slate-500">Quản trị mục tiêu doanh số & mạng lưới đại lý</p>
+                        <p className="text-[10px] text-slate-500">Quản trị mục tiêu doanh số & hệ thống đại lý</p>
                       </div>
-                      <div className="p-2.5 rounded-xl border border-dashed border-amber-200 bg-amber-50/50 text-[11px] text-amber-900 font-medium">
-                        Phụ trách trực tiếp toàn bộ đội ngũ NVKD Miền Tây & Đông Nam Bộ
+
+                      <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-sm space-y-1">
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded">Tầng 5</span>
+                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Marketing</h5>
+                        <p className="text-[10px] text-slate-500">Phát triển thương hiệu, tiếp thị & truyền thông</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl border border-dashed border-amber-200 bg-amber-50/50 text-[10px] text-amber-900 font-medium">
+                        Phối hợp đồng bộ giữa phát triển thị trường, xúc tiến bán hàng & marketing đa kênh
                       </div>
                     </div>
                   </div>
