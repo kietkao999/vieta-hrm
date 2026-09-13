@@ -512,445 +512,287 @@ const DeptPosSettingsPage = () => {
 
         {/* Tab 0: Sơ Đồ Cây Phân Cấp Chức Danh (Pure Roles Org Chart) */}
         {activeTab === 'org_chart' && (
-          <div className="p-4 sm:p-6 space-y-6 bg-slate-50/40">
-            {/* Top Toolbar */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-amber-50 rounded-xl text-amber-700 border border-amber-200">
-                  <Crown size={20} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                    Sơ Đồ Phân Cấp Chức Danh & Vị Trí Công Tác
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Phân định rõ ràng các cấp vị trí chức danh và trách nhiệm công tác toàn công ty
-                  </p>
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs w-full sm:w-72">
-                <Search size={15} className="text-slate-400 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Tìm chức danh, vị trí..."
-                  value={roleSearch}
-                  onChange={(e) => setRoleSearch(e.target.value)}
-                  className="bg-transparent outline-none w-full text-slate-700 font-medium"
-                />
-                {roleSearch && (
-                  <button onClick={() => setRoleSearch('')} className="text-slate-400 hover:text-slate-600">
-                    <XCircle size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* SƠ ĐỒ CÂY PHÂN CẤP CHỨC DANH */}
-            <div className="space-y-6">
+          <div className="p-3 sm:p-5 space-y-3 bg-slate-50/40">
+            {/* SƠ ĐỒ CÂY PHÂN CẤP CHỨC DANH (COMPACT SINGLE-VIEW) */}
+            <div className="space-y-2.5">
               {/* CẤP 1: BAN TỔNG GIÁM ĐỐC */}
               <div className="flex flex-col items-center">
-                <div className="w-full max-w-3xl bg-white rounded-2xl border-2 border-amber-400 shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white p-4 text-center">
-                    <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 border border-amber-400/40 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-amber-300 mb-1">
-                      <Crown size={12} />
-                      <span>BAN LÃNH ĐẠO CÔNG TY</span>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-black text-amber-300">
-                      BAN TỔNG GIÁM ĐỐC CÔNG TY TNHH TM SX NỆM VIỆT Á
-                    </h3>
+                <div className="w-full max-w-xl bg-white rounded-xl border border-amber-300 shadow-sm overflow-hidden">
+                  <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white px-3 py-1.5 text-center flex items-center justify-center space-x-1.5">
+                    <Crown size={13} className="text-amber-400" />
+                    <span className="text-xs font-black text-amber-300 tracking-wide uppercase">
+                      BAN TỔNG GIÁM ĐỐC
+                    </span>
                   </div>
-
-                  <div className="p-4 bg-amber-50/30 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3.5 bg-white rounded-xl border border-amber-200 shadow-sm text-center space-y-1">
-                      <div className="inline-block p-2 rounded-xl bg-amber-100 text-amber-900 font-black mb-1">
-                        <Sparkles size={20} />
-                      </div>
-                      <h4 className="font-black text-slate-900 text-sm">TỔNG GIÁM ĐỐC</h4>
-                      <p className="text-[11px] text-slate-500">Định hướng chiến lược phát triển, phê duyệt quy chế & kế hoạch sản xuất kinh doanh</p>
+                  <div className="p-2 bg-amber-50/20 grid grid-cols-2 gap-2 text-center">
+                    <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs">
+                      <div className="font-black text-slate-900 text-xs">TỔNG GIÁM ĐỐC</div>
                     </div>
-
-                    <div className="p-3.5 bg-white rounded-xl border border-amber-200 shadow-sm text-center space-y-1">
-                      <div className="inline-block p-2 rounded-xl bg-amber-100 text-amber-900 font-black mb-1">
-                        <ShieldCheck size={20} />
-                      </div>
-                      <h4 className="font-black text-slate-900 text-sm">TRỢ LÝ GIÁM ĐỐC</h4>
-                      <p className="text-[11px] text-slate-500">Tham mưu chiến lược và hỗ trợ công tác quản trị điều hành</p>
+                    <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs">
+                      <div className="font-black text-slate-900 text-xs">TRỢ LÝ GIÁM ĐỐC</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Vertical Tree Connector */}
-                <div className="w-0.5 h-6 bg-slate-300"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-brand-600"></div>
-                <div className="w-0.5 h-6 bg-slate-300"></div>
+                {/* Connector */}
+                <div className="w-0.5 h-3 bg-slate-300"></div>
+                <div className="w-2 h-2 rounded-full bg-brand-600"></div>
+                <div className="w-0.5 h-3 bg-slate-300"></div>
               </div>
 
               {/* CẤP 2: BAN GIÁM ĐỐC ĐIỀU HÀNH */}
               <div className="flex flex-col items-center">
-                <div className="w-full max-w-2xl bg-white rounded-2xl border-2 border-blue-500 shadow-md overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white p-3.5 text-center">
-                    <div className="inline-flex items-center space-x-1.5 bg-blue-400/20 border border-blue-400/40 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-blue-300 mb-1">
-                      <ShieldCheck size={12} />
-                      <span>BAN GIÁM ĐỐC ĐIỀU HÀNH</span>
-                    </div>
+                <div className="w-full max-w-sm bg-white rounded-xl border border-blue-400 shadow-sm overflow-hidden text-center">
+                  <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white px-3 py-1 flex items-center justify-center space-x-1.5">
+                    <ShieldCheck size={13} className="text-blue-300" />
+                    <span className="text-xs font-black text-blue-300 uppercase">BAN GIÁM ĐỐC ĐIỀU HÀNH</span>
                   </div>
-
-                  <div className="p-4 bg-blue-50/30 text-center">
-                    <div className="p-3.5 bg-white rounded-xl border border-blue-200 shadow-sm max-w-md mx-auto space-y-1">
-                      <div className="inline-block p-2 rounded-xl bg-blue-100 text-blue-900 font-black mb-1">
-                        <Building2 size={20} />
-                      </div>
-                      <h4 className="font-black text-slate-900 text-sm">PHÓ GIÁM ĐỐC ĐIỀU HÀNH</h4>
-                      <p className="text-[11px] text-slate-500">
-                        Chỉ đạo và điều hành trực tiếp 4 Khối: Văn phòng, Kinh doanh, Kho vận & Nhà máy sản xuất
-                      </p>
+                  <div className="p-2 bg-blue-50/20">
+                    <div className="p-2 bg-white rounded-lg border border-blue-200 shadow-2xs">
+                      <div className="font-black text-slate-900 text-xs">PHÓ GIÁM ĐỐC ĐIỀU HÀNH</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Connecting lines down to 4 Functional Pillars */}
-                <div className="w-0.5 h-6 bg-slate-300"></div>
-                <div className="w-full max-w-6xl relative hidden md:block">
+                {/* Connector down to 4 Pillars */}
+                <div className="w-0.5 h-3 bg-slate-300"></div>
+                <div className="w-full max-w-5xl relative hidden md:block">
                   <div className="h-0.5 bg-slate-300 w-full"></div>
                   <div className="flex justify-between w-full">
-                    <div className="w-0.5 h-6 bg-slate-300"></div>
-                    <div className="w-0.5 h-6 bg-slate-300"></div>
-                    <div className="w-0.5 h-6 bg-slate-300"></div>
-                    <div className="w-0.5 h-6 bg-slate-300"></div>
+                    <div className="w-0.5 h-3 bg-slate-300"></div>
+                    <div className="w-0.5 h-3 bg-slate-300"></div>
+                    <div className="w-0.5 h-3 bg-slate-300"></div>
+                    <div className="w-0.5 h-3 bg-slate-300"></div>
                   </div>
                 </div>
               </div>
 
-              {/* CẤP 3: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ (4 KHỐI CHỨC NĂNG) */}
-              <div className="space-y-3">
+              {/* CẤP 3: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ (4 KHỐI) */}
+              <div className="space-y-1.5">
                 <div className="text-center">
-                  <span className="inline-flex items-center space-x-2 bg-purple-100 text-purple-900 border border-purple-300 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
-                    <Crown size={14} />
+                  <span className="inline-flex items-center space-x-1.5 bg-purple-50 text-purple-900 border border-purple-200 px-3 py-0.5 rounded-full text-[11px] font-black uppercase shadow-2xs">
+                    <Crown size={12} className="text-purple-600" />
                     <span>CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                  {/* Nhánh 1: Khối Văn Phòng & Quản Trị */}
-                  <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-md overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-3.5 text-center">
-                      <div className="flex items-center justify-center space-x-1.5 text-xs font-black text-blue-200 uppercase">
-                        <Building2 size={16} />
-                        <span>KHỐI VĂN PHÒNG & QUẢN TRỊ</span>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+                  {/* Khối 1: Văn Phòng */}
+                  <div className="bg-white rounded-xl border border-blue-200 shadow-xs overflow-hidden flex flex-col">
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-2.5 py-1 text-center">
+                      <span className="text-[11px] font-black uppercase text-blue-100 flex items-center justify-center space-x-1">
+                        <Building2 size={13} />
+                        <span>KHỐI VĂN PHÒNG</span>
+                      </span>
                     </div>
-                    <div className="p-3.5 space-y-2.5 flex-1 bg-blue-50/20">
-                      <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Hành Chính Nhân Sự</h5>
-                        <p className="text-[10px] text-slate-500">Quản trị nhân sự, tiền lương, chính sách & hành chính</p>
+                    <div className="p-2 space-y-1.5 flex-1 bg-blue-50/20">
+                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Trưởng Phòng Hành Chính Nhân Sự
                       </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Kế Toán Doanh Nghiệp</h5>
-                        <p className="text-[10px] text-slate-500">Tài chính, thuế, ngân sách & hạch toán</p>
+                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Trưởng Phòng Kế Toán
                       </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng R&D</h5>
-                        <p className="text-[10px] text-slate-500">Nghiên cứu & phát triển sản phẩm nệm gối</p>
+                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Trưởng Phòng R&D
                       </div>
                     </div>
                   </div>
 
-                  {/* Nhánh 2: Khối Kinh Doanh & Marketing */}
-                  <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-md overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white p-3.5 text-center">
-                      <div className="flex items-center justify-center space-x-1.5 text-xs font-black text-amber-200 uppercase">
-                        <Award size={16} />
+                  {/* Khối 2: Kinh Doanh & Marketing */}
+                  <div className="bg-white rounded-xl border border-amber-200 shadow-xs overflow-hidden flex flex-col">
+                    <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white px-2.5 py-1 text-center">
+                      <span className="text-[11px] font-black uppercase text-amber-100 flex items-center justify-center space-x-1">
+                        <Award size={13} />
                         <span>KHỐI KINH DOANH & MARKETING</span>
-                      </div>
+                      </span>
                     </div>
-                    <div className="p-3.5 space-y-2.5 flex-1 bg-amber-50/20">
-                      <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Kinh Doanh</h5>
-                        <p className="text-[10px] text-slate-500">Quản trị mục tiêu doanh số & hệ thống đại lý</p>
+                    <div className="p-2 space-y-1.5 flex-1 bg-amber-50/20">
+                      <div className="p-1.5 bg-white rounded-lg border border-amber-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Trưởng Phòng Kinh Doanh
                       </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Trưởng Phòng Marketing</h5>
-                        <p className="text-[10px] text-slate-500">Phát triển thương hiệu, tiếp thị & truyền thông</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl border border-dashed border-amber-200 bg-amber-50/50 text-[10px] text-amber-900 font-medium">
-                        Phối hợp đồng bộ giữa phát triển thị trường, xúc tiến bán hàng & marketing đa kênh
+                      <div className="p-1.5 bg-white rounded-lg border border-amber-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Trưởng Phòng Marketing
                       </div>
                     </div>
                   </div>
 
-                  {/* Nhánh 3: Khối Kho Vận & Logistics */}
-                  <div className="bg-white rounded-2xl border-2 border-emerald-200 shadow-md overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-emerald-600 to-teal-800 text-white p-3.5 text-center">
-                      <div className="flex items-center justify-center space-x-1.5 text-xs font-black text-emerald-200 uppercase">
-                        <Truck size={16} />
+                  {/* Khối 3: Kho Vận & Logistics */}
+                  <div className="bg-white rounded-xl border border-emerald-200 shadow-xs overflow-hidden flex flex-col">
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-800 text-white px-2.5 py-1 text-center">
+                      <span className="text-[11px] font-black uppercase text-emerald-100 flex items-center justify-center space-x-1">
+                        <Truck size={13} />
                         <span>KHỐI KHO VẬN & LOGISTICS</span>
-                      </div>
+                      </span>
                     </div>
-                    <div className="p-3.5 space-y-2.5 flex-1 bg-emerald-50/20">
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý Kho Cần Thơ</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Cần Thơ & giao nhận khu vực Cần Thơ</p>
+                    <div className="p-2 space-y-1.5 flex-1 bg-emerald-50/20">
+                      <div className="p-1.5 bg-white rounded-lg border border-emerald-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Quản Lý Kho Cần Thơ
                       </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý Kho Mỹ Tho</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Mỹ Tho & vận tải khu vực Mỹ Tho</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/50 text-[10px] text-emerald-900 font-medium">
-                        Quản lý toàn diện xuất nhập tồn và điều phối mạng lưới giao nhận
+                      <div className="p-1.5 bg-white rounded-lg border border-emerald-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Quản Lý Kho Mỹ Tho
                       </div>
                     </div>
                   </div>
 
-                  {/* Nhánh 4: Khối Nhà Máy Sản Xuất */}
-                  <div className="bg-white rounded-2xl border-2 border-purple-200 shadow-md overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-purple-700 to-fuchsia-800 text-white p-3.5 text-center">
-                      <div className="flex items-center justify-center space-x-1.5 text-xs font-black text-purple-200 uppercase">
-                        <Factory size={16} />
+                  {/* Khối 4: Nhà Máy Sản Xuất */}
+                  <div className="bg-white rounded-xl border border-purple-200 shadow-xs overflow-hidden flex flex-col">
+                    <div className="bg-gradient-to-r from-purple-700 to-fuchsia-800 text-white px-2.5 py-1 text-center">
+                      <span className="text-[11px] font-black uppercase text-purple-100 flex items-center justify-center space-x-1">
+                        <Factory size={13} />
                         <span>KHỐI NHÀ MÁY SẢN XUẤT</span>
-                      </div>
+                      </span>
                     </div>
-                    <div className="p-3.5 space-y-2.5 flex-1 bg-purple-50/20">
-                      <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý Xưởng Sản Xuất Nệm</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành toàn bộ dây chuyền sản xuất nệm</p>
+                    <div className="p-2 space-y-1.5 flex-1 bg-purple-50/20">
+                      <div className="p-1.5 bg-white rounded-lg border border-purple-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Quản Lý Xưởng Sản Xuất Nệm
                       </div>
-
-                      <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-sm space-y-1">
-                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý Xưởng Gối</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành dây chuyền may gối, thổi gòn & đóng gói thành phẩm</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-xl border border-dashed border-purple-200 bg-purple-50/50 text-[10px] text-purple-900 font-medium">
-                        Chịu trách nhiệm trực tiếp năng suất, định mức kỹ thuật và an toàn lao động
+                      <div className="p-1.5 bg-white rounded-lg border border-purple-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                        Quản Lý Xưởng Gối
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Dải phân cách nối xuống Cấp Phó Phòng & Phó Quản Lý */}
-              <div className="flex flex-col items-center my-3">
-                <div className="w-0.5 h-6 bg-slate-300"></div>
-                <div className="px-4 py-1 rounded-full bg-teal-100 border border-teal-300 text-teal-900 text-xs font-black flex items-center space-x-1.5 shadow-sm">
-                  <ArrowDown size={14} />
+              {/* Dải nối xuống Cấp Phó */}
+              <div className="flex flex-col items-center my-1.5">
+                <div className="w-0.5 h-2.5 bg-slate-300"></div>
+                <span className="px-3 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-900 text-[11px] font-black flex items-center space-x-1 shadow-2xs">
+                  <ArrowDown size={11} />
                   <span>CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM</span>
-                </div>
-                <div className="w-0.5 h-6 bg-slate-300"></div>
+                </span>
+                <div className="w-0.5 h-2.5 bg-slate-300"></div>
               </div>
 
               {/* CẤP 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM */}
-              <div className="bg-white rounded-2xl border-2 border-teal-400 shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-teal-950 via-emerald-950 to-slate-900 text-white p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="bg-teal-100 text-teal-900 font-black text-xs px-2.5 py-0.5 rounded-full">Phó Phòng & Phó QL</span>
-                    <h4 className="font-black text-teal-300 text-sm sm:text-base">
-                      CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM
-                    </h4>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
+                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Văn Phòng</span>
+                  <div className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng Chuyên Môn</div>
                 </div>
-
-                <div className="p-4 bg-teal-50/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Văn Phòng</span>
-                    <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng Chuyên Môn</h5>
-                    <p className="text-[11px] text-slate-500">Hỗ trợ quản lý và điều phối nghiệp vụ chuyên môn phòng ban</p>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">KD & Marketing</span>
-                    <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng / Trưởng Nhóm KD & MKT</h5>
-                    <p className="text-[11px] text-slate-500">Phụ trách nhóm kinh doanh và triển khai kế hoạch tiếp thị</p>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Kho Vận</span>
-                    <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</h5>
-                    <p className="text-[11px] text-slate-500">Phụ trách điều phối xuất nhập kho và an toàn vận tải</p>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Sản Xuất</span>
-                    <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Xưởng Nệm / Trưởng Nhóm Gối</h5>
-                    <p className="text-[11px] text-slate-500">Kiểm soát tiến độ may, dán, keo, đóng gói & dây chuyền gối</p>
-                  </div>
+                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
+                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">KD & MKT</span>
+                  <div className="font-bold text-slate-800 text-xs">Phó TP / Trưởng Nhóm KD & MKT</div>
+                </div>
+                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
+                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Kho Vận</span>
+                  <div className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</div>
+                </div>
+                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
+                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Sản Xuất</span>
+                  <div className="font-bold text-slate-800 text-xs">Phó QL Xưởng Nệm / TN Gối</div>
                 </div>
               </div>
 
-              {/* Dải phân cách nối xuống Cấp Chuyên Viên & Nhân Viên Thực Thi */}
-              <div className="flex flex-col items-center my-3">
-                <div className="w-0.5 h-6 bg-slate-300"></div>
-                <div className="px-4 py-1 rounded-full bg-indigo-100 border border-indigo-300 text-indigo-900 text-xs font-black flex items-center space-x-1.5 shadow-sm">
-                  <ArrowDown size={14} />
+              {/* Dải nối xuống Cấp Chuyên Viên & Thực Thi */}
+              <div className="flex flex-col items-center my-1.5">
+                <div className="w-0.5 h-2.5 bg-slate-300"></div>
+                <span className="px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-[11px] font-black flex items-center space-x-1 shadow-2xs">
+                  <ArrowDown size={11} />
                   <span>CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI</span>
-                </div>
-                <div className="w-0.5 h-6 bg-slate-300"></div>
+                </span>
+                <div className="w-0.5 h-2.5 bg-slate-300"></div>
               </div>
 
-              {/* CẤP 5 (GOM TẦNG 1, 2, 3 LÀM 1 CẤP DUY NHẤT): CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI */}
-              <div className="bg-white rounded-2xl border-2 border-indigo-300 shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-400/40 text-indigo-300">
-                        <Users size={18} />
-                      </div>
-                      <div>
-                        <h4 className="font-black text-indigo-200 text-sm sm:text-base">
-                          CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI
-                        </h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          Đội ngũ chuyên viên chuyên môn, kỹ thuật viên nhà máy, tài xế vận tải và nhân sự tác nghiệp toàn công ty
-                        </p>
-                      </div>
+              {/* CẤP 5: CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                {/* Cột 1: Chuyên Viên Cao Cấp / Đội Trưởng */}
+                <div className="bg-white rounded-xl border border-emerald-200 shadow-2xs overflow-hidden flex flex-col">
+                  <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
+                    <Award size={13} className="text-emerald-300 shrink-0" />
+                    <span className="text-xs font-black text-emerald-200">
+                      Chuyên Viên Cao Cấp / Đội Trưởng (≥ 3 năm)
+                    </span>
+                  </div>
+                  <div className="p-2.5 space-y-1.5 flex-1 bg-emerald-50/10">
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                      <span>Đội Trưởng Đội Tài Xế</span>
+                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                      <span>Tài Xế Tuyến Trọng Điểm</span>
+                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                      <span>Nhân Viên Kinh Doanh Thâm Niên</span>
+                      <span className="text-[10px] font-medium text-slate-400">Kinh Doanh</span>
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                      <span>Nhân Viên Giao Hàng Thâm Niên</span>
+                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                      <span>Kỹ Thuật May Viền Thâm Niên</span>
+                      <span className="text-[10px] font-medium text-slate-400">Xưởng SX</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 sm:p-6 bg-indigo-50/20 space-y-6">
-                  {/* Nhóm 1: Chuyên Viên Cao Cấp / Đội Trưởng */}
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="bg-emerald-100 text-emerald-900 font-bold text-xs px-3 py-1 rounded-lg border border-emerald-300 shadow-sm flex items-center space-x-1.5">
-                        <Award size={13} className="text-emerald-700" />
-                        <span>Chuyên Viên Cao Cấp & Đội Trưởng (Thâm niên ≥ 3 năm)</span>
-                      </span>
+                {/* Cột 2: Chuyên Viên & Kỹ Thuật Chính Thức */}
+                <div className="bg-white rounded-xl border border-sky-200 shadow-2xs overflow-hidden flex flex-col">
+                  <div className="bg-gradient-to-r from-sky-800 to-blue-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
+                    <Briefcase size={13} className="text-sky-300 shrink-0" />
+                    <span className="text-xs font-black text-sky-200">
+                      Chuyên Viên / Kỹ Thuật Chính Thức (1 - 3 năm)
+                    </span>
+                  </div>
+                  <div className="p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 flex-1 bg-sky-50/10">
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Chuyên Viên HCNS
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Đội Trưởng</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Đội Trưởng Đội Tài Xế</h5>
-                        <p className="text-[11px] text-slate-500">Điều phối toàn bộ đội xe tải, lộ trình và an toàn giao nhận</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kho Vận</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Tài Xế Tuyến Trọng Điểm</h5>
-                        <p className="text-[11px] text-slate-500">Phụ trách các tuyến đường dài và giao hàng đại lý liên tỉnh</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kinh Doanh</span>
-                        <h5 className="font-bold text-slate-800 text-xs">NV Kinh Doanh Thâm Niên</h5>
-                        <p className="text-[11px] text-slate-500">Phát triển và duy trì mạng lưới đại lý phân phối</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kho Vận</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Giao Hàng Thâm Niên</h5>
-                        <p className="text-[11px] text-slate-500">Phụ trách giao nhận độc lập các tuyến hàng trọng yếu</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Sản Xuất</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Kỹ Thuật May Viền Thâm Niên</h5>
-                        <p className="text-[11px] text-slate-500">Thợ tay nghề cao phụ trách hoàn thiện mẫu và kèm thợ mới</p>
-                      </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kế Toán Mua Hàng / Công Nợ
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kế Toán Kho & Kế Toán Xưởng
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      NV Kinh Doanh Chính Thức
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kỹ Thuật May Viền / 1 Kim
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kỹ Thuật Phun Keo / Dán Nệm
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kỹ Thuật Cắt Vải / Dán Tem
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Kỹ Thuật Vô Áo / Vali Nệm
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      NV Thổi Gòn & May Gối
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      NV Kho & Bốc Xếp
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 sm:col-span-2">
+                      Nhân Viên Giao Hàng & Phụ Xe
                     </div>
                   </div>
+                </div>
 
-                  {/* Nhóm 2: Chuyên Viên / Kế Toán / Kỹ Thuật Viên Chính Thức */}
-                  <div className="space-y-3 pt-2 border-t border-indigo-100">
-                    <div className="flex items-center space-x-2">
-                      <span className="bg-sky-100 text-sky-900 font-bold text-xs px-3 py-1 rounded-lg border border-sky-300 shadow-sm flex items-center space-x-1.5">
-                        <Briefcase size={13} className="text-sky-700" />
-                        <span>Chuyên Viên / Kế Toán / Kỹ Thuật Viên Chính Thức (Thâm niên 1 – 3 năm)</span>
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Văn Phòng</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Chuyên Viên HCNS & Tổ Chức</h5>
-                        <p className="text-[11px] text-slate-500">Chấm công, bảo hiểm, hợp đồng và chính sách nhân sự</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Kế Toán</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Kế Toán Mua Hàng / Công Nợ / Thu Chi</h5>
-                        <p className="text-[11px] text-slate-500">Hạch toán chứng từ, công nợ khách hàng và vật tư</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Kế Toán</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Kế Toán Kho & Kế Toán Xưởng</h5>
-                        <p className="text-[11px] text-slate-500">Theo dõi số lượng hàng hóa nhập xuất tồn kho thực tế</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Kinh Doanh</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Kinh Doanh Chính Thức</h5>
-                        <p className="text-[11px] text-slate-500">Chăm sóc đại lý và hoàn thành chỉ tiêu doanh số tháng</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Xưởng Nệm</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên May Viền Nệm</h5>
-                        <p className="text-[11px] text-slate-500">Vận hành máy may viền hoàn thiện viền mép nệm</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Xưởng Nệm</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên May Một Kim & May Tay</h5>
-                        <p className="text-[11px] text-slate-500">May vỏ áo nệm, may khóa kéo và may viền góc</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Xưởng Nệm</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Phun Keo & Dán Nệm</h5>
-                        <p className="text-[11px] text-slate-500">Phun keo định hình các lớp mút và ruột nệm</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Xưởng Nệm</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Vô Áo & Vô Vali Nệm</h5>
-                        <p className="text-[11px] text-slate-500">Lồng vỏ áo bọc nệm và đóng gói nệm thành phẩm</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Xưởng Gối</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Thổi Gòn & May Gối</h5>
-                        <p className="text-[11px] text-slate-500">Vận hành máy thổi gòn định lượng và may đóng gối</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Kho Vận</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Kho & Bốc Xếp</h5>
-                        <p className="text-[11px] text-slate-500">Sắp xếp kho bãi, nâng hạ hàng hóa và soạn hàng xuất</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-sky-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded">Kho Vận</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Giao Hàng & Phụ Xe</h5>
-                        <p className="text-[11px] text-slate-500">Theo xe tải giao hàng đến các đại lý phân phối</p>
-                      </div>
-                    </div>
+                {/* Cột 3: Nhân Viên Mới / Thử Việc */}
+                <div className="bg-white rounded-xl border border-slate-300 shadow-2xs overflow-hidden flex flex-col">
+                  <div className="bg-gradient-to-r from-slate-800 to-zinc-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
+                    <Users size={13} className="text-slate-300 shrink-0" />
+                    <span className="text-xs font-black text-slate-200">
+                      Nhân Viên Mới / Thử Việc (&lt; 1 năm)
+                    </span>
                   </div>
-
-                  {/* Nhóm 3: Nhân Viên Mới / Thử Việc / Học Việc */}
-                  <div className="space-y-3 pt-2 border-t border-indigo-100">
-                    <div className="flex items-center space-x-2">
-                      <span className="bg-slate-100 text-slate-800 font-bold text-xs px-3 py-1 rounded-lg border border-slate-300 shadow-sm flex items-center space-x-1.5">
-                        <Users size={13} className="text-slate-600" />
-                        <span>Nhân Viên Mới / Thử Việc / Học Việc (Thâm niên &lt; 1 năm)</span>
-                      </span>
+                  <div className="p-2.5 space-y-1.5 flex-1 bg-slate-50/20">
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Nhân Viên Thử Việc Văn Phòng
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Thử Việc</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Thử Việc Văn Phòng</h5>
-                        <p className="text-[11px] text-slate-500">Thử việc các vị trí hành chính, kế toán, nhân sự</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Thử Việc</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Thử Việc Kinh Doanh</h5>
-                        <p className="text-[11px] text-slate-500">Làm quen thị trường, sản phẩm và quy trình bán hàng</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Học Việc</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Học Việc May & Xưởng Nệm</h5>
-                        <p className="text-[11px] text-slate-500">Học việc may viền, may một kim, dán tem và phụ xưởng</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Thử Việc</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Thử Việc Kho & Giao Nhận</h5>
-                        <p className="text-[11px] text-slate-500">Làm quen quy trình soạn hàng và phụ xe giao nhận</p>
-                      </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Nhân Viên Thử Việc Kinh Doanh
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Nhân Viên Học Việc May & Xưởng Nệm
+                    </div>
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                      Nhân Viên Thử Việc Kho & Giao Hàng
                     </div>
                   </div>
                 </div>
