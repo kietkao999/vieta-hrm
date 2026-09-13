@@ -37,21 +37,21 @@ import { useAuth } from '../../contexts/AuthContext';
 const LEVEL_TITLE_CONFIGS = [
   {
     level: 5,
-    title: 'BAN TỔNG GIÁM ĐỐC & TRỢ LÝ CẤP CAO',
-    subtitle: 'Cấp hoạch định chiến lược vĩ mô & điều hành tối cao',
+    title: 'BAN TỔNG GIÁM ĐỐC',
+    subtitle: 'Hoạch định chiến lược phát triển và điều hành tổng thể công ty',
     headerBg: 'bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900',
     borderClass: 'border-amber-400',
     badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
     accentText: 'text-amber-300',
     roles: [
-      { name: 'Tổng Giám Đốc', dept: 'Ban Giám Đốc', desc: 'Định hướng chiến lược, quyết định tối cao toàn công ty', level: 'Tối cao' },
-      { name: 'Trợ Lý Giám Đốc', dept: 'Khối Văn Phòng', desc: 'Tham mưu chiến lược, ban cố vấn & hỗ trợ điều hành', level: 'Tham mưu cấp cao' }
+      { name: 'Tổng Giám Đốc', dept: 'Ban Giám Đốc', desc: 'Định hướng chiến lược phát triển, phê duyệt kế hoạch kinh doanh và ngân sách', level: 'Ban Lãnh Đạo' },
+      { name: 'Trợ Lý Giám Đốc', dept: 'Khối Văn Phòng', desc: 'Tham mưu chiến lược và hỗ trợ công tác điều hành', level: 'Tham mưu' }
     ]
   },
   {
     level: 4,
     title: 'BAN GIÁM ĐỐC ĐIỀU HÀNH',
-    subtitle: 'Cấp điều hành trực tiếp toàn bộ chuỗi sản xuất, kinh doanh, logistics & nhân sự',
+    subtitle: 'Điều hành trực tiếp các khối sản xuất, kinh doanh, logistics & nhân sự',
     headerBg: 'bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900',
     borderClass: 'border-blue-500',
     badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
@@ -103,7 +103,7 @@ const LEVEL_TITLE_CONFIGS = [
   {
     level: 2,
     title: 'CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM',
-    subtitle: 'Hỗ trợ quản lý điều phối tác nghiệp chuyên sâu, kiểm soát tiến độ & an toàn bộ phận',
+    subtitle: 'Hỗ trợ quản lý điều phối tác nghiệp, kiểm soát tiến độ & an toàn bộ phận',
     headerBg: 'bg-gradient-to-r from-teal-950 via-cyan-950 to-slate-900',
     borderClass: 'border-teal-400',
     badgeClass: 'bg-teal-100 text-teal-900 border-teal-300',
@@ -129,10 +129,10 @@ const LEVEL_TITLE_CONFIGS = [
         subgroupName: 'Chuyên Viên Cao Cấp / Đội Trưởng (Thâm niên ≥ 3 năm)',
         roles: [
           { name: 'Đội Trưởng Đội Tài Xế', dept: 'Kho Vận', desc: 'Điều phối toàn bộ đội xe tải, lộ trình giao hàng và an toàn vận tải' },
-          { name: 'Tài Xế Xe Tải Cấp Cao', dept: 'Kho Cần Thơ / Kho Mỹ Tho', desc: 'Phụ trách các tuyến đường dài, giao hàng đại lý liên tỉnh' },
+          { name: 'Tài Xế Tuyến Trọng Điểm', dept: 'Kho Cần Thơ / Kho Mỹ Tho', desc: 'Phụ trách các tuyến đường dài, giao hàng đại lý liên tỉnh' },
           { name: 'Nhân Viên Kinh Doanh Thâm Niên', dept: 'Phòng Kinh Doanh', desc: 'Chăm sóc hệ thống khách hàng lớn và mạng lưới đại lý chủ lực' },
-          { name: 'Kỹ Thuật Viên / May Viền Thâm Niên', dept: 'Xưởng Nệm / Gối', desc: 'Thợ may viền, may một kim bậc cao, kèm cặp thợ mới' },
-          { name: 'Nhân Viên Giao Hàng Kỳ Cựu', dept: 'Kho Vận', desc: 'Phụ trách giao nhận các tuyến trọng điểm và quản lý biên bản' }
+          { name: 'Kỹ Thuật May Viền Thâm Niên', dept: 'Xưởng Nệm / Gối', desc: 'Thợ may viền, may một kim bậc cao, kèm cặp thợ mới' },
+          { name: 'Nhân Viên Giao Hàng Thâm Niên', dept: 'Kho Vận', desc: 'Phụ trách giao nhận các tuyến trọng điểm và quản lý biên bản' }
         ]
       },
       {
@@ -549,13 +549,13 @@ const DeptPosSettingsPage = () => {
 
             {/* SƠ ĐỒ CÂY PHÂN CẤP CHỨC DANH */}
             <div className="space-y-6">
-              {/* CẤP 1: BAN TỔNG GIÁM ĐỐC & TRỢ LÝ CẤP CAO */}
+              {/* CẤP 1: BAN TỔNG GIÁM ĐỐC */}
               <div className="flex flex-col items-center">
                 <div className="w-full max-w-3xl bg-white rounded-2xl border-2 border-amber-400 shadow-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white p-4 text-center">
                     <div className="inline-flex items-center space-x-1.5 bg-amber-400/20 border border-amber-400/40 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-amber-300 mb-1">
                       <Crown size={12} />
-                      <span>BAN ĐIỀU HÀNH & LÃNH ĐẠO TỐI CAO</span>
+                      <span>BAN LÃNH ĐẠO CÔNG TY</span>
                     </div>
                     <h3 className="text-base sm:text-lg font-black text-amber-300">
                       BAN TỔNG GIÁM ĐỐC CÔNG TY TNHH TM SX NỆM VIỆT Á
@@ -568,7 +568,7 @@ const DeptPosSettingsPage = () => {
                         <Sparkles size={20} />
                       </div>
                       <h4 className="font-black text-slate-900 text-sm">TỔNG GIÁM ĐỐC</h4>
-                      <p className="text-[11px] text-slate-500">Hoạch định chiến lược tối cao, phê duyệt toàn bộ quy chế & ngân sách</p>
+                      <p className="text-[11px] text-slate-500">Định hướng chiến lược phát triển, phê duyệt quy chế & kế hoạch sản xuất kinh doanh</p>
                     </div>
 
                     <div className="p-3.5 bg-white rounded-xl border border-amber-200 shadow-sm text-center space-y-1">
@@ -576,7 +576,7 @@ const DeptPosSettingsPage = () => {
                         <ShieldCheck size={20} />
                       </div>
                       <h4 className="font-black text-slate-900 text-sm">TRỢ LÝ GIÁM ĐỐC</h4>
-                      <p className="text-[11px] text-slate-500">Tham mưu chiến lược, ban cố vấn & hỗ trợ điều hành toàn diện</p>
+                      <p className="text-[11px] text-slate-500">Tham mưu chiến lược và hỗ trợ công tác quản trị điều hành</p>
                     </div>
                   </div>
                 </div>
@@ -741,7 +741,7 @@ const DeptPosSettingsPage = () => {
                 <div className="w-0.5 h-6 bg-slate-300"></div>
                 <div className="px-4 py-1 rounded-full bg-teal-100 border border-teal-300 text-teal-900 text-xs font-black flex items-center space-x-1.5 shadow-sm">
                   <ArrowDown size={14} />
-                  <span>CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM (DƯỚI CẤP QUẢN LÝ)</span>
+                  <span>CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM</span>
                 </div>
                 <div className="w-0.5 h-6 bg-slate-300"></div>
               </div>
@@ -752,7 +752,7 @@ const DeptPosSettingsPage = () => {
                   <div className="flex items-center space-x-2">
                     <span className="bg-teal-100 text-teal-900 font-black text-xs px-2.5 py-0.5 rounded-full">Phó Phòng & Phó QL</span>
                     <h4 className="font-black text-teal-300 text-sm sm:text-base">
-                      CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM CHUYÊN SÂU
+                      CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM
                     </h4>
                   </div>
                 </div>
@@ -761,25 +761,25 @@ const DeptPosSettingsPage = () => {
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
                     <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Văn Phòng</span>
                     <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng Chuyên Môn</h5>
-                    <p className="text-[11px] text-slate-500">Tham mưu nghiệp vụ chuyên sâu và hỗ trợ điều hành bộ phận</p>
+                    <p className="text-[11px] text-slate-500">Hỗ trợ quản lý và điều phối nghiệp vụ chuyên môn phòng ban</p>
                   </div>
 
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
                     <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">KD & Marketing</span>
                     <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng / Trưởng Nhóm KD & MKT</h5>
-                    <p className="text-[11px] text-slate-500">Phụ trách nhóm kinh doanh trọng điểm và chiến dịch tiếp thị</p>
+                    <p className="text-[11px] text-slate-500">Phụ trách nhóm kinh doanh và triển khai kế hoạch tiếp thị</p>
                   </div>
 
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
                     <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Kho Vận</span>
                     <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</h5>
-                    <p className="text-[11px] text-slate-500">Phụ trách điều phối xuất nhập kho, an toàn kho và thủ tục xuất nhập</p>
+                    <p className="text-[11px] text-slate-500">Phụ trách điều phối xuất nhập kho và an toàn vận tải</p>
                   </div>
 
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
                     <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Sản Xuất</span>
                     <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Xưởng Nệm / Trưởng Nhóm Gối</h5>
-                    <p className="text-[11px] text-slate-500">Kiểm soát tiến độ may, dán, keo, đóng gói vali & dây chuyền thổi gối</p>
+                    <p className="text-[11px] text-slate-500">Kiểm soát tiến độ may, dán, keo, đóng gói & dây chuyền gối</p>
                   </div>
                 </div>
               </div>
@@ -789,7 +789,7 @@ const DeptPosSettingsPage = () => {
                 <div className="w-0.5 h-6 bg-slate-300"></div>
                 <div className="px-4 py-1 rounded-full bg-indigo-100 border border-indigo-300 text-indigo-900 text-xs font-black flex items-center space-x-1.5 shadow-sm">
                   <ArrowDown size={14} />
-                  <span>CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI (ĐỘI NGŨ TÁC NGHIỆP)</span>
+                  <span>CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI</span>
                 </div>
                 <div className="w-0.5 h-6 bg-slate-300"></div>
               </div>
@@ -820,7 +820,7 @@ const DeptPosSettingsPage = () => {
                     <div className="flex items-center space-x-2">
                       <span className="bg-emerald-100 text-emerald-900 font-bold text-xs px-3 py-1 rounded-lg border border-emerald-300 shadow-sm flex items-center space-x-1.5">
                         <Award size={13} className="text-emerald-700" />
-                        <span>Chuyên Viên Cao Cấp / Đội Trưởng / Thợ Bậc Cao (Thâm niên ≥ 3 năm)</span>
+                        <span>Chuyên Viên Cao Cấp & Đội Trưởng (Thâm niên ≥ 3 năm)</span>
                       </span>
                     </div>
 
@@ -833,22 +833,22 @@ const DeptPosSettingsPage = () => {
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kho Vận</span>
                         <h5 className="font-bold text-slate-800 text-xs">Tài Xế Tuyến Trọng Điểm</h5>
-                        <p className="text-[11px] text-slate-500">Phụ trách các chuyến vận tải đường dài và giao đại lý lớn</p>
+                        <p className="text-[11px] text-slate-500">Phụ trách các tuyến đường dài và giao hàng đại lý liên tỉnh</p>
                       </div>
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kinh Doanh</span>
                         <h5 className="font-bold text-slate-800 text-xs">NV Kinh Doanh Thâm Niên</h5>
-                        <p className="text-[11px] text-slate-500">Phát triển và duy trì mạng lưới đại lý chủ lực các tỉnh</p>
+                        <p className="text-[11px] text-slate-500">Phát triển và duy trì mạng lưới đại lý phân phối</p>
                       </div>
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Kho Vận</span>
-                        <h5 className="font-bold text-slate-800 text-xs">NV Giao Hàng Kỳ Cựu</h5>
+                        <h5 className="font-bold text-slate-800 text-xs">Nhân Viên Giao Hàng Thâm Niên</h5>
                         <p className="text-[11px] text-slate-500">Phụ trách giao nhận độc lập các tuyến hàng trọng yếu</p>
                       </div>
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Sản Xuất</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Kỹ Thuật May Viền Bậc Cao</h5>
-                        <p className="text-[11px] text-slate-500">Thợ tay nghề cao phụ trách mẫu cao cấp và kèm thợ mới</p>
+                        <h5 className="font-bold text-slate-800 text-xs">Kỹ Thuật May Viền Thâm Niên</h5>
+                        <p className="text-[11px] text-slate-500">Thợ tay nghề cao phụ trách hoàn thiện mẫu và kèm thợ mới</p>
                       </div>
                     </div>
                   </div>
