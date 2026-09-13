@@ -314,38 +314,38 @@ const PayrollPage = () => {
     return (
       <div className="space-y-6">
         {/* Top Header Card */}
-        <div className="rounded-2xl bg-gradient-to-r from-brand-900 via-indigo-900 to-slate-900 p-6 md:p-8 text-white shadow-xl">
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-brand-950 to-blue-950 p-6 md:p-8 text-white shadow-xl border border-slate-800">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div>
               <div className="flex items-center space-x-2.5 mb-2">
-                <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-300 border border-emerald-400/30">
+                <span className="rounded-full bg-emerald-500/30 px-3 py-0.5 text-xs font-black text-emerald-300 border border-emerald-400/50">
                   PHIẾU LƯƠNG CÁ NHÂN
                 </span>
-                <span className="text-xs text-slate-300 font-mono">
+                <span className="text-xs text-white font-mono bg-white/20 px-2.5 py-0.5 rounded-full font-bold">
                   Mã NV: {user?.employeeCode || user?.username}
                 </span>
               </div>
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white">
                 {user?.fullname || user?.username}
               </h2>
-              <p className="mt-1 text-xs md:text-sm text-slate-300">
-                Chức vụ: <strong className="text-white">{user?.positionName || user?.position_name || 'Nhân sự'}</strong> • Phòng ban: <strong className="text-white">{user?.departmentName || user?.department_name || 'Nệm Việt Á'}</strong>
+              <p className="mt-1.5 text-xs md:text-sm text-slate-200">
+                Chức vụ: <strong className="text-amber-300 font-bold">{user?.positionName || user?.position_name || 'Nhân sự'}</strong> • Phòng ban: <strong className="text-cyan-300 font-bold">{user?.departmentName || user?.department_name || 'Nệm Việt Á'}</strong>
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 text-right md:min-w-[240px]">
-              <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+            <div className="bg-white/15 backdrop-blur-md rounded-2xl p-5 border border-white/25 text-right md:min-w-[250px] shadow-lg">
+              <p className="text-xs font-black text-slate-100 uppercase tracking-wider">
                 Thực Lĩnh Tháng {month < 10 ? `0${parseInt(month, 10)}` : month}/{year}
               </p>
-              <p className="text-2xl md:text-3xl font-black text-emerald-300 mt-1">
+              <p className="text-2xl md:text-3xl font-black text-emerald-300 mt-1 drop-shadow">
                 {currentSlip ? formatVND(netSalary) : 'Chưa có dữ liệu'}
               </p>
-              <div className="mt-2 flex justify-end space-x-2">
+              <div className="mt-3 flex justify-end space-x-2">
                 <button
                   onClick={handlePrint}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-black transition shadow cursor-pointer"
                 >
-                  <Printer size={13} />
+                  <Printer size={14} className="text-brand-700" />
                   <span>In phiếu lương</span>
                 </button>
               </div>
@@ -354,12 +354,12 @@ const PayrollPage = () => {
         </div>
 
         {/* Month Selector Pills */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden space-y-2">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm print:hidden space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
               Chọn kỳ lương cần tra cứu:
             </span>
-            <span className="text-xs font-bold text-brand-700 font-mono">Năm {year}</span>
+            <span className="text-xs font-black text-brand-800 font-mono bg-brand-50 px-2 py-0.5 rounded border border-brand-200">Năm {year}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: maxDisplayMonth }, (_, i) => i + 1).map((m) => {
@@ -371,7 +371,7 @@ const PayrollPage = () => {
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
                     isSelected
                       ? 'bg-brand-700 text-white shadow-md ring-2 ring-brand-300'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                      : 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300 font-semibold'
                   }`}
                 >
                   <span>Tháng {m < 10 ? `0${m}` : m}</span>
@@ -385,115 +385,115 @@ const PayrollPage = () => {
         {currentSlip ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Card 1: Thu nhập cơ sở & Ngày công */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-brand-900 font-bold text-sm uppercase">
-                <Clock size={16} className="text-brand-600" />
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-blue-50/90 border-b border-blue-200 px-5 py-3.5 flex items-center space-x-2 text-blue-950 font-black text-sm uppercase">
+                <Clock size={18} className="text-blue-700" />
                 <span>I. Lương Cơ Bản & Ngày Công</span>
               </div>
-              <div className="space-y-3 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Lương tầng chức vụ:</span>
-                  <span className="font-bold text-slate-800">{formatVND(currentSlip.tier_salary)}</span>
+              <div className="p-5 space-y-3 text-[13px] flex-1">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Lương tầng chức vụ:</span>
+                  <span className="font-bold text-slate-950">{formatVND(currentSlip.tier_salary)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Lương bậc chuyên môn:</span>
-                  <span className="font-bold text-slate-800">{formatVND(currentSlip.grade_salary)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Lương bậc chuyên môn:</span>
+                  <span className="font-bold text-slate-950">{formatVND(currentSlip.grade_salary)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50 bg-blue-50/50 px-2 rounded">
-                  <span className="font-semibold text-blue-900">Tổng lương cơ sở (chuẩn 26 ngày):</span>
-                  <span className="font-bold text-blue-900">{formatVND(totalBase)}</span>
+                <div className="flex justify-between items-center py-2 px-3 bg-blue-100/70 border border-blue-200 rounded-lg">
+                  <span className="font-bold text-blue-950">Tổng lương cơ sở (26 ngày):</span>
+                  <span className="font-black text-blue-950">{formatVND(totalBase)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Ngày công làm việc thực tế:</span>
-                  <span className="font-bold text-emerald-700">{wDays} ngày công</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Ngày công làm việc thực tế:</span>
+                  <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{wDays} ngày công</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Tiền lương theo ngày công:</span>
-                  <span className="font-bold text-slate-800">{formatVND(baseWork)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Tiền lương theo ngày công:</span>
+                  <span className="font-bold text-slate-950">{formatVND(baseWork)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Giờ tăng ca (OT):</span>
-                  <span className="font-bold text-slate-800">{otHrs > 0 ? `${otHrs} giờ (150%)` : '0 giờ'}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Giờ tăng ca (OT):</span>
+                  <span className="font-bold text-slate-950">{otHrs > 0 ? `${otHrs} giờ (150%)` : '0 giờ'}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 bg-slate-50 px-2 rounded">
-                  <span className="font-semibold text-slate-700">Tiền làm thêm giờ (OT):</span>
-                  <span className="font-bold text-indigo-600">{formatVND(otSal)}</span>
+                <div className="flex justify-between items-center py-2 px-3 bg-slate-100 border border-slate-200 rounded-lg">
+                  <span className="font-bold text-slate-800">Tiền làm thêm giờ (OT):</span>
+                  <span className="font-black text-indigo-700">+{formatVND(otSal)}</span>
                 </div>
               </div>
             </div>
 
             {/* Card 2: KPI & Phụ Cấp */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-amber-900 font-bold text-sm uppercase">
-                <Award size={16} className="text-amber-600" />
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-amber-50/90 border-b border-amber-200 px-5 py-3.5 flex items-center space-x-2 text-amber-950 font-black text-sm uppercase">
+                <Award size={18} className="text-amber-700" />
                 <span>II. Thưởng KPI & Phụ Cấp</span>
               </div>
-              <div className="space-y-3 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Thưởng KPI Trách nhiệm:</span>
+              <div className="p-5 space-y-3 text-[13px] flex-1">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Thưởng KPI Trách nhiệm:</span>
                   <span className="font-bold text-emerald-700">+{formatVND(respKpi)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Thưởng KPI Hiệu quả cá nhân:</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Thưởng KPI Hiệu quả cá nhân:</span>
                   <span className="font-bold text-amber-700">+{formatVND(perfKpi)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Thưởng khác / Sáng kiến:</span>
-                  <span className="font-bold text-slate-800">+{formatVND(oBonus)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Thưởng khác / Sáng kiến:</span>
+                  <span className="font-bold text-slate-950">+{formatVND(oBonus)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50 bg-amber-50/50 px-2 rounded">
-                  <span className="font-semibold text-amber-900">Tổng thưởng KPI & Khen thưởng:</span>
-                  <span className="font-bold text-amber-900">+{formatVND(totalBonus)}</span>
+                <div className="flex justify-between items-center py-2 px-3 bg-amber-100/70 border border-amber-300 rounded-lg">
+                  <span className="font-bold text-amber-950">Tổng thưởng KPI & Khen thưởng:</span>
+                  <span className="font-black text-amber-950">+{formatVND(totalBonus)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Phụ cấp Cơm & Điện thoại:</span>
-                  <span className="font-bold text-slate-800">+{formatVND(mealPhone)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Phụ cấp Cơm & Điện thoại:</span>
+                  <span className="font-bold text-slate-950">+{formatVND(mealPhone)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Phụ cấp khác:</span>
-                  <span className="font-bold text-slate-800">+{formatVND(otherAllow)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Phụ cấp khác:</span>
+                  <span className="font-bold text-slate-950">+{formatVND(otherAllow)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 bg-slate-50 px-2 rounded">
-                  <span className="font-semibold text-slate-700">Tổng phụ cấp:</span>
-                  <span className="font-bold text-slate-800">+{formatVND(totalAllowances)}</span>
+                <div className="flex justify-between items-center py-2 px-3 bg-slate-100 border border-slate-200 rounded-lg">
+                  <span className="font-bold text-slate-800">Tổng phụ cấp:</span>
+                  <span className="font-black text-slate-950">+{formatVND(totalAllowances)}</span>
                 </div>
               </div>
             </div>
 
             {/* Card 3: Khấu Trừ & Tổng Thực Lĩnh */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-red-900 font-bold text-sm uppercase">
-                <ShieldAlert size={16} className="text-red-600" />
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-rose-50/90 border-b border-rose-200 px-5 py-3.5 flex items-center space-x-2 text-rose-950 font-black text-sm uppercase">
+                <ShieldAlert size={18} className="text-rose-700" />
                 <span>III. Các Khoản Giảm Trừ</span>
               </div>
-              <div className="space-y-3 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Bảo hiểm Xã hội (BHXH, BHYT, BHTN):</span>
-                  <span className="font-bold text-red-600">-{formatVND(socialIns)}</span>
+              <div className="p-5 space-y-3 text-[13px] flex-1">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Bảo hiểm Xã hội (BHXH, BHYT, BHTN):</span>
+                  <span className="font-bold text-rose-700">-{formatVND(socialIns)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Đoàn phí công đoàn:</span>
-                  <span className="font-bold text-red-600">-{formatVND(unionFee)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Đoàn phí công đoàn:</span>
+                  <span className="font-bold text-rose-700">-{formatVND(unionFee)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Thuế thu nhập cá nhân (TNCN):</span>
-                  <span className="font-bold text-red-600">-{formatVND(incTax)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Thuế thu nhập cá nhân (TNCN):</span>
+                  <span className="font-bold text-rose-700">-{formatVND(incTax)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Tạm ứng trong tháng:</span>
-                  <span className="font-bold text-red-600">-{formatVND(advPay)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Tạm ứng trong tháng:</span>
+                  <span className="font-bold text-rose-700">-{formatVND(advPay)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Giảm trừ cắt giờ / Vi phạm:</span>
-                  <span className="font-bold text-red-600">-{formatVND(otherDeduct + hrDeduct)}</span>
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-800 font-medium">Giảm trừ cắt giờ / Vi phạm:</span>
+                  <span className="font-bold text-rose-700">-{formatVND(otherDeduct + hrDeduct)}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 bg-red-50 px-2 rounded">
-                  <span className="font-semibold text-red-900">Tổng các khoản khấu trừ:</span>
-                  <span className="font-bold text-red-700">-{formatVND(totalDeductions)}</span>
+                <div className="flex justify-between items-center py-2 px-3 bg-rose-100/70 border border-rose-300 rounded-lg">
+                  <span className="font-bold text-rose-950">Tổng các khoản khấu trừ:</span>
+                  <span className="font-black text-rose-800">-{formatVND(totalDeductions)}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-emerald-50 rounded-xl border border-emerald-200 mt-2">
-                  <span className="font-extrabold text-emerald-900 text-sm">THỰC LĨNH NHẬN:</span>
-                  <span className="font-black text-emerald-800 text-base">{formatVND(netSalary)}</span>
+                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl shadow-md border border-emerald-500 mt-2">
+                  <span className="font-black text-white text-sm uppercase tracking-wide">THỰC LĨNH NHẬN:</span>
+                  <span className="font-black text-white text-lg md:text-xl drop-shadow">{formatVND(netSalary)}</span>
                 </div>
               </div>
             </div>
@@ -505,7 +505,7 @@ const PayrollPage = () => {
               Chưa có dữ liệu bảng lương cho Tháng {month}/{year}
             </h4>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Bạn vui lòng chọn các tháng khác (VD: Tháng 09, Tháng 07, Tháng 06,...) để tra cứu phiếu lương đã được chốt.
+              Bạn vui lòng chọn các tháng khác (VD: Tháng 09, Tháng 08, Tháng 07,...) để tra cứu phiếu lương đã được chốt.
             </p>
           </div>
         )}
