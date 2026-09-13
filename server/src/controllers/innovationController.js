@@ -40,7 +40,7 @@ export const getInnovations = async (req, res) => {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    // Phân quyền hiển thị
+    // Phân quyền hiển thị theo Role & Đơn vị nhận (Recipient Routing)
     if (req.user.roleName === 'EMPLOYEE') {
       if (scope === 'my') {
         // Chỉ xem sáng kiến của chính mình
@@ -52,26 +52,79 @@ export const getInnovations = async (req, res) => {
         params.push(req.user.employeeId);
       }
     } else if (req.user.roleName === 'MANAGER') {
+      // Quản lý cấp phòng / kho / xưởng:
+      // CHỈ xem được:
+      // 1. Góp ý gửi đích danh đến phòng ban / chức danh của Quản lý đó
+      // 2. Góp ý do chính Quản lý đó gửi đi
+      // 3. Các sáng kiến công khai đã được áp dụng / khen thưởng
+      // TUYỆT ĐỐI KHÔNG xem được góp ý / khiếu nại gửi đến "Ban Giám Đốc" hoặc phòng ban khác!
+      
+      const managerInfo = await query.get(
+        `SELECT e.id, d.name as dept_name, p.name as pos_name
+         FROM employees e
+         LEFT JOIN departments d ON e.department_id = d.id
+         LEFT JOIN positions p ON e.position_id = p.id
+         WHERE e.id = ?`,
+        [req.user.employeeId]
+      );
+
+      const deptName = managerInfo?.dept_name || '';
+      const posName = managerInfo?.pos_name || '';
+
+      if (scope === 'my') {
+        sql += ` AND i.employee_id = ?`;
+        params.push(req.user.employeeId);
+      } else {
+        sql += ` AND (
+          i.employee_id = ?
+          OR i.status IN ('Đã áp dụng thành công', 'Thử nghiệm', 'Khen thưởng', 'Đã triển khai')
+          OR (
+            i.target_unit != 'Ban Giám Đốc' 
+            AND i.target_unit != 'Trưởng Phòng Hành Chính Nhân Sự'
+            AND (
+              i.target_unit = ? 
+              OR i.target_unit = ?
+              OR (? != '' AND (i.target_unit LIKE '%' || ? || '%' OR ? LIKE '%' || i.target_unit || '%'))
+              OR (? != '' AND (i.target_unit LIKE '%' || ? || '%' OR ? LIKE '%' || i.target_unit || '%'))
+            )
+          )
+        )`;
+        params.push(
+          req.user.employeeId,
+          posName,
+          deptName,
+          deptName, deptName, deptName,
+          posName, posName, posName
+        );
+      }
+
       if (employee_id) {
         sql += ` AND i.employee_id = ?`;
         params.push(employee_id);
       }
-    } else if (employee_id) {
-      sql += ` AND i.employee_id = ?`;
-      params.push(employee_id);
+    } else {
+      // CẤP 1 - ADMIN (Ban Giám Đốc, Huỳnh Thị Trúc Xinh, Phan Tuấn Kiệt)
+      // Toàn quyền xem tất cả hòm thư (Bao gồm Ban Giám Đốc, Trưởng phòng HCNS và tất cả phòng ban)
+      if (scope === 'my') {
+        sql += ` AND i.employee_id = ?`;
+        params.push(req.user.employeeId);
+      } else if (employee_id) {
+        sql += ` AND i.employee_id = ?`;
+        params.push(employee_id);
+      }
     }
 
     sql += ` ORDER BY i.date DESC, i.id DESC`;
     const records = await query.all(sql, params);
 
-    // Xử lý bảo mật danh tính cho các bài gửi nặc danh
+    // Xử lý bảo mật danh tính cho các bài gửi nặc danh (100% ẩn thông tin nhân viên nếu không phải tác giả)
     const sanitizedRecords = records.map(record => {
       const isAuthor = record.employee_id === req.user.employeeId;
 
       if (record.is_anonymous === 1 && !isAuthor) {
         return {
           ...record,
-          fullname: 'Thành viên Việt Á (Nặc danh)',
+          fullname: 'Thành viên Việt Á (Nặc danh 🔒)',
           employee_code: '***',
           avatar: null,
           department_name: 'Bảo mật'
@@ -174,6 +227,7 @@ export const updateInnovation = async (req, res) => {
 
     const now = new Date().toISOString();
     const isEmployee = req.user.roleName === 'EMPLOYEE';
+    const isManager = req.user.roleName === 'MANAGER';
 
     // Nhân viên chỉ sửa được sáng kiến của mình khi còn ở trạng thái chờ
     if (isEmployee) {
@@ -205,9 +259,55 @@ export const updateInnovation = async (req, res) => {
         now,
         id
       ]);
+    } else if (isManager) {
+      // MANAGER: Kiểm tra thẩm quyền đơn vị tiếp nhận
+      // Không được can thiệp vào các góp ý gửi đích danh cho Ban Giám Đốc hoặc Trưởng phòng HCNS hoặc đơn vị khác
+      if (innov.target_unit === 'Ban Giám Đốc' || innov.target_unit === 'Trưởng Phòng Hành Chính Nhân Sự') {
+        return res.status(403).json({ message: 'Bạn không có thẩm quyền xử lý góp ý gửi đích danh cho Ban Giám Đốc / Phòng HCNS.' });
+      }
+
+      const managerInfo = await query.get(
+        `SELECT e.id, d.name as dept_name, p.name as pos_name
+         FROM employees e
+         LEFT JOIN departments d ON e.department_id = d.id
+         LEFT JOIN positions p ON e.position_id = p.id
+         WHERE e.id = ?`,
+        [req.user.employeeId]
+      );
+
+      const deptName = managerInfo?.dept_name || '';
+      const posName = managerInfo?.pos_name || '';
+
+      const isTargetMatched = 
+        innov.target_unit === posName ||
+        innov.target_unit === deptName ||
+        (deptName && (innov.target_unit.includes(deptName) || deptName.includes(innov.target_unit))) ||
+        (posName && (innov.target_unit.includes(posName) || posName.includes(innov.target_unit))) ||
+        innov.employee_id === req.user.employeeId;
+
+      if (!isTargetMatched) {
+        return res.status(403).json({ message: 'Bạn chỉ có thẩm quyền phản hồi các góp ý gửi đến đúng phòng ban / đơn vị bạn quản lý.' });
+      }
+
+      const responder = req.user.fullname || req.user.username || posName || 'Quản Lý Đơn Vị';
+      
+      await query.run(`
+        UPDATE innovations 
+        SET status = ?, response_notes = ?, response_by = ?, response_date = ?,
+            reward_amount = ?, updated_at = ?
+        WHERE id = ?
+      `, [
+        status || innov.status,
+        response_notes !== undefined ? response_notes : innov.response_notes,
+        response_notes ? responder : innov.response_by,
+        response_notes ? now.split('T')[0] : innov.response_date,
+        reward_amount !== undefined ? Number(reward_amount) : innov.reward_amount,
+        now,
+        id
+      ]);
     } else {
-      // Admin / Manager thẩm định, phản hồi và khen thưởng
-      const responder = req.user.fullname || req.user.username || 'Ban Giám Đốc / Quản Lý';
+      // CẤP 1 - ADMIN: Toàn quyền cập nhật, thẩm định, phản hồi và khen thưởng
+      const responder = req.user.fullname || req.user.username || 'Ban Giám Đốc';
       
       await query.run(`
         UPDATE innovations 
@@ -266,6 +366,16 @@ export const deleteInnovation = async (req, res) => {
   try {
     const innov = await query.get('SELECT * FROM innovations WHERE id = ?', [id]);
     if (!innov) return res.status(404).json({ message: 'Không tìm thấy sáng kiến.' });
+
+    // Phân quyền xóa: Admin hoặc chính tác giả khi còn ở trạng thái chờ tiếp nhận
+    if (req.user.roleName !== 'ADMIN') {
+      if (innov.employee_id !== req.user.employeeId) {
+        return res.status(403).json({ message: 'Bạn không có quyền xóa sáng kiến này.' });
+      }
+      if (innov.status !== 'Chờ tiếp nhận' && innov.status !== 'Đề xuất') {
+        return res.status(403).json({ message: 'Không thể xóa góp ý đang thẩm định hoặc đã xử lý.' });
+      }
+    }
 
     await query.run('DELETE FROM innovations WHERE id = ?', [id]);
     return res.json({ message: 'Đã xóa sáng kiến.' });

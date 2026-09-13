@@ -380,7 +380,7 @@ const InnovationPage = () => {
                   </div>
                 </div>
 
-                {/* 2. GỬI ĐẾN AI */}
+                {/* 2. GỬI ĐẾN AI (PHÂN QUYỀN RÕ RÀNG) */}
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
                     2. Gửi Trực Tiếp Đến Ai? *
@@ -388,7 +388,7 @@ const InnovationPage = () => {
                   <select
                     value={formData.target_unit}
                     onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none shadow-2xs"
                   >
                     {RECIPIENT_GROUPS.map((grp, idx) => (
                       <optgroup key={idx} label={grp.groupLabel}>
@@ -398,6 +398,26 @@ const InnovationPage = () => {
                       </optgroup>
                     ))}
                   </select>
+
+                  {/* Thông báo định tuyến phân quyền rõ ràng */}
+                  <div className="mt-2 p-2.5 rounded-xl border text-[11px] leading-relaxed flex items-start space-x-2 bg-slate-50 border-slate-200">
+                    <ShieldCheck size={16} className="text-brand-600 shrink-0 mt-0.5" />
+                    <div>
+                      {formData.target_unit === 'Ban Giám Đốc' ? (
+                        <span className="text-slate-700">
+                          <strong className="text-indigo-900 font-bold">👑 Bảo mật Cấp 1 (Ban Tổng Giám Đốc):</strong> Thư được gửi trực tiếp đến Ban Giám Đốc (Võ Minh Cường, Huỳnh Thị Trúc Xinh, Phan Tuấn Kiệt). <em>Trưởng phòng / Quản lý đơn vị hoàn toàn không được quyền xem.</em>
+                        </span>
+                      ) : formData.target_unit === 'Trưởng Phòng Hành Chính Nhân Sự' ? (
+                        <span className="text-slate-700">
+                          <strong className="text-blue-900 font-bold">👔 Trưởng Phòng HCNS:</strong> Tiếp nhận trực tiếp giải quyết chế độ lương thưởng, hợp đồng, phúc lợi và hỗ trợ nhân viên.
+                        </span>
+                      ) : (
+                        <span className="text-slate-700">
+                          <strong className="text-emerald-900 font-bold">🏬 Quản Lý Đơn Vị ({formData.target_unit}):</strong> Gửi đích danh đến Quản lý phụ trách bộ phận này. <em>Các Quản lý bộ phận khác không xem được chéo.</em>
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* 3. TÙY CHỌN BẢO MẬT: CÔNG KHAI HOẶC NẶC DANH */}
@@ -603,6 +623,25 @@ const InnovationPage = () => {
       {/* ================= TAB 2: QUẢN LÝ & THẨM ĐỊNH (ADMIN / MANAGER) ================= */}
       {activeTab === 'management' && isAdminOrManager && (
         <div className="space-y-4">
+          {/* Banner quyền hạn thẩm định */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 border border-slate-800 text-white shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-brand-500/20 text-brand-300 border border-brand-400/30 shrink-0">
+                {user?.roleName === 'ADMIN' ? <Crown size={20} className="text-amber-400" /> : <ShieldCheck size={20} className="text-blue-400" />}
+              </div>
+              <div>
+                <h2 className="text-xs sm:text-sm font-black text-white flex items-center space-x-2">
+                  <span>{user?.roleName === 'ADMIN' ? '👑 CẤP 1 - BAN TỔNG GIÁM ĐỐC (TOÀN QUYỀN HỆ THỐNG)' : `👔 CẤP 2 - QUẢN LÝ ĐƠN VỊ: ${user?.positionName || user?.departmentName || 'QUẢN LÝ'}`}</span>
+                </h2>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  {user?.roleName === 'ADMIN'
+                    ? 'Bạn có quyền xem và phản hồi toàn bộ mọi góp ý, sáng kiến & khiếu nại gửi đến Ban Giám Đốc hoặc tất cả phòng ban.'
+                    : 'Hệ thống tự động lọc các ý kiến gửi đích danh đến đơn vị bạn quản lý. Các phản ánh gửi Ban Giám Đốc được bảo mật tuyệt đối.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Bộ lọc đơn giản */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
             <div className="flex items-center space-x-2 w-full sm:max-w-md bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
