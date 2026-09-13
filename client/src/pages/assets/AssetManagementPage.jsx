@@ -477,7 +477,7 @@ const AssetManagementPage = () => {
           {/* Bộ lọc tài sản */}
           <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row gap-2.5 items-center justify-between">
             <div className="flex items-center space-x-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-              <Search size={14} className="text-slate-400" />
+              <Search size={14} className="text-slate-400 shrink-0" />
               <input
                 type="text"
                 placeholder="Tìm mã, tên máy, biển số, người giữ..."
@@ -487,11 +487,11 @@ const AssetManagementPage = () => {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto md:flex md:items-center">
               <select
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
               >
                 <option value="">Tất cả phòng ban / xưởng / kho</option>
                 {departments.map(d => (
@@ -502,7 +502,7 @@ const AssetManagementPage = () => {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
               >
                 <option value="">Tất cả loại tài sản</option>
                 {Object.keys(CATEGORY_CONFIG).map(c => (
@@ -513,7 +513,7 @@ const AssetManagementPage = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
               >
                 <option value="">Tất cả trạng thái</option>
                 {Object.keys(STATUS_CONFIG).map(s => (
@@ -523,9 +523,127 @@ const AssetManagementPage = () => {
             </div>
           </div>
 
-          {/* Bảng danh mục tài sản */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
+          {/* GIAO DIỆN DI ĐỘNG: MOBILE CARDS (block md:hidden) */}
+          <div className="block md:hidden space-y-3">
+            {loading ? (
+              <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs">
+                <RefreshCw className="animate-spin inline mr-2" size={16} /> Đang tải danh mục tài sản...
+              </div>
+            ) : filteredAssets.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs">
+                Không tìm thấy tài sản nào phù hợp với bộ lọc.
+              </div>
+            ) : (
+              filteredAssets.map(item => {
+                const catInfo = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG['Máy móc sản xuất'];
+                const CatIcon = catInfo.icon;
+                const statusInfo = STATUS_CONFIG[item.status] || STATUS_CONFIG['Đang sử dụng'];
+                const StatusIcon = statusInfo.icon;
+
+                return (
+                  <div key={item.id} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+                    {/* Header: Code + Status Badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-lg">
+                        {item.code}
+                      </span>
+                      <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badge}`}>
+                        <StatusIcon size={10} />
+                        <span>{item.status}</span>
+                      </span>
+                    </div>
+
+                    {/* Name & Category */}
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm leading-snug">{item.name}</h3>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${catInfo.badge}`}>
+                          <CatIcon size={10} />
+                          <span>{item.category}</span>
+                        </span>
+                        {item.serial_number && (
+                          <span className="text-[10px] text-slate-700 font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            Seri/Biển: {item.serial_number}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Department & Responsible Person */}
+                    <div className="pt-2 border-t border-slate-100 text-xs space-y-1.5 text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Phòng ban:</span>
+                        <span className="font-bold text-slate-800 flex items-center space-x-1">
+                          <Building2 size={12} className="text-slate-400" />
+                          <span>{item.department_name || 'Toàn công ty'}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Người phụ trách:</span>
+                        <span className="font-bold text-slate-800">
+                          {item.assigned_to_name || <em className="text-slate-400 font-normal">Chưa bàn giao</em>}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer: Price & Actions */}
+                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Giá trị</span>
+                        <span className="text-xs font-black text-slate-900">
+                          {Number(item.purchase_price || 0).toLocaleString('vi-VN')} đ
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          onClick={() => handleOpenDetail(item.id)}
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                        >
+                          <Eye size={13} />
+                          <span>Xem</span>
+                        </button>
+
+                        {isAdminOrManager && (
+                          <>
+                            <button
+                              onClick={() => handleOpenAlloc(item, item.assigned_to ? 'revoke' : 'allocate')}
+                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                            >
+                              <ArrowRightLeft size={13} />
+                              <span>{item.assigned_to ? 'Thu hồi' : 'Giao'}</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 cursor-pointer"
+                              title="Sửa"
+                            >
+                              <Edit size={14} />
+                            </button>
+                          </>
+                        )}
+
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteAsset(item.id, item.name)}
+                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 cursor-pointer"
+                            title="Xóa"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* GIAO DIỆN DESKTOP / TABLET: BẢNG DỮ LIỆU (hidden md:block) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto custom-scroll-x">
               <table className="w-full text-left text-xs border-collapse min-w-[850px]">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-100">
                   <tr>
@@ -613,7 +731,7 @@ const AssetManagementPage = () => {
                             <button
                               onClick={() => handleOpenDetail(item.id)}
                               title="Xem chi tiết & lịch sử"
-                              className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-brand-600 transition"
+                              className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-brand-600 transition cursor-pointer"
                             >
                               <Eye size={14} />
                             </button>
@@ -623,7 +741,7 @@ const AssetManagementPage = () => {
                                 <button
                                   onClick={() => handleOpenAlloc(item, item.assigned_to ? 'revoke' : 'allocate')}
                                   title={item.assigned_to ? 'Thu hồi tài sản về kho' : 'Bàn giao cho nhân viên'}
-                                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition"
+                                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition cursor-pointer"
                                 >
                                   <ArrowRightLeft size={14} />
                                 </button>
@@ -631,7 +749,7 @@ const AssetManagementPage = () => {
                                 <button
                                   onClick={() => handleOpenEdit(item)}
                                   title="Chỉnh sửa thông tin"
-                                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-amber-600 transition"
+                                  className="p-1 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-amber-600 transition cursor-pointer"
                                 >
                                   <Edit size={14} />
                                 </button>
@@ -642,7 +760,7 @@ const AssetManagementPage = () => {
                               <button
                                 onClick={() => handleDeleteAsset(item.id, item.name)}
                                 title="Xóa tài sản"
-                                className="p-1 rounded-lg text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition"
+                                className="p-1 rounded-lg text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -680,8 +798,71 @@ const AssetManagementPage = () => {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
+          {/* Giao diện Mobile Cards cho Phiếu báo hỏng (block md:hidden) */}
+          <div className="block md:hidden space-y-3">
+            {tickets.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs">
+                Chưa có phiếu báo hỏng thiết bị nào.
+              </div>
+            ) : (
+              tickets.map(t => {
+                const st = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG['Chờ tiếp nhận'];
+                return (
+                  <div key={t.id} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                        #BH-{t.id} • {t.created_at?.split('T')[0]}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${st.badge}`}>
+                        {t.status}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 leading-tight">{t.title}</h4>
+                      <p className="text-xs text-brand-700 font-semibold mt-0.5">{t.asset_name} ({t.asset_code})</p>
+                      {t.description && (
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                          {t.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="text-slate-500 text-[11px]">Người báo: <strong>{t.reported_by_name}</strong></span>
+                        {t.repair_cost > 0 && (
+                          <div className="font-bold text-slate-900 mt-0.5">Chi phí: {Number(t.repair_cost).toLocaleString('vi-VN')} đ</div>
+                        )}
+                      </div>
+
+                      {isAdminOrManager && (
+                        <button
+                          onClick={() => {
+                            setSelectedTicket(t);
+                            setTicketProcessForm({
+                              status: t.status || 'Đang xử lý',
+                              repair_cost: t.repair_cost || 0,
+                              repaired_by: t.repaired_by || '',
+                              notes: t.notes || ''
+                            });
+                            setProcessTicketModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-900 text-white font-bold text-xs shadow-xs hover:bg-slate-800 transition cursor-pointer"
+                        >
+                          Cập nhật
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Giao diện Desktop Table cho Phiếu báo hỏng (hidden md:block) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto custom-scroll-x">
               <table className="w-full text-left text-xs border-collapse min-w-[750px]">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-100">
                   <tr>
@@ -760,7 +941,7 @@ const AssetManagementPage = () => {
                                   });
                                   setProcessTicketModalOpen(true);
                                 }}
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 font-bold text-[11px] transition"
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 font-bold text-[11px] transition cursor-pointer"
                               >
                                 Cập nhật
                               </button>

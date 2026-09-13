@@ -202,7 +202,104 @@ const ContractPage = () => {
         </select>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
+      {/* Mobile Card View (block md:hidden) */}
+      <div className="block md:hidden space-y-3">
+        {loading ? (
+          <div className="flex justify-center p-8 bg-white rounded-2xl border border-slate-200"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
+        ) : contracts.length === 0 ? (
+          <div className="p-6 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs">Không có dữ liệu hợp đồng</div>
+        ) : (
+          contracts.map(c => {
+            const hasContract = c.contract_id !== null;
+            const daysLeft = hasContract ? getRemainingDays(c.end_date) : null;
+            const isWarning = hasContract && daysLeft !== null && daysLeft > 0 && daysLeft <= 30;
+            const isExpired = hasContract && daysLeft !== null && daysLeft <= 0;
+            const fileUrl = c.document_url 
+              ? (api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') + c.document_url : c.document_url) 
+              : null;
+
+            return (
+              <div key={c.employee_id} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg border ${
+                    hasContract ? 'bg-brand-50 text-brand-700 border-brand-200' : 'bg-rose-50 text-rose-600 border-rose-200'
+                  }`}>
+                    {hasContract ? c.contract_number : 'Chưa có HĐ'}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    !hasContract ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                    c.contract_status === 'Có hiệu lực' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    c.contract_status === 'Hết hạn' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    'bg-slate-100 text-slate-700 border-slate-200'
+                  }`}>
+                    {hasContract ? c.contract_status : 'Chưa tạo HĐ'}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm leading-snug">{c.fullname}</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">{c.employee_code} • {c.department_name}</p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 text-xs space-y-1.5 text-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-[11px]">Loại HĐ:</span>
+                    <span className="font-bold text-slate-800">{hasContract ? c.contract_type : '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-[11px]">Thời hạn:</span>
+                    <span className="font-semibold text-slate-700">
+                      {hasContract ? `${c.start_date || 'N/A'} → ${c.end_date || 'Vô thời hạn'}` : '—'}
+                    </span>
+                  </div>
+                  {hasContract && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 text-[11px]">Cảnh báo:</span>
+                      <div>
+                        {isWarning && <span className="inline-flex items-center text-amber-700 font-bold text-[11px] bg-amber-50 px-2 py-0.5 rounded"><AlertTriangle size={12} className="mr-1"/> Còn {daysLeft} ngày</span>}
+                        {isExpired && c.contract_status === 'Có hiệu lực' && <span className="inline-flex items-center text-rose-700 font-bold text-[11px] bg-rose-50 px-2 py-0.5 rounded"><AlertTriangle size={12} className="mr-1"/> Đã quá hạn</span>}
+                        {(!isWarning && !isExpired && c.contract_status === 'Có hiệu lực' && daysLeft !== null) && <span className="text-emerald-700 font-bold text-[11px]">Còn {daysLeft} ngày</span>}
+                        {!isWarning && !isExpired && (c.contract_status !== 'Có hiệu lực' || daysLeft === null) && <span className="text-slate-400 text-[11px]">Bình thường</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {(user?.roleName === 'ADMIN' || user?.roleName === 'HR') && (
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-end space-x-2">
+                    {hasContract ? (
+                      <>
+                        {fileUrl ? (
+                          <a href={fileUrl} target="_blank" rel="noreferrer" className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-xl border border-emerald-200 inline-flex items-center space-x-1" title="Xem hợp đồng">
+                            <ExternalLink size={13} />
+                            <span>File HĐ</span>
+                          </a>
+                        ) : null}
+                        <label className="cursor-pointer text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-xl border border-brand-200 inline-flex items-center space-x-1" title="Tải file hợp đồng lên">
+                          <Upload size={13} />
+                          <span>Tải file</span>
+                          <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, c)} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+                        </label>
+                        <button onClick={() => handleOpenEdit(c)} className="text-slate-700 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-xl border border-slate-200 cursor-pointer" title="Sửa hợp đồng"><Edit2 size={14}/></button>
+                        {user?.roleName === 'ADMIN' && (
+                          <button onClick={() => handleDelete(c.contract_id)} className="text-rose-700 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-xl border border-rose-200 cursor-pointer" title="Xóa hợp đồng"><Trash2 size={14}/></button>
+                        )}
+                      </>
+                    ) : (
+                      <button onClick={() => handleOpenCreateForEmployee(c.employee_id)} className="text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 px-3.5 py-1.5 rounded-xl shadow-xs cursor-pointer">
+                        + Tạo Hợp Đồng
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop / Tablet Table View (hidden md:block) */}
+      <div className="hidden md:block rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto custom-scroll-x">
         {loading ? (
            <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
         ) : (

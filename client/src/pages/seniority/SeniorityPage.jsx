@@ -182,94 +182,159 @@ const SeniorityPage = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="overflow-x-auto">
+        <div>
           {loading ? (
             <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div></div>
           ) : activeTab === 'seniority' ? (
-            /* Tab 1: Bảng thâm niên */
-            <table className="w-full text-left text-sm border-collapse min-w-[800px]">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
-                <tr>
-                  <th className="px-4 py-3">Mã NV</th>
-                  <th className="px-4 py-3">Nhân viên</th>
-                  <th className="px-4 py-3">Phòng ban / Chức vụ</th>
-                  <th className="px-4 py-3">Ngày vào</th>
-                  <th className="px-4 py-3 text-center">Thâm niên</th>
-                  <th className="px-4 py-3">Mốc vinh danh</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              {/* Mobile View: Cards */}
+              <div className="block md:hidden p-3 space-y-3">
                 {filteredSeniority.length === 0 ? (
-                  <tr><td colSpan="6" className="text-center py-8 text-slate-500">Không có dữ liệu</td></tr>
+                  <div className="p-6 text-center text-slate-400 bg-white rounded-xl text-xs">Không có dữ liệu</div>
                 ) : filteredSeniority.map(emp => {
                   const milestone = getMilestoneStyle(emp.years_of_service);
                   return (
-                    <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 font-bold text-brand-700">{emp.code}</td>
-                      <td className="px-4 py-4">
-                        <div className="font-semibold text-slate-800">{emp.fullname}</div>
-                        <div className="text-xs text-slate-500">{emp.branch_name}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-slate-700">{emp.department_name}</div>
-                        <div className="text-xs text-slate-500">{emp.position_name}</div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-600">{emp.join_date ? new Date(emp.join_date).toLocaleDateString('vi-VN') : '-'}</td>
-                      <td className="px-4 py-4 text-center">
-                        <span className="text-lg font-bold text-slate-800">{emp.years_of_service}</span>
-                        <span className="text-xs text-slate-500 ml-1">năm {emp.months_remainder > 0 ? `${emp.months_remainder} tháng` : ''}</span>
-                      </td>
-                      <td className="px-4 py-4">
+                    <div key={emp.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
+                          {emp.code}
+                        </span>
                         {milestone.label ? (
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${milestone.bg} ${milestone.text} shadow-sm ${milestone.shadow}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${milestone.bg} ${milestone.text} border border-current/20`}>
                             {milestone.label}
                           </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </td>
-                    </tr>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <div className="font-bold text-slate-800 text-sm">{emp.fullname}</div>
+                        <div className="text-xs text-slate-500">{emp.department_name} • {emp.position_name}</div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                        <span className="text-slate-500">Ngày vào: {emp.join_date ? new Date(emp.join_date).toLocaleDateString('vi-VN') : '-'}</span>
+                        <span className="font-bold text-slate-800">
+                          {emp.years_of_service} <span className="text-[11px] font-normal text-slate-500">năm {emp.months_remainder > 0 ? `${emp.months_remainder} th` : ''}</span>
+                        </span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block overflow-x-auto custom-scroll-x">
+                <table className="w-full text-left text-sm border-collapse min-w-[800px]">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                    <tr>
+                      <th className="px-4 py-3">Mã NV</th>
+                      <th className="px-4 py-3">Nhân viên</th>
+                      <th className="px-4 py-3">Phòng ban / Chức vụ</th>
+                      <th className="px-4 py-3">Ngày vào</th>
+                      <th className="px-4 py-3 text-center">Thâm niên</th>
+                      <th className="px-4 py-3">Mốc vinh danh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSeniority.length === 0 ? (
+                      <tr><td colSpan="6" className="text-center py-8 text-slate-500">Không có dữ liệu</td></tr>
+                    ) : filteredSeniority.map(emp => {
+                      const milestone = getMilestoneStyle(emp.years_of_service);
+                      return (
+                        <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-4 font-bold text-brand-700">{emp.code}</td>
+                          <td className="px-4 py-4">
+                            <div className="font-semibold text-slate-800">{emp.fullname}</div>
+                            <div className="text-xs text-slate-500">{emp.branch_name}</div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="text-sm text-slate-700">{emp.department_name}</div>
+                            <div className="text-xs text-slate-500">{emp.position_name}</div>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{emp.join_date ? new Date(emp.join_date).toLocaleDateString('vi-VN') : '-'}</td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="text-lg font-bold text-slate-800">{emp.years_of_service}</span>
+                            <span className="text-xs text-slate-500 ml-1">năm {emp.months_remainder > 0 ? `${emp.months_remainder} tháng` : ''}</span>
+                          </td>
+                          <td className="px-4 py-4">
+                            {milestone.label ? (
+                              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${milestone.bg} ${milestone.text} shadow-sm ${milestone.shadow}`}>
+                                {milestone.label}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
-            /* Tab 2: Quá trình công tác */
-            <table className="w-full text-left text-sm border-collapse min-w-[900px]">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
-                <tr>
-                  <th className="px-4 py-3">Nhân viên</th>
-                  <th className="px-4 py-3">Phòng ban</th>
-                  <th className="px-4 py-3">Chức vụ</th>
-                  <th className="px-4 py-3">Từ ngày</th>
-                  <th className="px-4 py-3">Đến ngày</th>
-                  <th className="px-4 py-3">Ghi chú</th>
-                  {isAdmin && <th className="px-4 py-3 text-right">Thao tác</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+            <>
+              {/* Tab 2 Mobile: Cards */}
+              <div className="block md:hidden p-3 space-y-3">
                 {filteredWorkHistory.length === 0 ? (
-                  <tr><td colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-slate-500">Chưa có dữ liệu lịch sử công tác</td></tr>
+                  <div className="p-6 text-center text-slate-400 bg-white rounded-xl text-xs">Chưa có dữ liệu lịch sử công tác</div>
                 ) : filteredWorkHistory.map(wh => (
-                  <tr key={wh.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-4">
-                      <div className="font-semibold text-slate-800">{wh.fullname}</div>
-                      <div className="text-xs text-slate-500">{wh.employee_code}</div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-700 font-medium">{wh.department_name || '-'}</td>
-                    <td className="px-4 py-4 text-sm text-slate-700">{wh.position_name || '-'}</td>
-                    <td className="px-4 py-4 text-sm text-slate-600">{wh.start_date ? new Date(wh.start_date).toLocaleDateString('vi-VN') : '-'}</td>
-                    <td className="px-4 py-4 text-sm text-slate-600">{wh.end_date ? new Date(wh.end_date).toLocaleDateString('vi-VN') : <span className="text-emerald-600 font-semibold">Hiện tại</span>}</td>
-                    <td className="px-4 py-4 text-xs text-slate-500">{wh.notes || '-'}</td>
-                    {isAdmin && (
-                      <td className="px-4 py-4 text-right">
-                        <button onClick={() => handleDelete(wh.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={16} /></button>
-                      </td>
-                    )}
-                  </tr>
+                  <div key={wh.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-slate-800 text-sm">{wh.fullname}</div>
+                      {isAdmin && (
+                        <button onClick={() => handleDelete(wh.id)} className="text-rose-600 p-1 hover:bg-rose-50 rounded"><Trash2 size={14} /></button>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-600 font-medium">
+                      {wh.department_name || '-'} • {wh.position_name || '-'}
+                    </div>
+                    <div className="pt-2 border-t border-slate-200/60 text-xs text-slate-500 flex justify-between">
+                      <span>{wh.start_date ? new Date(wh.start_date).toLocaleDateString('vi-VN') : '-'} → {wh.end_date ? new Date(wh.end_date).toLocaleDateString('vi-VN') : 'Hiện tại'}</span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Tab 2 Desktop: Table */}
+              <div className="hidden md:block overflow-x-auto custom-scroll-x">
+                <table className="w-full text-left text-sm border-collapse min-w-[900px]">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                    <tr>
+                      <th className="px-4 py-3">Nhân viên</th>
+                      <th className="px-4 py-3">Phòng ban</th>
+                      <th className="px-4 py-3">Chức vụ</th>
+                      <th className="px-4 py-3">Từ ngày</th>
+                      <th className="px-4 py-3">Đến ngày</th>
+                      <th className="px-4 py-3">Ghi chú</th>
+                      {isAdmin && <th className="px-4 py-3 text-right">Thao tác</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredWorkHistory.length === 0 ? (
+                      <tr><td colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-slate-500">Chưa có dữ liệu lịch sử công tác</td></tr>
+                    ) : filteredWorkHistory.map(wh => (
+                      <tr key={wh.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-slate-800">{wh.fullname}</div>
+                          <div className="text-xs text-slate-500">{wh.employee_code}</div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-700 font-medium">{wh.department_name || '-'}</td>
+                        <td className="px-4 py-4 text-sm text-slate-700">{wh.position_name || '-'}</td>
+                        <td className="px-4 py-4 text-sm text-slate-600">{wh.start_date ? new Date(wh.start_date).toLocaleDateString('vi-VN') : '-'}</td>
+                        <td className="px-4 py-4 text-sm text-slate-600">{wh.end_date ? new Date(wh.end_date).toLocaleDateString('vi-VN') : <span className="text-emerald-600 font-semibold">Hiện tại</span>}</td>
+                        <td className="px-4 py-4 text-xs text-slate-500">{wh.notes || '-'}</td>
+                        {isAdmin && (
+                          <td className="px-4 py-4 text-right">
+                            <button onClick={() => handleDelete(wh.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={16} /></button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
