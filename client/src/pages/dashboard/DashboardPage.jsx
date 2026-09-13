@@ -16,7 +16,8 @@ import {
   DollarSign,
   Building2,
   Briefcase,
-  ChevronRight
+  ChevronRight,
+  Cake
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -135,6 +136,92 @@ const DashboardPage = () => {
     </div>
   );
 
+  // Widget Chúc mừng sinh nhật nhân sự trong tháng
+  const renderBirthdayWidget = () => {
+    const currentMonth = new Date().getMonth() + 1;
+    const currentDay = new Date().getDate();
+
+    const birthdayEmployees = (stats.deptEmployees || []).filter(e => {
+      if (!e.dob) return false;
+      const parts = e.dob.split('-');
+      if (parts.length === 3) {
+        return parseInt(parts[1], 10) === currentMonth;
+      }
+      const d = new Date(e.dob);
+      return !isNaN(d.getTime()) && (d.getMonth() + 1) === currentMonth;
+    }).sort((a, b) => {
+      const dayA = parseInt(a.dob.split('-')[2] || '0', 10);
+      const dayB = parseInt(b.dob.split('-')[2] || '0', 10);
+      return dayA - dayB;
+    });
+
+    return (
+      <div className="rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/60 via-white to-pink-50/40 p-5 shadow-sm space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-md">
+              <Cake size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                Sinh Nhật Trong Tháng {currentMonth < 10 ? `0${currentMonth}` : currentMonth}
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">Chúc mừng ngày sinh nhật các thành viên công ty</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-rose-100 text-rose-800 text-xs font-black px-3 py-1 border border-rose-200 shadow-sm">
+            🎉 {birthdayEmployees.length} nhân sự
+          </span>
+        </div>
+
+        {birthdayEmployees.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto pr-1">
+            {birthdayEmployees.map(emp => {
+              const day = parseInt(emp.dob?.split('-')[2] || '0', 10);
+              const isToday = day === currentDay;
+              return (
+                <div
+                  key={emp.id || emp.code}
+                  className={`p-3 rounded-xl border flex items-center space-x-3 transition-all ${
+                    isToday
+                      ? 'bg-rose-100/90 border-rose-400 shadow-md ring-2 ring-rose-400'
+                      : 'bg-white border-slate-200/80 hover:border-rose-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs flex-shrink-0 ${
+                    isToday ? 'bg-rose-600 text-white shadow' : 'bg-rose-100 text-rose-700'
+                  }`}>
+                    {emp.fullname ? emp.fullname.split(' ').pop().charAt(0) : 'NV'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-1.5">
+                      <p className="text-xs font-black text-slate-800 truncate">{emp.fullname}</p>
+                      {isToday && (
+                        <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase flex-shrink-0 animate-pulse">
+                          Hôm nay 🎉
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium truncate">{emp.position_name || emp.department_name || 'Nệm Việt Á'}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-xs font-black text-rose-600 font-mono bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                      {day < 10 ? `0${day}` : day}/{currentMonth < 10 ? `0${currentMonth}` : currentMonth}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-slate-400 text-xs bg-white/80 rounded-xl border border-slate-100">
+            Không có thành viên nào có ngày sinh nhật trong tháng {currentMonth}.
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Layout 1: Dashboard cho Admin và HR
   const renderAdminHRDashboard = () => (
     <div className="space-y-6">
@@ -172,6 +259,9 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Birthday Widget */}
+      {renderBirthdayWidget()}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Quick Access Menu */}
@@ -296,6 +386,9 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Birthday Widget */}
+      {renderBirthdayWidget()}
+
       {/* Department Staff List */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <div className="flex justify-between items-center">
@@ -404,6 +497,9 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Birthday Widget for Employee view */}
+      {renderBirthdayWidget()}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Leave Requests shortcut */}

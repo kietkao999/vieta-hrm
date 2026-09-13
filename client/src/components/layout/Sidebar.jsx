@@ -18,7 +18,10 @@ import {
   Building2,
   ClipboardList,
   Landmark,
-  BookOpen
+  BookOpen,
+  GraduationCap,
+  History,
+  Database
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -49,7 +52,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
         { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-        { name: 'Văn bản & Quy định', path: '/documents', icon: BookOpen, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
+        { name: 'Văn bản & Quy định', path: '/documents', icon: BookOpen, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Đào tạo & Hội nhập', path: '/training', icon: GraduationCap, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {
@@ -82,10 +86,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     {
       id: 'hethong',
       title: 'HỆ THỐNG & BÁO CÁO',
-      roles: ['ADMIN'],
+      roles: ['ADMIN', 'MANAGER'],
       items: [
-        { name: 'Báo cáo thống kê', path: '/reports', icon: BarChart3, roles: ['ADMIN'] },
-        { name: 'Phân quyền tài khoản', path: '/users', icon: Shield, roles: ['ADMIN'] }
+        { name: 'Báo cáo thống kê', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'MANAGER'] },
+        { name: 'Phân quyền tài khoản', path: '/users', icon: Shield, roles: ['ADMIN'] },
+        { name: 'Nhật ký hệ thống', path: '/audit-logs', icon: History, roles: ['ADMIN'] },
+        { name: 'Sao lưu & Khôi phục', path: '/backup', icon: Database, roles: ['ADMIN'] }
       ]
     }
   ];
