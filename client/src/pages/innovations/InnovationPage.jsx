@@ -34,58 +34,55 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-// MÔ HÌNH 2: 3 MỤC ĐÍCH GÓP Ý CHÍNH (CHUẨN THẾ GIỚI DI ĐỘNG / FPT)
+// 3 MỤC ĐÍCH GÓP Ý CHÍNH
 const FEEDBACK_PURPOSES = [
   {
     id: 'Ý tưởng sáng tạo & Cải tiến',
-    title: '💡 Ý Tưởng Cải Tiến & Sáng Tạo',
-    desc: 'Đề xuất tăng doanh số, cải tiến sản xuất nệm/gối, tối ưu lộ trình giao hàng, tiết kiệm chi phí...',
+    title: 'Cải Tiến & Sáng Tạo',
     icon: Lightbulb,
-    color: 'border-amber-400 bg-amber-50/70 text-amber-900',
-    badge: 'bg-amber-100 text-amber-800'
+    activeClass: 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-400/20 shadow-xs',
+    inactiveClass: 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
   },
   {
     id: 'Góp ý xây dựng môi trường & phúc lợi',
-    title: '💬 Góp Ý Môi Trường & Phúc Lợi',
-    desc: 'Đóng góp ý kiến về bữa ăn ca, điều kiện làm việc tại xưởng/kho, văn hóa công ty, chế độ phúc lợi...',
+    title: 'Môi Trường & Phúc Lợi',
     icon: MessageSquare,
-    color: 'border-blue-400 bg-blue-50/70 text-blue-900',
-    badge: 'bg-blue-100 text-blue-800'
+    activeClass: 'border-blue-500 bg-blue-50 text-blue-900 ring-2 ring-blue-400/20 shadow-xs',
+    inactiveClass: 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
   },
   {
     id: 'Phản ánh bất cập & Khiếu nại bảo mật',
-    title: '🛡️ Phản Ánh Bất Cập & Khiếu Nại',
-    desc: 'Phản ánh khúc mắc công việc, bất công phân ca/tuyến, vi phạm quy chế hoặc thái độ quản lý (bảo mật tuyệt đối)...',
+    title: 'Phản Ánh & Kiến Nghị',
     icon: ShieldAlert,
-    color: 'border-rose-400 bg-rose-50/70 text-rose-900',
-    badge: 'bg-rose-100 text-rose-800'
+    activeClass: 'border-rose-500 bg-rose-50 text-rose-900 ring-2 ring-rose-400/20 shadow-xs',
+    inactiveClass: 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
   }
 ];
 
 // DANH SÁCH CẤP TIẾP NHẬN
 const RECIPIENT_GROUPS = [
   {
-    groupLabel: '👑 CẤP LÃNH ĐẠO CAO NHẤT (CEO LETTERBOX)',
+    groupLabel: 'Cấp Lãnh Đạo',
     options: [
-      { id: 'Ban Giám Đốc', label: '👑 Hòm Thư Ban Tổng Giám Đốc (Xem xét & chỉ đạo toàn diện)' }
+      { id: 'Ban Giám Đốc', label: '👑 Ban Tổng Giám Đốc' }
     ]
   },
   {
-    groupLabel: '👔 PHÒNG HÀNH CHÍNH NHÂN SỰ (HR)',
+    groupLabel: 'Phòng Hành Chính Nhân Sự',
     options: [
-      { id: 'Trưởng Phòng Hành Chính Nhân Sự', label: '👔 Trưởng Phòng HCNS (Giải quyết chế độ, quyền lợi & hỗ trợ nhân sự)' }
+      { id: 'Trưởng Phòng Hành Chính Nhân Sự', label: '👔 Phòng Hành Chính Nhân Sự' }
     ]
   },
   {
-    groupLabel: '🏬 TRƯỞNG PHÒNG BAN & QUẢN LÝ ĐƠN VỊ',
+    groupLabel: 'Trưởng Phòng Ban & Đơn Vị',
     options: [
-      { id: 'Trưởng Phòng Kinh Doanh & Marketing', label: 'Trưởng Phòng Kinh Doanh & Marketing' },
-      { id: 'Trưởng Phòng Kế Toán', label: 'Trưởng Phòng Kế Toán' },
-      { id: 'Trưởng Phòng R&D', label: 'Trưởng Phòng R&D' },
-      { id: 'Quản Lý Kho Cần Thơ', label: 'Quản Lý Kho Cần Thơ' },
-      { id: 'Quản Lý Kho Mỹ Tho', label: 'Quản Lý Kho Mỹ Tho' },
-      { id: 'Quản Lý Xưởng Sản Xuất Nệm', label: 'Quản Lý Xưởng Sản Xuất Nệm' },
-      { id: 'Quản Lý Xưởng Gối', label: 'Quản Lý Xưởng Gối' }
+      { id: 'Trưởng Phòng Kinh Doanh & Marketing', label: '🏬 Phòng Kinh Doanh & Marketing' },
+      { id: 'Trưởng Phòng Kế Toán', label: '🏬 Phòng Kế Toán' },
+      { id: 'Trưởng Phòng R&D', label: '🏬 Phòng R&D' },
+      { id: 'Quản Lý Kho Cần Thơ', label: '🏬 Quản Lý Kho Cần Thơ' },
+      { id: 'Quản Lý Kho Mỹ Tho', label: '🏬 Quản Lý Kho Mỹ Tho' },
+      { id: 'Quản Lý Xưởng Sản Xuất Nệm', label: '🏬 Quản Lý Xưởng Sản Xuất Nệm' },
+      { id: 'Quản Lý Xưởng Gối', label: '🏬 Quản Lý Xưởng Gối' }
     ]
   }
 ];
@@ -95,9 +92,9 @@ const STATUS_CONFIGS = {
   'Đề xuất': { label: 'Chờ tiếp nhận', badge: 'bg-amber-100 text-amber-800 border-amber-200', icon: Clock },
   'Đang thẩm định': { label: 'Đang xem xét', badge: 'bg-blue-100 text-blue-800 border-blue-200', icon: HelpCircle },
   'Thử nghiệm': { label: 'Thử nghiệm', badge: 'bg-purple-100 text-purple-800 border-purple-200', icon: Sparkles },
-  'Đã áp dụng thành công': { label: 'Đã giải quyết / Áp dụng', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle2 },
+  'Đã áp dụng thành công': { label: 'Đã giải quyết', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle2 },
   'Đã triển khai': { label: 'Đã giải quyết', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: CheckCircle2 },
-  'Khen thưởng': { label: 'Được Khen Thưởng', badge: 'bg-yellow-100 text-yellow-900 border-yellow-300 font-black', icon: Award },
+  'Khen thưởng': { label: 'Khen Thưởng', badge: 'bg-yellow-100 text-yellow-900 border-yellow-300 font-bold', icon: Award },
   'Từ chối / Lưu trữ': { label: 'Lưu trữ', badge: 'bg-slate-100 text-slate-600 border-slate-200', icon: XCircle }
 };
 
@@ -116,7 +113,7 @@ const InnovationPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Form state theo Mô hình 2
+  // Form state
   const [formData, setFormData] = useState({
     category: FEEDBACK_PURPOSES[0].id,
     target_unit: 'Ban Giám Đốc',
@@ -165,7 +162,7 @@ const InnovationPage = () => {
   const handleSubmitIdea = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) {
-      setError('Vui lòng nhập tiêu đề ý kiến / phản ánh!');
+      setError('Vui lòng nhập tiêu đề ý kiến / đề xuất!');
       return;
     }
     if (!formData.content.trim()) {
@@ -185,11 +182,10 @@ const InnovationPage = () => {
         attachment_url: formData.attachment_url
       });
 
-      const recipientText = formData.target_unit.includes('Ban Giám Đốc') ? 'Ban Giám Đốc' : formData.target_unit;
-      const privacyText = formData.is_anonymous ? '(Chế độ Nặc Danh 🔒)' : '(Chế độ Công Khai 👤)';
-      setSuccess(`Cảm ơn bạn! Ý kiến đóng góp đã được gửi đến ${recipientText} thành công ${privacyText}!`);
+      const privacyText = formData.is_anonymous ? '(Ẩn danh 🔒)' : '(Công khai 👤)';
+      setSuccess(`Đã gửi ý kiến đến ${formData.target_unit} thành công ${privacyText}!`);
 
-      // Reset form title and content
+      // Reset form
       setFormData(prev => ({
         ...prev,
         title: '',
@@ -198,7 +194,7 @@ const InnovationPage = () => {
       }));
 
       fetchData();
-      setTimeout(() => setSuccess(''), 6000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi gửi đề xuất.');
     } finally {
@@ -276,37 +272,34 @@ const InnovationPage = () => {
   const waitingCount = allInnovations.filter(i => i.status === 'Chờ tiếp nhận' || i.status === 'Đề xuất' || i.status === 'Đang thẩm định').length;
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header Banner - Mô hình 2 Voice of Employee */}
-      <div className="rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 p-6 sm:p-7 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-brand-500/20 border border-brand-400/30 px-3 py-0.5 text-xs font-semibold text-brand-300">
-            <HeartHandshake size={13} className="text-amber-400" />
-            <span>Kênh Tiếng Nói & Lắng Nghe Nhân Viên (Voice of Employee)</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-            HÒM THƯ GÓP Ý & LẮNG NGHE NỘI BỘ
+    <div className="space-y-5 pb-10">
+      {/* Header Banner */}
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-5 sm:p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center space-x-2">
+            <HeartHandshake className="text-amber-400" size={22} />
+            <span>Hòm Thư Góp Ý & Sáng Kiến</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300">
-            Nơi tiếp nhận mọi sáng kiến, đóng góp xây dựng và phản ánh bất cập. Cam kết bảo mật danh tính tuyệt đối & phản hồi trong vòng 24h - 48h!
+          <p className="text-xs text-slate-300 mt-1">
+            Kênh tiếp nhận ý kiến đóng góp, đề xuất cải tiến và phản ánh nội bộ Nệm Việt Á.
           </p>
         </div>
 
         {isAdminOrManager && (
-          <div className="flex bg-slate-800/90 p-1 rounded-xl border border-slate-700">
+          <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 shrink-0">
             <button
               onClick={() => setActiveTab('box')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'box' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'
+                activeTab === 'box' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
               }`}
             >
               <Send size={13} />
-              <span>Gửi Góp Ý</span>
+              <span>Gửi Ý Kiến</span>
             </button>
             <button
               onClick={() => setActiveTab('management')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
-                activeTab === 'management' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'
+                activeTab === 'management' ? 'bg-brand-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
               }`}
             >
               <ShieldCheck size={13} />
@@ -318,41 +311,39 @@ const InnovationPage = () => {
 
       {/* Alerts */}
       {success && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center space-x-2.5 shadow-xs animate-in fade-in">
-          <CheckCircle className="text-emerald-600 shrink-0" size={18} />
-          <span className="text-xs sm:text-sm font-bold">{success}</span>
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center space-x-2 shadow-xs text-xs font-semibold animate-in fade-in">
+          <CheckCircle className="text-emerald-600 shrink-0" size={16} />
+          <span>{success}</span>
         </div>
       )}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center space-x-2.5 shadow-xs animate-in fade-in">
-          <AlertCircle className="text-rose-600 shrink-0" size={18} />
-          <span className="text-xs sm:text-sm font-bold">{error}</span>
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center space-x-2 shadow-xs text-xs font-semibold animate-in fade-in">
+          <AlertCircle className="text-rose-600 shrink-0" size={16} />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* ================= TAB 1: FORM GÓP Ý CHUẨN MÔ HÌNH 2 ================= */}
+      {/* ================= TAB 1: FORM GÓP Ý ================= */}
       {activeTab === 'box' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Cột trái: Form Góp Ý & Phản Ánh */}
-          <div className="lg:col-span-7 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Cột trái: Form Góp Ý */}
+          <div className="lg:col-span-7">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="bg-slate-900 px-5 py-3.5 text-white flex items-center justify-between">
-                <span className="text-xs sm:text-sm font-black flex items-center space-x-2">
-                  <Send size={16} className="text-amber-400" />
-                  <span>PHIẾU GÓP Ý & PHẢN ÁNH NỘI BỘ</span>
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <span className="text-xs font-bold text-slate-800 flex items-center space-x-2">
+                  <Send size={14} className="text-brand-600" />
+                  <span>Phiếu Gửi Ý Kiến & Đề Xuất</span>
                 </span>
-                <span className="text-[11px] text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                  Phản hồi trong 48h
-                </span>
+                <span className="text-[11px] text-slate-400">Phản hồi trong 24h - 48h</span>
               </div>
 
-              <form onSubmit={handleSubmitIdea} className="p-5 space-y-5">
-                {/* 1. MỤC ĐÍCH GỬI (3 LOẠI CHÍNH) */}
+              <form onSubmit={handleSubmitIdea} className="p-5 space-y-4">
+                {/* 1. MỤC ĐÍCH */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
-                    1. Bạn Muốn Gửi Về Mục Đích Gì? *
+                  <label className="block text-xs font-bold text-slate-700 mb-2">
+                    Mục đích gửi
                   </label>
-                  <div className="grid grid-cols-1 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {FEEDBACK_PURPOSES.map(item => {
                       const Icon = item.icon;
                       const isSelected = formData.category === item.id;
@@ -361,161 +352,115 @@ const InnovationPage = () => {
                           key={item.id}
                           type="button"
                           onClick={() => setFormData({ ...formData, category: item.id })}
-                          className={`p-3 rounded-xl border text-left flex items-start space-x-3 transition cursor-pointer ${
-                            isSelected
-                              ? `${item.color} ring-2 ring-brand-500/30 shadow-xs`
-                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          className={`p-2.5 rounded-xl border text-left flex items-center space-x-2 transition cursor-pointer ${
+                            isSelected ? item.activeClass : item.inactiveClass
                           }`}
                         >
-                          <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${isSelected ? 'bg-white shadow-2xs' : 'bg-slate-100 text-slate-600'}`}>
-                            <Icon size={18} />
-                          </div>
-                          <div className="flex-1">
-                            <span className="font-black text-xs block text-slate-900">{item.title}</span>
-                            <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">{item.desc}</span>
-                          </div>
+                          <Icon size={16} className="shrink-0" />
+                          <span className="font-bold text-xs">{item.title}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* 2. GỬI ĐẾN AI (PHÂN QUYỀN RÕ RÀNG) */}
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                    2. Gửi Trực Tiếp Đến Ai? *
-                  </label>
-                  <select
-                    value={formData.target_unit}
-                    onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none shadow-2xs"
-                  >
-                    {RECIPIENT_GROUPS.map((grp, idx) => (
-                      <optgroup key={idx} label={grp.groupLabel}>
-                        {grp.options.map(opt => (
-                          <option key={opt.id} value={opt.id}>{opt.label}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                {/* 2. GỬI ĐẾN & DANH TÍNH */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      Gửi trực tiếp đến
+                    </label>
+                    <select
+                      value={formData.target_unit}
+                      onChange={(e) => setFormData({ ...formData, target_unit: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-brand-500 focus:outline-none"
+                    >
+                      {RECIPIENT_GROUPS.map((grp, idx) => (
+                        <optgroup key={idx} label={grp.groupLabel}>
+                          {grp.options.map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
 
-                  {/* Thông báo định tuyến phân quyền rõ ràng */}
-                  <div className="mt-2 p-2.5 rounded-xl border text-[11px] leading-relaxed flex items-start space-x-2 bg-slate-50 border-slate-200">
-                    <ShieldCheck size={16} className="text-brand-600 shrink-0 mt-0.5" />
-                    <div>
-                      {formData.target_unit === 'Ban Giám Đốc' ? (
-                        <span className="text-slate-700">
-                          <strong className="text-indigo-900 font-bold">👑 Bảo mật Cấp 1 (Ban Tổng Giám Đốc):</strong> Thư được gửi trực tiếp đến Ban Giám Đốc (Võ Minh Cường, Huỳnh Thị Trúc Xinh, Phan Tuấn Kiệt). <em>Trưởng phòng / Quản lý đơn vị hoàn toàn không được quyền xem.</em>
-                        </span>
-                      ) : formData.target_unit === 'Trưởng Phòng Hành Chính Nhân Sự' ? (
-                        <span className="text-slate-700">
-                          <strong className="text-blue-900 font-bold">👔 Trưởng Phòng HCNS:</strong> Tiếp nhận trực tiếp giải quyết chế độ lương thưởng, hợp đồng, phúc lợi và hỗ trợ nhân viên.
-                        </span>
-                      ) : (
-                        <span className="text-slate-700">
-                          <strong className="text-emerald-900 font-bold">🏬 Quản Lý Đơn Vị ({formData.target_unit}):</strong> Gửi đích danh đến Quản lý phụ trách bộ phận này. <em>Các Quản lý bộ phận khác không xem được chéo.</em>
-                        </span>
-                      )}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      Chế độ danh tính
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, is_anonymous: false })}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer ${
+                          !formData.is_anonymous
+                            ? 'border-brand-600 bg-brand-50 text-brand-900 ring-2 ring-brand-500/20'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Eye size={14} />
+                        <span>Công khai</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, is_anonymous: true })}
+                        className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer ${
+                          formData.is_anonymous
+                            ? 'border-amber-500 bg-amber-50 text-amber-950 ring-2 ring-amber-400/20'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <EyeOff size={14} />
+                        <span>Ẩn danh</span>
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* 3. TÙY CHỌN BẢO MẬT: CÔNG KHAI HOẶC NẶC DANH */}
+                {/* 3. TIÊU ĐỀ */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                    3. Mức Độ Bảo Mật Danh Tính *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Nặc danh */}
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, is_anonymous: true })}
-                      className={`p-3.5 rounded-xl border text-left transition flex items-start space-x-3 cursor-pointer ${
-                        formData.is_anonymous
-                          ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-400/20 shadow-xs'
-                          : 'border-slate-200 bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg shrink-0 ${formData.is_anonymous ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        <EyeOff size={18} />
-                      </div>
-                      <div>
-                        <div className={`text-xs font-black ${formData.is_anonymous ? 'text-amber-950' : 'text-slate-800'}`}>
-                          🔒 Gửi Nặc Danh 100%
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                          Giấu hoàn toàn tên, mã NV. Người nhận chỉ thấy nội dung để giải quyết công tâm.
-                        </p>
-                      </div>
-                    </button>
-
-                    {/* Công khai */}
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, is_anonymous: false })}
-                      className={`p-3.5 rounded-xl border text-left transition flex items-start space-x-3 cursor-pointer ${
-                        !formData.is_anonymous
-                          ? 'border-brand-600 bg-brand-50/90 ring-2 ring-brand-500/20 shadow-xs'
-                          : 'border-slate-200 bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg shrink-0 ${!formData.is_anonymous ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        <Eye size={18} />
-                      </div>
-                      <div>
-                        <div className={`text-xs font-black ${!formData.is_anonymous ? 'text-brand-950' : 'text-slate-800'}`}>
-                          👤 Gửi Công Khai
-                        </div>
-                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">
-                          Hiển thị tên để BGĐ/HR hỗ trợ riêng 1-1 và khen thưởng khi sáng kiến được áp dụng.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. Tiêu đề */}
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                    4. Tiêu Đề Ý Kiến / Phản Ánh *
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tiêu đề ý kiến / đề xuất *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Tóm tắt ngắn gọn vấn đề (Ví dụ: Đề xuất cải tiến thao tác dán nệm / Góp ý bữa ăn ca xưởng...)"
+                    placeholder="Tóm tắt ngắn gọn vấn đề..."
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
-                {/* 5. Nội dung chi tiết */}
+                {/* 4. NỘI DUNG */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
-                    5. Chi Tiết Thực Trạng & Nội Dung Đóng Góp / Đề Xuất *
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nội dung chi tiết *
                   </label>
                   <textarea
-                    rows={6}
+                    rows={5}
                     required
-                    placeholder="Mô tả cụ thể: 1) Hiện trạng hoặc vấn đề đang xảy ra? 2) Nguyên nhân / Bất cập ở đâu? 3) Đề xuất phương án cải thiện hoặc mong muốn Ban Giám Đốc / Quản lý hỗ trợ..."
+                    placeholder="Mô tả cụ thể hiện trạng, nguyên nhân hoặc đề xuất giải pháp..."
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 p-3 text-xs sm:text-sm text-slate-800 leading-relaxed focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 leading-relaxed focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
-                {/* 6. Đính kèm liên kết bằng chứng / hình ảnh (tùy chọn) */}
+                {/* 5. LIÊN KẾT ĐÍNH KÈM */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1 flex items-center space-x-1.5">
-                    <Paperclip size={14} />
-                    <span>6. Liên Kết Hình Ảnh / Bằng Chứng Hiện Trạng (Nếu Có)</span>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center space-x-1">
+                    <Paperclip size={13} />
+                    <span>Link hình ảnh / tài liệu (nếu có)</span>
                   </label>
                   <input
                     type="url"
-                    placeholder="https://drive.google.com/... hoặc link ảnh minh chứng hiện trường xưởng/kho"
+                    placeholder="https://drive.google.com/..."
                     value={formData.attachment_url}
                     onChange={(e) => setFormData({ ...formData, attachment_url: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:border-brand-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-800 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
@@ -523,48 +468,51 @@ const InnovationPage = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-700 hover:from-brand-700 hover:to-indigo-800 text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 mt-2"
                 >
                   {submitting ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                   ) : (
                     <>
-                      <Send size={16} />
-                      <span>
-                        GỬI ĐẾN {formData.target_unit.toUpperCase()} {formData.is_anonymous ? '(NẶC DANH 🔒)' : '(CÔNG KHAI 👤)'}
-                      </span>
+                      <Send size={14} />
+                      <span>Gửi Ý Kiến Đến {formData.target_unit}</span>
                     </>
                   )}
                 </button>
+
+                {/* Cam kết bảo mật 1 dòng */}
+                <div className="flex items-center justify-center space-x-1.5 text-[11px] text-slate-400 text-center pt-1">
+                  <Lock size={12} className="text-slate-400 shrink-0" />
+                  <span>Bảo mật danh tính tuyệt đối • Tiếp nhận & phản hồi trong 24h - 48h</span>
+                </div>
               </form>
             </div>
           </div>
 
-          {/* Cột phải: Ý kiến đã gửi & Cam kết bảo mật */}
-          <div className="lg:col-span-5 space-y-4">
-            {/* Box 1: Ý kiến của bạn */}
+          {/* Cột phải: Ý kiến đã gửi */}
+          <div className="lg:col-span-5">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 space-y-3">
-              <div className="flex items-center justify-between border-b pb-2.5">
-                <span className="font-black text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
-                  <Lightbulb size={16} className="text-brand-600" />
-                  <span>Ý Kiến & Phản Ánh Của Bạn ({myInnovations.length})</span>
+              <div className="flex items-center justify-between border-b pb-2.5 border-slate-100">
+                <span className="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+                  <Lightbulb size={15} className="text-brand-600" />
+                  <span>Lịch Sử Ý Kiến Của Bạn ({myInnovations.length})</span>
                 </span>
-                <span className="text-[11px] text-slate-400">Theo dõi trực tiếp</span>
+                <span className="text-[11px] text-slate-400">Trạng thái</span>
               </div>
 
               {myInnovations.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs">
-                  Bạn chưa gửi ý kiến nào. Mọi đóng góp của bạn đều giúp Nệm Việt Á ngày một phát triển hơn!
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  Bạn chưa gửi ý kiến nào.
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
                   {myInnovations.map((item) => {
                     const statusInfo = STATUS_CONFIGS[item.status] || STATUS_CONFIGS['Chờ tiếp nhận'];
                     const StatusIcon = statusInfo.icon;
                     return (
-                      <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+                      <div key={item.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
                         <div className="flex items-start justify-between gap-1">
-                          <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badge}`}>
+                          <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusInfo.badge}`}>
                             <StatusIcon size={11} />
                             <span>{statusInfo.label}</span>
                           </span>
@@ -572,26 +520,26 @@ const InnovationPage = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded">
-                            Gửi đến: {item.target_unit}
+                          <span className="font-semibold text-brand-800 bg-brand-50 px-1.5 py-0.5 rounded text-[10px]">
+                            Đến: {item.target_unit}
                           </span>
-                          <span className="text-slate-400">
-                            {item.is_anonymous === 1 ? '🔒 Nặc danh' : '👤 Công khai'}
+                          <span className="text-slate-400 text-[10px]">
+                            {item.is_anonymous === 1 ? '🔒 Ẩn danh' : '👤 Công khai'}
                           </span>
                         </div>
 
                         <p className="font-bold text-xs text-slate-900 leading-snug">{item.title}</p>
-                        <p className="text-[11px] text-slate-600 line-clamp-2 whitespace-pre-line">{item.content}</p>
+                        <p className="text-[11px] text-slate-600 line-clamp-2">{item.content}</p>
 
                         {/* Phản hồi từ Quản lý */}
                         {item.response_notes && (
                           <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 space-y-0.5">
                             <span className="font-bold block text-emerald-800">
-                              💬 Phản hồi từ {item.response_by || 'Ban Quản Lý'}:
+                              💬 Phản hồi ({item.response_by || 'Ban Quản Lý'}):
                             </span>
                             <p className="italic text-slate-700">"{item.response_notes}"</p>
                             {item.reward_amount > 0 && (
-                              <p className="font-black text-amber-700 pt-0.5">
+                              <p className="font-bold text-amber-700 pt-0.5">
                                 🎁 Khen thưởng: {Number(item.reward_amount).toLocaleString('vi-VN')} đ
                               </p>
                             )}
@@ -602,19 +550,6 @@ const InnovationPage = () => {
                   })}
                 </div>
               )}
-            </div>
-
-            {/* Box 2: Cam kết Lắng nghe & Bảo mật (Chuẩn Mô hình 2) */}
-            <div className="bg-gradient-to-br from-indigo-50 via-slate-50 to-blue-50 rounded-2xl border border-indigo-200 p-4 space-y-2.5">
-              <div className="flex items-center space-x-2 text-indigo-950 font-black text-xs sm:text-sm">
-                <Lock size={16} className="text-indigo-600" />
-                <span>CHÍNH SÁCH BẢO MẬT & LẮNG NGHE</span>
-              </div>
-              <ul className="text-[11px] text-slate-600 space-y-1.5 list-disc list-inside leading-relaxed">
-                <li><strong>Bảo vệ người gửi nặc danh:</strong> Hệ thống mã hóa thông tin, không một ai có thể truy xuất danh tính người gửi nặc danh.</li>
-                <li><strong>Thời gian xử lý:</strong> Ban Giám Đốc và Quản lý phòng ban cam kết phản hồi trong vòng <strong>24h - 48h làm việc</strong>.</li>
-                <li><strong>Khen thưởng sáng kiến:</strong> Mọi ý kiến cải tiến mang lại giá trị thiết thực đều được Ban Giám Đốc xét duyệt khen thưởng xứng đáng.</li>
-              </ul>
             </div>
           </div>
         </div>
