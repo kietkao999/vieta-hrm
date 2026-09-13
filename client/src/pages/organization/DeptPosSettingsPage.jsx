@@ -129,7 +129,7 @@ const LEVEL_TITLE_CONFIGS = [
         subgroupName: 'Chuyên Viên Cao Cấp / Đội Trưởng (Thâm niên ≥ 3 năm)',
         roles: [
           { name: 'Đội Trưởng Đội Tài Xế', dept: 'Kho Vận', desc: 'Điều phối toàn bộ đội xe tải, lộ trình giao hàng và an toàn vận tải' },
-          { name: 'Tài Xế Tuyến Trọng Điểm', dept: 'Kho Cần Thơ / Kho Mỹ Tho', desc: 'Phụ trách các tuyến đường dài, giao hàng đại lý liên tỉnh' },
+          { name: 'Tài Xế Giao Hàng', dept: 'Kho Cần Thơ / Kho Mỹ Tho', desc: 'Phụ trách các tuyến giao nhận hàng hóa, đại lý và showroom' },
           { name: 'Nhân Viên Kinh Doanh Thâm Niên', dept: 'Phòng Kinh Doanh', desc: 'Chăm sóc hệ thống khách hàng lớn và mạng lưới đại lý chủ lực' },
           { name: 'Kỹ Thuật May Viền Thâm Niên', dept: 'Xưởng Nệm / Gối', desc: 'Thợ may viền, may một kim bậc cao, kèm cặp thợ mới' },
           { name: 'Nhân Viên Giao Hàng Thâm Niên', dept: 'Kho Vận', desc: 'Phụ trách giao nhận các tuyến trọng điểm và quản lý biên bản' }
@@ -763,7 +763,7 @@ const DeptPosSettingsPage = () => {
                       <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kho Vận</span>
                     </div>
                     <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
-                      <span>Tài Xế Tuyến Trọng Điểm</span>
+                      <span>Tài Xế Giao Hàng</span>
                       <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kho Vận</span>
                     </div>
                     <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
