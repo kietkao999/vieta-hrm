@@ -432,7 +432,7 @@ const DeptPosSettingsPage = () => {
             <span className="p-2 rounded-xl bg-brand-50 text-brand-700 border border-brand-200">
               <Network size={22} />
             </span>
-            <span>Sơ Đồ Tổ Chức & Phân Cấp Chức Danh</span>
+            <span>Sơ Đồ Tổ Chức</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
             Sơ đồ cây phân cấp vị trí & chức danh toàn công ty theo hệ thống nhân sự (Thông Báo 18/2026/TB-VA)
