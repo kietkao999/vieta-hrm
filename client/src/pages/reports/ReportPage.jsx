@@ -832,22 +832,22 @@ const ReportPage = () => {
       </div>
 
       {/* Tabs Bar + Year Filter */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 flex-wrap">
-          <div className="flex">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-2 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2 overflow-x-auto custom-scroll-x">
+          <div className="flex items-center gap-1.5 min-w-max">
             {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-5 py-3 text-sm font-semibold transition-colors flex items-center space-x-2 ${
+                  className={`px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center space-x-2 shrink-0 cursor-pointer whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'text-brand-700 border-b-2 border-brand-700 bg-brand-50/50'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon size={15} className={activeTab === tab.id ? 'text-white' : 'text-slate-400'} />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -855,19 +855,17 @@ const ReportPage = () => {
           </div>
 
           {/* Year selector */}
-          <div className="flex items-center space-x-3 px-4 py-2">
-            <div className="flex items-center space-x-1">
-              <span className="text-xs font-semibold text-slate-500">Năm</span>
-              <select
-                value={year}
-                onChange={e => setYear(e.target.value)}
-                className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none bg-slate-50"
-              >
-                {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
-                  <option key={y} value={y.toString()}>{y}</option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center space-x-1.5 shrink-0 px-2">
+            <span className="text-xs font-semibold text-slate-500">Năm</span>
+            <select
+              value={year}
+              onChange={e => setYear(e.target.value)}
+              className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none bg-white shadow-2xs cursor-pointer"
+            >
+              {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
+                <option key={y} value={y.toString()}>{y}</option>
+              ))}
+            </select>
           </div>
         </div>
 
