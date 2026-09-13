@@ -55,9 +55,7 @@ const KpiPage = () => {
   const [month, setMonth] = useState((currentDate.getMonth() + 1).toString());
   const [year, setYear] = useState(currentDate.getFullYear().toString());
 
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1;
-  const maxDisplayMonth = parseInt(year, 10) >= currentYear ? currentMonth : 12;
+  const maxDisplayMonth = 12;
 
   const [kpiList, setKpiList] = useState([]);
   const [departments, setDepartments] = useState([]);
