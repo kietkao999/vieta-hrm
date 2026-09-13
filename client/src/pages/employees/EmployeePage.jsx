@@ -134,21 +134,21 @@ const EmployeePage = () => {
       {success && <div className="rounded-lg bg-emerald-50 p-4 text-xs font-semibold text-emerald-700">{success}</div>}
       {error && <div className="rounded-lg bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>}
 
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4 md:space-y-0 md:flex md:space-x-4">
-        <form onSubmit={handleSearch} className="flex-1 flex items-center space-x-2 border border-slate-200 rounded-lg px-3 py-2 focus-within:border-brand-500">
-          <Search size={18} className="text-slate-400" />
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 md:space-y-0 md:flex md:items-center md:space-x-4">
+        <form onSubmit={handleSearch} className="flex-1 flex items-center space-x-2 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-brand-500 bg-slate-50/50">
+          <Search size={18} className="text-slate-400 shrink-0" />
           <input type="text" placeholder="Tìm tên, mã NV, SĐT..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="outline-none text-sm w-full bg-transparent" />
           <button type="submit" className="hidden">Search</button>
         </form>
         
-        <div className="flex space-x-2">
-          <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500 bg-white min-w-[150px]">
+        <div className="grid grid-cols-2 gap-2 w-full md:w-auto md:flex">
+          <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-brand-500 bg-white w-full md:min-w-[150px]">
             <option value="">Tất cả phòng ban</option>
             {departments.map(d => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-500 bg-white min-w-[150px]">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-brand-500 bg-white w-full md:min-w-[150px]">
             <option value="">Tất cả trạng thái</option>
             <option value="Đang làm việc">Đang làm việc</option>
             <option value="Thử việc">Thử việc</option>

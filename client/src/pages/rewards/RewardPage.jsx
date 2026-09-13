@@ -297,17 +297,17 @@ const RewardPage = () => {
       {error && <div className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">{error}</div>}
 
       {/* ═══ TAB NAVIGATION ═══ */}
-      <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl w-fit">
+      <div className="flex items-center space-x-1 bg-slate-100 p-1.5 rounded-2xl w-fit max-w-full overflow-x-auto custom-scroll-x">
         <button
           onClick={() => switchTab('rewards')}
-          className={`flex items-center space-x-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
             activeTab === 'rewards'
-              ? 'bg-white text-emerald-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-emerald-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Trophy size={16} />
-          <span>Danh Sách Khen Thưởng</span>
+          <Trophy size={16} className={activeTab === 'rewards' ? 'text-amber-500' : 'text-slate-400'} />
+          <span>Khen Thưởng</span>
           {rewards.length > 0 && (
             <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
               {rewards.length}
@@ -316,14 +316,14 @@ const RewardPage = () => {
         </button>
         <button
           onClick={() => switchTab('discipline')}
-          className={`flex items-center space-x-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
             activeTab === 'discipline'
-              ? 'bg-white text-rose-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-rose-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <ShieldAlert size={16} />
-          <span>Danh Sách Kỷ Luật & Vi Phạm</span>
+          <ShieldAlert size={16} className={activeTab === 'discipline' ? 'text-rose-500' : 'text-slate-400'} />
+          <span>Kỷ Luật & Vi Phạm</span>
           {disciplines.length > 0 && (
             <span className="bg-rose-100 text-rose-700 text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">
               {disciplines.length}

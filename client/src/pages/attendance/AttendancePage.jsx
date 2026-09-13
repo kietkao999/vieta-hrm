@@ -369,27 +369,27 @@ const AttendancePage = () => {
       {error && <div className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">{error}</div>}
 
       {/* ═══ TAB NAVIGATION ═══ */}
-      <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl w-fit">
+      <div className="flex items-center space-x-1 bg-slate-100 p-1.5 rounded-2xl w-fit max-w-full overflow-x-auto custom-scroll-x">
         <button
           onClick={() => switchTab('attendance')}
-          className={`flex items-center space-x-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
             activeTab === 'attendance'
-              ? 'bg-white text-brand-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-brand-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <ClipboardList size={16} />
+          <ClipboardList size={16} className={activeTab === 'attendance' ? 'text-brand-700' : 'text-slate-400'} />
           <span>Bảng Chấm Công</span>
         </button>
         <button
           onClick={() => switchTab('leaves')}
-          className={`flex items-center space-x-2 px-5 py-2 rounded-lg text-sm font-bold transition-all ${
+          className={`flex items-center space-x-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
             activeTab === 'leaves'
-              ? 'bg-white text-brand-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-brand-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <FileText size={16} />
+          <FileText size={16} className={activeTab === 'leaves' ? 'text-brand-700' : 'text-slate-400'} />
           <span>Đơn Xin Nghỉ Phép</span>
           {leaveRequests.filter(r => r.status === 'Chờ duyệt').length > 0 && (
             <span className="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">

@@ -433,41 +433,41 @@ const AssetManagementPage = () => {
       </div>
 
       {/* 3. Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-2 overflow-x-auto pb-1 text-xs sm:text-sm font-bold">
+      <div className="flex items-center space-x-1 bg-slate-100 p-1.5 rounded-2xl w-fit max-w-full overflow-x-auto custom-scroll-x">
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`pb-2.5 px-3.5 flex items-center space-x-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
+          className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center space-x-2 ${
             activeTab === 'inventory'
-              ? 'border-brand-600 text-brand-700 font-black'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-brand-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Package size={15} />
-          <span>Danh Mục Tài Sản & Thiết Bị ({filteredAssets.length})</span>
+          <Package size={15} className={activeTab === 'inventory' ? 'text-brand-700' : 'text-slate-400'} />
+          <span>Tài Sản & Thiết Bị ({filteredAssets.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('maintenance')}
-          className={`pb-2.5 px-3.5 flex items-center space-x-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
+          className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center space-x-2 ${
             activeTab === 'maintenance'
-              ? 'border-brand-600 text-brand-700 font-black'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-brand-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Wrench size={15} />
-          <span>Phiếu Báo Hỏng & Sửa Chữa ({tickets.length})</span>
+          <Wrench size={15} className={activeTab === 'maintenance' ? 'text-amber-600' : 'text-slate-400'} />
+          <span>Báo Hỏng & Sửa Chữa ({tickets.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('schedule')}
-          className={`pb-2.5 px-3.5 flex items-center space-x-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
+          className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer flex items-center space-x-2 ${
             activeTab === 'schedule'
-              ? 'border-brand-600 text-brand-700 font-black'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-brand-900 shadow-sm border border-slate-200/60'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
           }`}
         >
-          <Calendar size={15} />
-          <span>Lịch Bảo Trì & Đăng Kiểm Xe</span>
+          <Calendar size={15} className={activeTab === 'schedule' ? 'text-indigo-600' : 'text-slate-400'} />
+          <span>Lịch Bảo Trì & Xe</span>
         </button>
       </div>
 

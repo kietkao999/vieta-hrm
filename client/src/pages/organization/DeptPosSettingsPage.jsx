@@ -483,51 +483,72 @@ const DeptPosSettingsPage = () => {
 
       {/* Tabs Layout */}
       <div className="border border-slate-200 bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex flex-wrap border-b border-slate-200 bg-slate-50/50">
-          <button
-            onClick={() => setActiveTab('org_chart')}
-            className={`flex-1 min-w-[200px] py-4 text-center font-bold text-sm border-b-2 transition-all flex justify-center items-center space-x-2 cursor-pointer ${
-              activeTab === 'org_chart'
-                ? 'border-brand-700 text-brand-700 bg-white shadow-sm'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'
-            }`}
-          >
-            <Crown size={18} className={activeTab === 'org_chart' ? 'text-amber-500' : ''} />
-            <span>Sơ Đồ Cây Phân Cấp Chức Danh</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('departments')}
-            className={`flex-1 min-w-[180px] py-4 text-center font-bold text-sm border-b-2 transition-all flex justify-center items-center space-x-2 cursor-pointer ${
-              activeTab === 'departments'
-                ? 'border-brand-700 text-brand-700 bg-white shadow-sm'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'
-            }`}
-          >
-            <Layers size={18} />
-            <span>Danh mục Phòng ban ({departments.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('positions')}
-            className={`flex-1 min-w-[180px] py-4 text-center font-bold text-sm border-b-2 transition-all flex justify-center items-center space-x-2 cursor-pointer ${
-              activeTab === 'positions'
-                ? 'border-brand-700 text-brand-700 bg-white shadow-sm'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'
-            }`}
-          >
-            <Briefcase size={18} />
-            <span>Danh mục Chức vụ ({positions.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('dept_assets')}
-            className={`flex-1 min-w-[200px] py-4 text-center font-bold text-sm border-b-2 transition-all flex justify-center items-center space-x-2 cursor-pointer ${
-              activeTab === 'dept_assets'
-                ? 'border-brand-700 text-brand-700 bg-white shadow-sm'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'
-            }`}
-          >
-            <Package size={18} className={activeTab === 'dept_assets' ? 'text-amber-500' : ''} />
-            <span>Thiết Bị Theo Sơ Đồ Tổ Chức ({allAssets.length})</span>
-          </button>
+        <div className="p-2 border-b border-slate-200 bg-slate-50/80 overflow-x-auto custom-scroll-x">
+          <div className="flex items-center gap-1.5 min-w-max">
+            <button
+              type="button"
+              onClick={() => setActiveTab('org_chart')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-2 cursor-pointer shrink-0 ${
+                activeTab === 'org_chart'
+                  ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Crown size={15} className={activeTab === 'org_chart' ? 'text-amber-300' : 'text-slate-400'} />
+              <span>Sơ Đồ Cây Phân Cấp</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('departments')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-2 cursor-pointer shrink-0 ${
+                activeTab === 'departments'
+                  ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Layers size={15} className={activeTab === 'departments' ? 'text-white' : 'text-slate-400'} />
+              <span>Phòng Ban</span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'departments' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}>
+                {departments.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('positions')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-2 cursor-pointer shrink-0 ${
+                activeTab === 'positions'
+                  ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Briefcase size={15} className={activeTab === 'positions' ? 'text-white' : 'text-slate-400'} />
+              <span>Chức Vụ</span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'positions' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}>
+                {positions.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('dept_assets')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-2 cursor-pointer shrink-0 ${
+                activeTab === 'dept_assets'
+                  ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Package size={15} className={activeTab === 'dept_assets' ? 'text-amber-300' : 'text-slate-400'} />
+              <span>Thiết Bị Theo Sơ Đồ</span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === 'dept_assets' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}>
+                {allAssets.length}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Tab 0: Sơ Đồ Cây Phân Cấp Chức Danh (Pure Roles Org Chart) */}
