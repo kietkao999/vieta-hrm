@@ -532,9 +532,13 @@ const DeptPosSettingsPage = () => {
                 </div>
 
                 {/* Connector */}
-                <div className="w-0.5 h-4 bg-slate-300"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-brand-600 ring-4 ring-brand-100"></div>
-                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="flex flex-col items-center my-1">
+                  <div className="w-0.5 h-3 bg-slate-300"></div>
+                  <div className="w-6 h-6 rounded-full bg-amber-50 border border-amber-300 flex items-center justify-center text-amber-600 shadow-2xs">
+                    <ArrowDown size={14} className="stroke-[2.5]" />
+                  </div>
+                  <div className="w-0.5 h-3 bg-slate-300"></div>
+                </div>
               </div>
 
               {/* CẤP 2: BAN GIÁM ĐỐC ĐIỀU HÀNH */}
@@ -553,15 +557,32 @@ const DeptPosSettingsPage = () => {
                   </div>
                 </div>
 
-                {/* Connector down to 4 Pillars */}
-                <div className="w-0.5 h-5 bg-slate-300"></div>
-                <div className="w-full max-w-6xl relative hidden md:block">
-                  <div className="h-0.5 bg-slate-300 w-full"></div>
-                  <div className="flex justify-between w-full">
-                    <div className="w-0.5 h-4 bg-slate-300"></div>
-                    <div className="w-0.5 h-4 bg-slate-300"></div>
-                    <div className="w-0.5 h-4 bg-slate-300"></div>
-                    <div className="w-0.5 h-4 bg-slate-300"></div>
+                {/* Connector down to 4 Pillars with Arrows */}
+                <div className="flex flex-col items-center w-full">
+                  <div className="w-0.5 h-3 bg-slate-300"></div>
+                  <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-300 flex items-center justify-center text-blue-600 shadow-2xs mb-1">
+                    <ArrowDown size={14} className="stroke-[2.5]" />
+                  </div>
+                  <div className="w-full max-w-6xl relative hidden md:block">
+                    <div className="h-0.5 bg-slate-300 w-full"></div>
+                    <div className="flex justify-between w-full">
+                      <div className="flex flex-col items-center -mt-0.5">
+                        <div className="w-0.5 h-4 bg-slate-300"></div>
+                        <ArrowDown size={14} className="text-slate-500 -mt-1 stroke-[2.5]" />
+                      </div>
+                      <div className="flex flex-col items-center -mt-0.5">
+                        <div className="w-0.5 h-4 bg-slate-300"></div>
+                        <ArrowDown size={14} className="text-slate-500 -mt-1 stroke-[2.5]" />
+                      </div>
+                      <div className="flex flex-col items-center -mt-0.5">
+                        <div className="w-0.5 h-4 bg-slate-300"></div>
+                        <ArrowDown size={14} className="text-slate-500 -mt-1 stroke-[2.5]" />
+                      </div>
+                      <div className="flex flex-col items-center -mt-0.5">
+                        <div className="w-0.5 h-4 bg-slate-300"></div>
+                        <ArrowDown size={14} className="text-slate-500 -mt-1 stroke-[2.5]" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -656,14 +677,31 @@ const DeptPosSettingsPage = () => {
                 </div>
               </div>
 
-              {/* Dải nối xuống Cấp Phó */}
+              {/* Dải nối xuống Cấp Phó with Arrows */}
               <div className="flex flex-col items-center my-2">
-                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="w-0.5 h-3 bg-slate-300"></div>
                 <span className="px-4 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-900 text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-2xs">
-                  <ArrowDown size={14} />
+                  <ArrowDown size={14} className="stroke-[2.5] text-teal-600" />
                   <span>CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM</span>
                 </span>
-                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="w-0.5 h-3 bg-slate-300"></div>
+                <div className="w-full max-w-4xl relative hidden md:block mb-1">
+                  <div className="h-0.5 bg-teal-300 w-full"></div>
+                  <div className="flex justify-between w-full">
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-teal-300"></div>
+                      <ArrowDown size={13} className="text-teal-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-teal-300"></div>
+                      <ArrowDown size={13} className="text-teal-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-teal-300"></div>
+                      <ArrowDown size={13} className="text-teal-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* CẤP 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM */}
@@ -682,14 +720,31 @@ const DeptPosSettingsPage = () => {
                 </div>
               </div>
 
-              {/* Dải nối xuống Cấp Chuyên Viên & Thực Thi */}
+              {/* Dải nối xuống Cấp Chuyên Viên & Thực Thi with Arrows */}
               <div className="flex flex-col items-center my-2">
-                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="w-0.5 h-3 bg-slate-300"></div>
                 <span className="px-4 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-2xs">
-                  <ArrowDown size={14} />
+                  <ArrowDown size={14} className="stroke-[2.5] text-indigo-600" />
                   <span>CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI</span>
                 </span>
-                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="w-0.5 h-3 bg-slate-300"></div>
+                <div className="w-full max-w-5xl relative hidden md:block mb-1">
+                  <div className="h-0.5 bg-indigo-300 w-full"></div>
+                  <div className="flex justify-between w-full">
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-indigo-300"></div>
+                      <ArrowDown size={13} className="text-indigo-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-indigo-300"></div>
+                      <ArrowDown size={13} className="text-indigo-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                    <div className="flex flex-col items-center -mt-0.5">
+                      <div className="w-0.5 h-3 bg-indigo-300"></div>
+                      <ArrowDown size={13} className="text-indigo-600 -mt-1 stroke-[2.5]" />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* CẤP 5: CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI */}
