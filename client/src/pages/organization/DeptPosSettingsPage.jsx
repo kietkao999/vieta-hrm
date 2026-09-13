@@ -512,141 +512,143 @@ const DeptPosSettingsPage = () => {
 
         {/* Tab 0: Sơ Đồ Cây Phân Cấp Chức Danh (Pure Roles Org Chart) */}
         {activeTab === 'org_chart' && (
-          <div className="p-3 sm:p-5 space-y-3 bg-slate-50/40">
-            {/* SƠ ĐỒ CÂY PHÂN CẤP CHỨC DANH (COMPACT SINGLE-VIEW) */}
-            <div className="space-y-2.5">
+          <div className="p-4 sm:p-7 space-y-6 bg-slate-50/50">
+            {/* SƠ ĐỒ CÂY PHÂN CẤP CHỨC DANH */}
+            <div className="space-y-4">
               {/* CẤP 1: BAN TỔNG GIÁM ĐỐC */}
               <div className="flex flex-col items-center">
-                <div className="w-full max-w-xl bg-white rounded-xl border border-amber-300 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white px-3 py-1.5 text-center flex items-center justify-center space-x-1.5">
-                    <Crown size={13} className="text-amber-400" />
-                    <span className="text-xs font-black text-amber-300 tracking-wide uppercase">
+                <div className="w-full max-w-2xl bg-white rounded-2xl border-2 border-amber-300/80 shadow-md overflow-hidden">
+                  <div className="bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900 text-white px-4 py-2.5 text-center flex items-center justify-center space-x-2">
+                    <Crown size={18} className="text-amber-400" />
+                    <span className="text-sm sm:text-base font-black text-amber-300 tracking-wider uppercase">
                       BAN TỔNG GIÁM ĐỐC
                     </span>
                   </div>
-                  <div className="p-2 bg-amber-50/20 grid grid-cols-2 gap-2 text-center">
-                    <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs">
-                      <div className="font-black text-slate-900 text-xs">TỔNG GIÁM ĐỐC</div>
+                  <div className="p-3.5 bg-amber-50/20 grid grid-cols-2 gap-3.5 text-center">
+                    <div className="py-3 px-4 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 transition">
+                      <div className="font-black text-slate-900 text-sm sm:text-base">TỔNG GIÁM ĐỐC</div>
                     </div>
-                    <div className="p-2 bg-white rounded-lg border border-amber-200 shadow-2xs">
-                      <div className="font-black text-slate-900 text-xs">TRỢ LÝ GIÁM ĐỐC</div>
+                    <div className="py-3 px-4 bg-white rounded-xl border border-amber-200 shadow-xs hover:border-amber-400 transition">
+                      <div className="font-black text-slate-900 text-sm sm:text-base">TRỢ LÝ GIÁM ĐỐC</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Connector */}
-                <div className="w-0.5 h-3 bg-slate-300"></div>
-                <div className="w-2 h-2 rounded-full bg-brand-600"></div>
-                <div className="w-0.5 h-3 bg-slate-300"></div>
+                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-brand-600 ring-4 ring-brand-100"></div>
+                <div className="w-0.5 h-4 bg-slate-300"></div>
               </div>
 
               {/* CẤP 2: BAN GIÁM ĐỐC ĐIỀU HÀNH */}
               <div className="flex flex-col items-center">
-                <div className="w-full max-w-sm bg-white rounded-xl border border-blue-400 shadow-sm overflow-hidden text-center">
-                  <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white px-3 py-1 flex items-center justify-center space-x-1.5">
-                    <ShieldCheck size={13} className="text-blue-300" />
-                    <span className="text-xs font-black text-blue-300 uppercase">BAN GIÁM ĐỐC ĐIỀU HÀNH</span>
+                <div className="w-full max-w-lg bg-white rounded-2xl border-2 border-blue-400/80 shadow-md overflow-hidden text-center">
+                  <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white px-4 py-2 flex items-center justify-center space-x-2">
+                    <ShieldCheck size={18} className="text-blue-300" />
+                    <span className="text-sm sm:text-base font-black text-blue-300 uppercase tracking-wider">
+                      BAN GIÁM ĐỐC ĐIỀU HÀNH
+                    </span>
                   </div>
-                  <div className="p-2 bg-blue-50/20">
-                    <div className="p-2 bg-white rounded-lg border border-blue-200 shadow-2xs">
-                      <div className="font-black text-slate-900 text-xs">PHÓ GIÁM ĐỐC ĐIỀU HÀNH</div>
+                  <div className="p-3 bg-blue-50/20">
+                    <div className="py-3 px-4 bg-white rounded-xl border border-blue-200 shadow-xs hover:border-blue-400 transition">
+                      <div className="font-black text-slate-900 text-sm sm:text-base">PHÓ GIÁM ĐỐC ĐIỀU HÀNH</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Connector down to 4 Pillars */}
-                <div className="w-0.5 h-3 bg-slate-300"></div>
-                <div className="w-full max-w-5xl relative hidden md:block">
+                <div className="w-0.5 h-5 bg-slate-300"></div>
+                <div className="w-full max-w-6xl relative hidden md:block">
                   <div className="h-0.5 bg-slate-300 w-full"></div>
                   <div className="flex justify-between w-full">
-                    <div className="w-0.5 h-3 bg-slate-300"></div>
-                    <div className="w-0.5 h-3 bg-slate-300"></div>
-                    <div className="w-0.5 h-3 bg-slate-300"></div>
-                    <div className="w-0.5 h-3 bg-slate-300"></div>
+                    <div className="w-0.5 h-4 bg-slate-300"></div>
+                    <div className="w-0.5 h-4 bg-slate-300"></div>
+                    <div className="w-0.5 h-4 bg-slate-300"></div>
+                    <div className="w-0.5 h-4 bg-slate-300"></div>
                   </div>
                 </div>
               </div>
 
               {/* CẤP 3: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ (4 KHỐI) */}
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 <div className="text-center">
-                  <span className="inline-flex items-center space-x-1.5 bg-purple-50 text-purple-900 border border-purple-200 px-3 py-0.5 rounded-full text-[11px] font-black uppercase shadow-2xs">
-                    <Crown size={12} className="text-purple-600" />
+                  <span className="inline-flex items-center space-x-2 bg-purple-50 text-purple-900 border border-purple-200 px-4 py-1 rounded-full text-xs sm:text-sm font-black uppercase shadow-xs">
+                    <Crown size={15} className="text-purple-600" />
                     <span>CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 w-full">
                   {/* Khối 1: Văn Phòng */}
-                  <div className="bg-white rounded-xl border border-blue-200 shadow-xs overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-2.5 py-1 text-center">
-                      <span className="text-[11px] font-black uppercase text-blue-100 flex items-center justify-center space-x-1">
-                        <Building2 size={13} />
+                  <div className="bg-white rounded-2xl border border-blue-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-3 py-2 text-center">
+                      <span className="text-xs sm:text-sm font-black uppercase text-blue-100 flex items-center justify-center space-x-1.5 tracking-wide">
+                        <Building2 size={16} />
                         <span>KHỐI VĂN PHÒNG</span>
                       </span>
                     </div>
-                    <div className="p-2 space-y-1.5 flex-1 bg-blue-50/20">
-                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                    <div className="p-3 space-y-2.5 flex-1 bg-blue-50/20">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-blue-300 transition">
                         Trưởng Phòng Hành Chính Nhân Sự
                       </div>
-                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-blue-300 transition">
                         Trưởng Phòng Kế Toán
                       </div>
-                      <div className="p-1.5 bg-white rounded-lg border border-blue-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-blue-300 transition">
                         Trưởng Phòng R&D
                       </div>
                     </div>
                   </div>
 
                   {/* Khối 2: Kinh Doanh & Marketing */}
-                  <div className="bg-white rounded-xl border border-amber-200 shadow-xs overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white px-2.5 py-1 text-center">
-                      <span className="text-[11px] font-black uppercase text-amber-100 flex items-center justify-center space-x-1">
-                        <Award size={13} />
+                  <div className="bg-white rounded-2xl border border-amber-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white px-3 py-2 text-center">
+                      <span className="text-xs sm:text-sm font-black uppercase text-amber-100 flex items-center justify-center space-x-1.5 tracking-wide">
+                        <Award size={16} />
                         <span>KHỐI KINH DOANH & MARKETING</span>
                       </span>
                     </div>
-                    <div className="p-2 space-y-1.5 flex-1 bg-amber-50/20">
-                      <div className="p-1.5 bg-white rounded-lg border border-amber-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                    <div className="p-3 space-y-2.5 flex-1 bg-amber-50/20">
+                      <div className="p-2.5 bg-white rounded-xl border border-amber-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-amber-300 transition">
                         Trưởng Phòng Kinh Doanh
                       </div>
-                      <div className="p-1.5 bg-white rounded-lg border border-amber-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                      <div className="p-2.5 bg-white rounded-xl border border-amber-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-amber-300 transition">
                         Trưởng Phòng Marketing
                       </div>
                     </div>
                   </div>
 
                   {/* Khối 3: Kho Vận & Logistics */}
-                  <div className="bg-white rounded-xl border border-emerald-200 shadow-xs overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-emerald-600 to-teal-800 text-white px-2.5 py-1 text-center">
-                      <span className="text-[11px] font-black uppercase text-emerald-100 flex items-center justify-center space-x-1">
-                        <Truck size={13} />
+                  <div className="bg-white rounded-2xl border border-emerald-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-800 text-white px-3 py-2 text-center">
+                      <span className="text-xs sm:text-sm font-black uppercase text-emerald-100 flex items-center justify-center space-x-1.5 tracking-wide">
+                        <Truck size={16} />
                         <span>KHỐI KHO VẬN & LOGISTICS</span>
                       </span>
                     </div>
-                    <div className="p-2 space-y-1.5 flex-1 bg-emerald-50/20">
-                      <div className="p-1.5 bg-white rounded-lg border border-emerald-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                    <div className="p-3 space-y-2.5 flex-1 bg-emerald-50/20">
+                      <div className="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-emerald-300 transition">
                         Quản Lý Kho Cần Thơ
                       </div>
-                      <div className="p-1.5 bg-white rounded-lg border border-emerald-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                      <div className="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-emerald-300 transition">
                         Quản Lý Kho Mỹ Tho
                       </div>
                     </div>
                   </div>
 
                   {/* Khối 4: Nhà Máy Sản Xuất */}
-                  <div className="bg-white rounded-xl border border-purple-200 shadow-xs overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-purple-700 to-fuchsia-800 text-white px-2.5 py-1 text-center">
-                      <span className="text-[11px] font-black uppercase text-purple-100 flex items-center justify-center space-x-1">
-                        <Factory size={13} />
+                  <div className="bg-white rounded-2xl border border-purple-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                    <div className="bg-gradient-to-r from-purple-700 to-fuchsia-800 text-white px-3 py-2 text-center">
+                      <span className="text-xs sm:text-sm font-black uppercase text-purple-100 flex items-center justify-center space-x-1.5 tracking-wide">
+                        <Factory size={16} />
                         <span>KHỐI NHÀ MÁY SẢN XUẤT</span>
                       </span>
                     </div>
-                    <div className="p-2 space-y-1.5 flex-1 bg-purple-50/20">
-                      <div className="p-1.5 bg-white rounded-lg border border-purple-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                    <div className="p-3 space-y-2.5 flex-1 bg-purple-50/20">
+                      <div className="p-2.5 bg-white rounded-xl border border-purple-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-purple-300 transition">
                         Quản Lý Xưởng Sản Xuất Nệm
                       </div>
-                      <div className="p-1.5 bg-white rounded-lg border border-purple-100 shadow-2xs text-xs font-bold text-slate-800 text-center">
+                      <div className="p-2.5 bg-white rounded-xl border border-purple-100 shadow-2xs text-xs sm:text-sm font-bold text-slate-800 text-center hover:border-purple-300 transition">
                         Quản Lý Xưởng Gối
                       </div>
                     </div>
@@ -655,143 +657,143 @@ const DeptPosSettingsPage = () => {
               </div>
 
               {/* Dải nối xuống Cấp Phó */}
-              <div className="flex flex-col items-center my-1.5">
-                <div className="w-0.5 h-2.5 bg-slate-300"></div>
-                <span className="px-3 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-900 text-[11px] font-black flex items-center space-x-1 shadow-2xs">
-                  <ArrowDown size={11} />
+              <div className="flex flex-col items-center my-2">
+                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <span className="px-4 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-900 text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-2xs">
+                  <ArrowDown size={14} />
                   <span>CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM</span>
                 </span>
-                <div className="w-0.5 h-2.5 bg-slate-300"></div>
+                <div className="w-0.5 h-4 bg-slate-300"></div>
               </div>
 
               {/* CẤP 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Văn Phòng</span>
-                  <div className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng Chuyên Môn</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
+                  <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">Văn Phòng</span>
+                  <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó Trưởng Phòng Chuyên Môn</div>
                 </div>
-                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">KD & MKT</span>
-                  <div className="font-bold text-slate-800 text-xs">Phó TP / Trưởng Nhóm KD & MKT</div>
+                <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
+                  <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">KD & MKT</span>
+                  <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó TP / Trưởng Nhóm KD & MKT</div>
                 </div>
-                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Kho Vận</span>
-                  <div className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</div>
+                <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
+                  <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">Kho Vận</span>
+                  <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó Quản Lý Kho Mỹ Tho</div>
                 </div>
-                <div className="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs text-center">
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded inline-block mb-1">Sản Xuất</span>
-                  <div className="font-bold text-slate-800 text-xs">Phó QL Xưởng Nệm / TN Gối</div>
+                <div className="p-3 bg-white rounded-2xl border border-teal-200 shadow-xs text-center hover:border-teal-400 transition">
+                  <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md inline-block mb-1.5">Sản Xuất</span>
+                  <div className="font-bold text-slate-800 text-xs sm:text-sm">Phó QL Xưởng Nệm / TN Gối</div>
                 </div>
               </div>
 
               {/* Dải nối xuống Cấp Chuyên Viên & Thực Thi */}
-              <div className="flex flex-col items-center my-1.5">
-                <div className="w-0.5 h-2.5 bg-slate-300"></div>
-                <span className="px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-[11px] font-black flex items-center space-x-1 shadow-2xs">
-                  <ArrowDown size={11} />
+              <div className="flex flex-col items-center my-2">
+                <div className="w-0.5 h-4 bg-slate-300"></div>
+                <span className="px-4 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-2xs">
+                  <ArrowDown size={14} />
                   <span>CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI</span>
                 </span>
-                <div className="w-0.5 h-2.5 bg-slate-300"></div>
+                <div className="w-0.5 h-4 bg-slate-300"></div>
               </div>
 
               {/* CẤP 5: CẤP CHUYÊN VIÊN, KỸ THUẬT & NHÂN VIÊN THỰC THI */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Cột 1: Chuyên Viên Cao Cấp / Đội Trưởng */}
-                <div className="bg-white rounded-xl border border-emerald-200 shadow-2xs overflow-hidden flex flex-col">
-                  <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
-                    <Award size={13} className="text-emerald-300 shrink-0" />
-                    <span className="text-xs font-black text-emerald-200">
+                <div className="bg-white rounded-2xl border border-emerald-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                  <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white px-3.5 py-2.5 flex items-center space-x-2">
+                    <Award size={16} className="text-emerald-300 shrink-0" />
+                    <span className="text-xs sm:text-sm font-black text-emerald-200">
                       Chuyên Viên Cao Cấp / Đội Trưởng (≥ 3 năm)
                     </span>
                   </div>
-                  <div className="p-2.5 space-y-1.5 flex-1 bg-emerald-50/10">
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                  <div className="p-3 space-y-2 flex-1 bg-emerald-50/10">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
                       <span>Đội Trưởng Đội Tài Xế</span>
-                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kho Vận</span>
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
                       <span>Tài Xế Tuyến Trọng Điểm</span>
-                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kho Vận</span>
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
                       <span>Nhân Viên Kinh Doanh Thâm Niên</span>
-                      <span className="text-[10px] font-medium text-slate-400">Kinh Doanh</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kinh Doanh</span>
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
                       <span>Nhân Viên Giao Hàng Thâm Niên</span>
-                      <span className="text-[10px] font-medium text-slate-400">Kho Vận</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Kho Vận</span>
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 flex justify-between items-center hover:border-emerald-300 transition">
                       <span>Kỹ Thuật May Viền Thâm Niên</span>
-                      <span className="text-[10px] font-medium text-slate-400">Xưởng SX</span>
+                      <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Xưởng SX</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Cột 2: Chuyên Viên & Kỹ Thuật Chính Thức */}
-                <div className="bg-white rounded-xl border border-sky-200 shadow-2xs overflow-hidden flex flex-col">
-                  <div className="bg-gradient-to-r from-sky-800 to-blue-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
-                    <Briefcase size={13} className="text-sky-300 shrink-0" />
-                    <span className="text-xs font-black text-sky-200">
+                <div className="bg-white rounded-2xl border border-sky-200 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                  <div className="bg-gradient-to-r from-sky-800 to-blue-900 text-white px-3.5 py-2.5 flex items-center space-x-2">
+                    <Briefcase size={16} className="text-sky-300 shrink-0" />
+                    <span className="text-xs sm:text-sm font-black text-sky-200">
                       Chuyên Viên / Kỹ Thuật Chính Thức (1 - 3 năm)
                     </span>
                   </div>
-                  <div className="p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 flex-1 bg-sky-50/10">
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                  <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 bg-sky-50/10">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Chuyên Viên HCNS
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kế Toán Mua Hàng / Công Nợ
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kế Toán Kho & Kế Toán Xưởng
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       NV Kinh Doanh Chính Thức
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kỹ Thuật May Viền / 1 Kim
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kỹ Thuật Phun Keo / Dán Nệm
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kỹ Thuật Cắt Vải / Dán Tem
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       Kỹ Thuật Vô Áo / Vali Nệm
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       NV Thổi Gòn & May Gối
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-sky-300 transition">
                       NV Kho & Bốc Xếp
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800 sm:col-span-2">
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 sm:col-span-2 text-center hover:border-sky-300 transition">
                       Nhân Viên Giao Hàng & Phụ Xe
                     </div>
                   </div>
                 </div>
 
                 {/* Cột 3: Nhân Viên Mới / Thử Việc */}
-                <div className="bg-white rounded-xl border border-slate-300 shadow-2xs overflow-hidden flex flex-col">
-                  <div className="bg-gradient-to-r from-slate-800 to-zinc-900 text-white px-3 py-1.5 flex items-center space-x-1.5">
-                    <Users size={13} className="text-slate-300 shrink-0" />
-                    <span className="text-xs font-black text-slate-200">
+                <div className="bg-white rounded-2xl border border-slate-300 shadow-xs overflow-hidden flex flex-col hover:shadow-md transition">
+                  <div className="bg-gradient-to-r from-slate-800 to-zinc-900 text-white px-3.5 py-2.5 flex items-center space-x-2">
+                    <Users size={16} className="text-slate-300 shrink-0" />
+                    <span className="text-xs sm:text-sm font-black text-slate-200">
                       Nhân Viên Mới / Thử Việc (&lt; 1 năm)
                     </span>
                   </div>
-                  <div className="p-2.5 space-y-1.5 flex-1 bg-slate-50/20">
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                  <div className="p-3 space-y-2 flex-1 bg-slate-50/20">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 transition">
                       Nhân Viên Thử Việc Văn Phòng
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 transition">
                       Nhân Viên Thử Việc Kinh Doanh
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 transition">
                       Nhân Viên Học Việc May & Xưởng Nệm
                     </div>
-                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 text-xs font-bold text-slate-800">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 hover:border-slate-400 transition">
                       Nhân Viên Thử Việc Kho & Giao Hàng
                     </div>
                   </div>
