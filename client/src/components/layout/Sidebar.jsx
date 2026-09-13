@@ -23,7 +23,8 @@ import {
   History,
   Database,
   Lightbulb,
-  Package
+  Package,
+  Network
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
