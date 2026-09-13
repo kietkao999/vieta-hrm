@@ -97,16 +97,14 @@ const TIER_TITLE_CONFIGS = [
         groupName: '🚚 KHỐI KHO VẬN & LOGISTICS',
         roles: [
           { name: 'Quản Lý Kho Cần Thơ', dept: 'Kho Cần Thơ', desc: 'Điều hành tổng kho Cần Thơ, xuất nhập & giao hàng khu vực Cần Thơ' },
-          { name: 'Quản Lý Kho Mỹ Tho', dept: 'Kho Mỹ Tho', desc: 'Điều hành tổng kho Mỹ Tho, xuất nhập & vận tải khu vực Mỹ Tho' },
-          { name: 'Phó Quản Lý Kho Mỹ Tho', dept: 'Kho Mỹ Tho', desc: 'Hỗ trợ điều phối xuất nhập kho & quản lý vận tải' }
+          { name: 'Quản Lý Kho Mỹ Tho', dept: 'Kho Mỹ Tho', desc: 'Điều hành tổng kho Mỹ Tho, xuất nhập & vận tải khu vực Mỹ Tho' }
         ]
       },
       {
         groupName: '🏭 KHỐI NHÀ MÁY SẢN XUẤT',
         roles: [
           { name: 'Quản Lý Xưởng Sản Xuất Nệm', dept: 'Xưởng Nệm', desc: 'Điều hành toàn bộ dây chuyền sản xuất nệm, năng suất & chất lượng' },
-          { name: 'Phó Quản Lý Xưởng Nệm', dept: 'Xưởng Nệm', desc: 'Hỗ trợ kiểm soát tiến độ sản xuất, kỹ thuật máy & an toàn xưởng' },
-          { name: 'Quản Lý Xưởng Gối / Trưởng Nhóm Thổi Gối', dept: 'Xưởng Gối', desc: 'Phụ trách dây chuyền may gối, thổi gối & đóng gói thành phẩm' }
+          { name: 'Quản Lý Xưởng Gối', dept: 'Xưởng Gối', desc: 'Điều hành dây chuyền may gối, thổi gòn & đóng gói thành phẩm' }
         ]
       }
     ]
@@ -114,8 +112,8 @@ const TIER_TITLE_CONFIGS = [
   {
     tier: 'Tầng 4',
     tierNumber: 4,
-    title: 'TẦNG 4: CẤP PHÓ PHÒNG / TRƯỞNG NHÓM / CHUYÊN VIÊN CHIẾN LƯỢC',
-    subtitle: 'Tham mưu chuyên môn nghiệp vụ trọng yếu và phối hợp điều phối tác nghiệp',
+    title: 'TẦNG 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM',
+    subtitle: 'Hỗ trợ quản lý điều phối tác nghiệp chuyên sâu, kiểm soát tiến độ & an toàn bộ phận',
     salary: '6.000.000 đ',
     kpiQuota: '1.500.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-teal-950 via-cyan-950 to-slate-900',
@@ -123,9 +121,11 @@ const TIER_TITLE_CONFIGS = [
     badgeClass: 'bg-teal-100 text-teal-900 border-teal-300',
     accentText: 'text-teal-300',
     roles: [
-      { name: 'Phó Trưởng Phòng Chuyên Môn', dept: 'Khối Văn Phòng', desc: 'Hỗ trợ quản lý điều phối nghiệp vụ phòng ban' },
-      { name: 'Trưởng Nhóm Nghiệp Vụ Chuyên Sâu', dept: 'Khối Kỹ Thuật / Kinh Doanh', desc: 'Phụ trách nhóm dự án hoặc tuyến trọng điểm' },
-      { name: 'Chuyên Viên Chiến Lược', dept: 'Khối Ban Giám Đốc', desc: 'Nghiên cứu thị trường và phân tích chiến lược' }
+      { name: 'Phó Trưởng Phòng Chuyên Môn', dept: 'Khối Văn Phòng', desc: 'Hỗ trợ quản lý điều phối nghiệp vụ chuyên môn phòng ban' },
+      { name: 'Phó Trưởng Phòng / Trưởng Nhóm KD & MKT', dept: 'Kinh Doanh & Marketing', desc: 'Phụ trách nhóm kinh doanh và chiến dịch tiếp thị' },
+      { name: 'Phó Quản Lý Kho Mỹ Tho', dept: 'Kho Mỹ Tho', desc: 'Phụ trách điều phối xuất nhập kho & an toàn vận tải' },
+      { name: 'Phó Quản Lý Xưởng Nệm', dept: 'Xưởng Nệm', desc: 'Kiểm soát tiến độ may, dán, keo, đóng gói & an toàn xưởng' },
+      { name: 'Trưởng Nhóm Thổi Gối', dept: 'Xưởng Gối', desc: 'Phụ trách trực tiếp dây chuyền thổi gòn định lượng và may hoàn thiện' }
     ]
   },
   {
@@ -767,19 +767,17 @@ const DeptPosSettingsPage = () => {
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Tầng 5</span>
                         <h5 className="font-bold text-slate-800 text-xs">Quản Lý Kho Cần Thơ</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Cần Thơ & giao nhận khu vực</p>
+                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Cần Thơ & giao nhận khu vực Cần Thơ</p>
                       </div>
 
                       <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Tầng 5</span>
                         <h5 className="font-bold text-slate-800 text-xs">Quản Lý Kho Mỹ Tho</h5>
-                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Mỹ Tho & vận tải khu vực</p>
+                        <p className="text-[10px] text-slate-500">Điều hành tổng kho Mỹ Tho & vận tải khu vực Mỹ Tho</p>
                       </div>
 
-                      <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Tầng 5</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</h5>
-                        <p className="text-[10px] text-slate-500">Phụ trách điều phối xuất nhập & an toàn kho</p>
+                      <div className="p-2.5 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/50 text-[10px] text-emerald-900 font-medium">
+                        Quản lý toàn diện xuất nhập tồn và điều phối mạng lưới giao nhận
                       </div>
                     </div>
                   </div>
@@ -801,37 +799,35 @@ const DeptPosSettingsPage = () => {
 
                       <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-sm space-y-1">
                         <span className="text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded">Tầng 5</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Xưởng Nệm</h5>
-                        <p className="text-[10px] text-slate-500">Kiểm soát tiến độ may, dán, keo & bao bì</p>
+                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý Xưởng Gối</h5>
+                        <p className="text-[10px] text-slate-500">Điều hành dây chuyền may gối, thổi gòn & đóng gói thành phẩm</p>
                       </div>
 
-                      <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-sm space-y-1">
-                        <span className="text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded">Tầng 5</span>
-                        <h5 className="font-bold text-slate-800 text-xs">Quản Lý / Trưởng Nhóm Xưởng Gối</h5>
-                        <p className="text-[10px] text-slate-500">Dây chuyền may gối, thổi gòn & đóng gói gối</p>
+                      <div className="p-2.5 rounded-xl border border-dashed border-purple-200 bg-purple-50/50 text-[10px] text-purple-900 font-medium">
+                        Chịu trách nhiệm trực tiếp năng suất, định mức kỹ thuật và an toàn lao động
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Dải phân cách nối xuống Tầng 4, 3, 2, 1 */}
-              <div className="flex flex-col items-center my-4">
+              {/* Dải phân cách nối xuống Tầng 4 */}
+              <div className="flex flex-col items-center my-3">
                 <div className="w-0.5 h-6 bg-slate-300"></div>
-                <div className="px-4 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex items-center space-x-1.5">
+                <div className="px-4 py-1 rounded-full bg-teal-100 border border-teal-300 text-teal-900 text-xs font-black flex items-center space-x-1.5 shadow-sm">
                   <ArrowDown size={14} />
-                  <span>Khối Chức Danh Tác Nghiệp & Thâm Niên (Tầng 4 ➔ Tầng 1)</span>
+                  <span>TẦNG 4: CẤP PHÓ PHÒNG & PHÓ QUẢN LÝ / TRƯỞNG NHÓM (DƯỚI CẤP QUẢN LÝ)</span>
                 </div>
                 <div className="w-0.5 h-6 bg-slate-300"></div>
               </div>
 
-              {/* TẦNG 4: CẤP PHÓ PHÒNG / TRƯỞNG NHÓM / CHUYÊN VIÊN CHIẾN LƯỢC */}
+              {/* TẦNG 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM */}
               <div className="bg-white rounded-2xl border-2 border-teal-400 shadow-md overflow-hidden">
                 <div className="bg-gradient-to-r from-teal-950 via-emerald-950 to-slate-900 text-white p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
                     <span className="bg-teal-100 text-teal-900 font-black text-xs px-2.5 py-0.5 rounded-full">Tầng 4</span>
                     <h4 className="font-black text-teal-300 text-sm sm:text-base">
-                      CẤP PHÓ PHÒNG / TRƯỞNG NHÓM / CHUYÊN VIÊN CHIẾN LƯỢC
+                      CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM CHUYÊN SÂU
                     </h4>
                   </div>
                   <div className="flex items-center space-x-3 text-xs text-slate-300">
@@ -841,18 +837,29 @@ const DeptPosSettingsPage = () => {
                   </div>
                 </div>
 
-                <div className="p-4 bg-teal-50/20 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 bg-teal-50/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Văn Phòng</span>
                     <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng Chuyên Môn</h5>
                     <p className="text-[11px] text-slate-500">Tham mưu nghiệp vụ chuyên sâu và hỗ trợ điều hành bộ phận</p>
                   </div>
+
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <h5 className="font-bold text-slate-800 text-xs">Trưởng Nhóm Nghiệp Vụ</h5>
-                    <p className="text-[11px] text-slate-500">Phụ trách nhóm dự án, nhóm kỹ thuật máy hoặc địa bàn kinh doanh</p>
+                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">KD & Marketing</span>
+                    <h5 className="font-bold text-slate-800 text-xs">Phó Trưởng Phòng / Trưởng Nhóm KD & MKT</h5>
+                    <p className="text-[11px] text-slate-500">Phụ trách nhóm kinh doanh trọng điểm và chiến dịch tiếp thị</p>
                   </div>
+
                   <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
-                    <h5 className="font-bold text-slate-800 text-xs">Chuyên Viên Chiến Lược & Phát Triển</h5>
-                    <p className="text-[11px] text-slate-500">Nghiên cứu thị trường và phân tích dữ liệu mở rộng thị phần</p>
+                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Kho Vận</span>
+                    <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Kho Mỹ Tho</h5>
+                    <p className="text-[11px] text-slate-500">Phụ trách điều phối xuất nhập kho, an toàn kho và thủ tục xuất nhập</p>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-teal-200 shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">Sản Xuất</span>
+                    <h5 className="font-bold text-slate-800 text-xs">Phó Quản Lý Xưởng Nệm / Trưởng Nhóm Gối</h5>
+                    <p className="text-[11px] text-slate-500">Kiểm soát tiến độ may, dán, keo, đóng gói vali & dây chuyền thổi gối</p>
                   </div>
                 </div>
               </div>
