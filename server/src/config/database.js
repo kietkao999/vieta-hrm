@@ -448,15 +448,44 @@ export const initDatabase = async () => {
         title TEXT NOT NULL,
         content TEXT,
         date TEXT,
-        status TEXT DEFAULT 'Đề xuất',
+        category TEXT DEFAULT 'Sản xuất',
+        target_unit TEXT DEFAULT 'Toàn công ty',
+        is_anonymous INTEGER DEFAULT 0,
+        attachment_url TEXT,
+        status TEXT DEFAULT 'Chờ tiếp nhận',
         efficiency TEXT,
         cost_savings REAL DEFAULT 0,
         productivity_increase TEXT,
         value_created TEXT,
+        response_notes TEXT,
+        response_by TEXT,
+        response_date TEXT,
+        reward_amount REAL DEFAULT 0,
+        likes_count INTEGER DEFAULT 0,
         created_at TEXT,
+        updated_at TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
       )
     `);
+
+    const innovationNewCols = [
+      "category TEXT DEFAULT 'Sản xuất'",
+      "target_unit TEXT DEFAULT 'Toàn công ty'",
+      "is_anonymous INTEGER DEFAULT 0",
+      "attachment_url TEXT",
+      "response_notes TEXT",
+      "response_by TEXT",
+      "response_date TEXT",
+      "reward_amount REAL DEFAULT 0",
+      "likes_count INTEGER DEFAULT 0",
+      "updated_at TEXT"
+    ];
+
+    for (const colDef of innovationNewCols) {
+      try {
+        await query.run(`ALTER TABLE innovations ADD COLUMN ${colDef}`);
+      } catch (e) {}
+    }
 
     // 17. Work History
     await query.exec(`

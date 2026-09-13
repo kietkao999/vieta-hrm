@@ -21,7 +21,8 @@ import {
   BookOpen,
   GraduationCap,
   History,
-  Database
+  Database,
+  Lightbulb
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -77,10 +78,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     },
     {
       id: 'ghinhan',
-      title: 'GHI NHẬN',
-      roles: ['ADMIN', 'MANAGER'],
+      title: 'GHI NHẬN & SÁNG KIẾN',
+      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
-        { name: 'Khen thưởng & Kỷ luật', path: '/rewards', icon: Award, roles: ['ADMIN', 'MANAGER'] }
+        { name: 'Khen thưởng & Kỷ luật', path: '/rewards', icon: Award, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Hòm thư & Sáng kiến', path: '/innovations', icon: Lightbulb, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {
