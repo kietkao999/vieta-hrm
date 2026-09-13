@@ -22,7 +22,8 @@ import {
   GraduationCap,
   History,
   Database,
-  Lightbulb
+  Lightbulb,
+  Package
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -53,6 +54,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
         { name: 'Phòng ban & Chức vụ', path: '/settings/departments-positions', icon: Layers, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Tài sản & Thiết bị', path: '/assets', icon: Package, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
         { name: 'Văn bản & Quy định', path: '/documents', icon: BookOpen, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
         { name: 'Đào tạo & Hội nhập', path: '/training', icon: GraduationCap, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]

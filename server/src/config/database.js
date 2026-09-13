@@ -531,7 +531,70 @@ export const initDatabase = async () => {
       )
     `);
 
-    console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ.');
+    // 20. Assets (Công cụ dụng cụ & Tài sản)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        department_id INTEGER,
+        assigned_to INTEGER,
+        serial_number TEXT,
+        purchase_date TEXT,
+        purchase_price REAL DEFAULT 0,
+        status TEXT DEFAULT 'Đang sử dụng',
+        specifications TEXT,
+        next_maintenance_date TEXT,
+        location TEXT,
+        image_url TEXT,
+        notes TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+        FOREIGN KEY (assigned_to) REFERENCES employees(id) ON DELETE SET NULL
+      )
+    `);
+
+    // 21. Asset Allocations (Lịch sử cấp phát & Bàn giao)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS asset_allocations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        asset_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        allocated_date TEXT NOT NULL,
+        returned_date TEXT,
+        condition_on_alloc TEXT,
+        condition_on_return TEXT,
+        notes TEXT,
+        created_at TEXT,
+        FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 22. Asset Maintenance Tickets (Phiếu báo hỏng & Sửa chữa)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS asset_maintenance_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        asset_id INTEGER NOT NULL,
+        reported_by INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        priority TEXT DEFAULT 'Trung bình',
+        status TEXT DEFAULT 'Chờ tiếp nhận',
+        repair_cost REAL DEFAULT 0,
+        repair_date TEXT,
+        repaired_by TEXT,
+        notes TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+        FOREIGN KEY (reported_by) REFERENCES employees(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ (bao gồm quản lý tài sản & thiết bị).');
 
     // Tự động nạp dữ liệu cơ bản nếu bảng roles trống
     const roleCount = await query.get('SELECT COUNT(*) as total FROM roles');
