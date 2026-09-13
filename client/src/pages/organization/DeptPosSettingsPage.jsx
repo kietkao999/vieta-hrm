@@ -40,8 +40,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 7,
     title: 'TẦNG 7: BAN TỔNG GIÁM ĐỐC & TRỢ LÝ CẤP CAO',
     subtitle: 'Cấp hoạch định chiến lược vĩ mô & điều hành tối cao',
-    salary: '9.500.000 đ',
-    kpiQuota: 'Theo quy định BGD / Thỏa thuận',
     headerBg: 'bg-gradient-to-r from-slate-950 via-amber-950 to-slate-900',
     borderClass: 'border-amber-400',
     badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
@@ -56,8 +54,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 6,
     title: 'TẦNG 6: BAN GIÁM ĐỐC ĐIỀU HÀNH',
     subtitle: 'Cấp điều hành trực tiếp toàn bộ chuỗi sản xuất, kinh doanh, logistics & nhân sự',
-    salary: '8.000.000 đ',
-    kpiQuota: '2.500.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900',
     borderClass: 'border-blue-500',
     badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
@@ -71,8 +67,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 5,
     title: 'TẦNG 5: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ',
     subtitle: 'Quản lý, điều hành và chịu trách nhiệm KPI trực tiếp từng phòng ban, kho bãi & xưởng sản xuất',
-    salary: '6.500.000 đ',
-    kpiQuota: '2.000.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900',
     borderClass: 'border-indigo-400',
     badgeClass: 'bg-purple-100 text-purple-900 border-purple-300',
@@ -114,8 +108,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 4,
     title: 'TẦNG 4: CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM',
     subtitle: 'Hỗ trợ quản lý điều phối tác nghiệp chuyên sâu, kiểm soát tiến độ & an toàn bộ phận',
-    salary: '6.000.000 đ',
-    kpiQuota: '1.500.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-teal-950 via-cyan-950 to-slate-900',
     borderClass: 'border-teal-400',
     badgeClass: 'bg-teal-100 text-teal-900 border-teal-300',
@@ -133,8 +125,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 3,
     title: 'TẦNG 3: CHUYÊN VIÊN CAO CẤP / ĐỘI TRƯỞNG (THÂM NIÊN ≥ 3 NĂM)',
     subtitle: 'Nhân sự nòng cốt có thâm niên vững vàng, phụ trách các tuyến xe tải & kinh doanh trọng điểm',
-    salary: '5.500.000 đ',
-    kpiQuota: '1.000.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-900',
     borderClass: 'border-emerald-500',
     badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-300',
@@ -152,8 +142,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 2,
     title: 'TẦNG 2: CHUYÊN VIÊN / KẾ TOÁN / KỸ THUẬT VIÊN (THÂM NIÊN 1 - 3 NĂM)',
     subtitle: 'Nhân sự chính thức hoàn thành công việc độc lập, đảm bảo tiến độ và định mức định kỳ',
-    salary: '5.000.000 đ',
-    kpiQuota: '1.000.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-sky-950 via-blue-950 to-slate-900',
     borderClass: 'border-sky-400',
     badgeClass: 'bg-sky-100 text-sky-900 border-sky-300',
@@ -176,8 +164,6 @@ const TIER_TITLE_CONFIGS = [
     tierNumber: 1,
     title: 'TẦNG 1: NHÂN VIÊN MỚI / THỬ VIỆC (THÂM NIÊN < 1 NĂM)',
     subtitle: 'Nhân sự mới tiếp nhận, học việc đang trong giai đoạn đào tạo và hòa nhập công ty',
-    salary: '4.500.000 đ',
-    kpiQuota: '1.000.000 đ/tháng',
     headerBg: 'bg-gradient-to-r from-slate-800 via-slate-900 to-zinc-900',
     borderClass: 'border-slate-400',
     badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
@@ -553,7 +539,7 @@ const DeptPosSettingsPage = () => {
                     Sơ Đồ Phân Cấp Chức Danh & Vị Trí Công Tác (TB18)
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Phân định rõ 7 tầng trách nhiệm, mức lương tầng cơ sở và định mức KPI
+                    Phân định rõ 7 tầng vị trí chức danh và trách nhiệm công tác toàn công ty
                   </p>
                 </div>
               </div>
@@ -616,11 +602,6 @@ const DeptPosSettingsPage = () => {
                     <h3 className="text-base sm:text-lg font-black text-amber-300">
                       BAN TỔNG GIÁM ĐỐC CÔNG TY TNHH TM SX NỆM VIỆT Á
                     </h3>
-                    <div className="flex items-center justify-center space-x-4 mt-2 text-xs text-slate-300">
-                      <span>Lương tầng: <strong className="text-amber-300 font-mono">9.500.000 đ</strong></span>
-                      <span>•</span>
-                      <span>Định mức KPI: <strong className="text-emerald-300">Quy định BGD</strong></span>
-                    </div>
                   </div>
 
                   <div className="p-4 bg-amber-50/30 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -656,11 +637,6 @@ const DeptPosSettingsPage = () => {
                       <ShieldCheck size={12} />
                       <span>TẦNG 6 • BAN GIÁM ĐỐC ĐIỀU HÀNH</span>
                     </div>
-                    <div className="flex items-center justify-center space-x-4 text-xs text-slate-300 mt-1">
-                      <span>Lương tầng: <strong className="text-amber-300 font-mono">8.000.000 đ</strong></span>
-                      <span>•</span>
-                      <span>KPI Trách nhiệm: <strong className="text-emerald-300 font-mono">2.500.000 đ/tháng</strong></span>
-                    </div>
                   </div>
 
                   <div className="p-4 bg-blue-50/30 text-center">
@@ -694,7 +670,7 @@ const DeptPosSettingsPage = () => {
                 <div className="text-center">
                   <span className="inline-flex items-center space-x-2 bg-purple-100 text-purple-900 border border-purple-300 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
                     <Crown size={14} />
-                    <span>TẦNG 5: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ • LƯƠNG: 6.500.000 Đ • KPI TN: 2.000.000 Đ</span>
+                    <span>TẦNG 5: CẤP TRƯỞNG PHÒNG & QUẢN LÝ ĐƠN VỊ</span>
                   </span>
                 </div>
 
@@ -830,11 +806,6 @@ const DeptPosSettingsPage = () => {
                       CẤP PHÓ PHÒNG / PHÓ QUẢN LÝ / TRƯỞNG NHÓM CHUYÊN SÂU
                     </h4>
                   </div>
-                  <div className="flex items-center space-x-3 text-xs text-slate-300">
-                    <span>Lương tầng: <strong className="text-amber-300 font-mono">6.000.000 đ</strong></span>
-                    <span>•</span>
-                    <span>KPI TN: <strong className="text-emerald-300 font-mono">1.500.000 đ/tháng</strong></span>
-                  </div>
                 </div>
 
                 <div className="p-4 bg-teal-50/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -872,11 +843,6 @@ const DeptPosSettingsPage = () => {
                     <h4 className="font-black text-emerald-300 text-sm sm:text-base">
                       CHUYÊN VIÊN CAO CẤP / ĐỘI TRƯỞNG (THÂM NIÊN ≥ 3 NĂM)
                     </h4>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-slate-300">
-                    <span>Lương tầng: <strong className="text-amber-300 font-mono">5.500.000 đ</strong></span>
-                    <span>•</span>
-                    <span>KPI TN: <strong className="text-emerald-300 font-mono">1.000.000 đ/tháng</strong></span>
                   </div>
                 </div>
 
@@ -917,11 +883,6 @@ const DeptPosSettingsPage = () => {
                     <h4 className="font-black text-sky-300 text-sm sm:text-base">
                       CHUYÊN VIÊN / KẾ TOÁN / KỸ THUẬT VIÊN CHÍNH THỨC (1 - 3 NĂM)
                     </h4>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-slate-300">
-                    <span>Lương tầng: <strong className="text-amber-300 font-mono">5.000.000 đ</strong></span>
-                    <span>•</span>
-                    <span>KPI TN: <strong className="text-emerald-300 font-mono">1.000.000 đ/tháng</strong></span>
                   </div>
                 </div>
 
@@ -992,11 +953,6 @@ const DeptPosSettingsPage = () => {
                     <h4 className="font-black text-slate-300 text-sm sm:text-base">
                       NHÂN VIÊN MỚI / THỬ VIỆC / HỌC VIỆC (THÂM NIÊN &lt; 1 NĂM)
                     </h4>
-                  </div>
-                  <div className="flex items-center space-x-3 text-xs text-slate-300">
-                    <span>Lương tầng: <strong className="text-amber-300 font-mono">4.500.000 đ</strong></span>
-                    <span>•</span>
-                    <span>KPI TN: <strong className="text-emerald-300 font-mono">1.000.000 đ/tháng</strong></span>
                   </div>
                 </div>
 
