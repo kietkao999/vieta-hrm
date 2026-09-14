@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import {
   BarChart3, Users, DollarSign, Calendar, TrendingUp,
   PieChart, AlertTriangle, ArrowUp, ArrowDown, Download,
-  FileSpreadsheet, CalendarRange, Check, X, ChevronDown,
-  Layers, FileText, Sparkles, Filter, CheckSquare, Square
+  FileSpreadsheet, CalendarRange, Check, X, ChevronDown, ChevronUp,
+  Layers, FileText, Sparkles, Filter, CheckSquare, Square,
+  Award, Target, Zap, Search, Eye, SlidersHorizontal, Info,
+  ChevronRight, UserCheck, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -20,6 +22,12 @@ const ReportPage = () => {
   const [payrollData, setPayrollData] = useState(null);
   const [attendanceData, setAttendanceData] = useState(null);
   const [kpiData, setKpiData] = useState(null);
+
+  // KPI Specific Sub-states
+  const [kpiSubTab, setKpiSubTab] = useState('all'); // 'all' | 'responsibility' | 'performance'
+  const [kpiSearchTerm, setKpiSearchTerm] = useState('');
+  const [kpiFilterType, setKpiFilterType] = useState('all'); // 'all' | 'has_performance' | 'rate_100' | 'rate_below_100'
+  const [expandedEmpId, setExpandedEmpId] = useState(null);
 
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState('2026');
@@ -93,7 +101,8 @@ const ReportPage = () => {
           setAttendanceData(res.data);
           break;
         }
-        case 'kpi': {
+        case 'kpi':
+        case 'performance': {
           const res = await api.get(`/reports/kpi?${monthsParam}&year=${year}${deptParam}`);
           setKpiData(res.data);
           break;
@@ -190,7 +199,8 @@ const ReportPage = () => {
     { id: 'summary', label: 'Tổng quan', icon: PieChart },
     { id: 'payroll', label: 'Quỹ Lương', icon: DollarSign },
     { id: 'attendance', label: 'Chấm công', icon: Calendar },
-    { id: 'kpi', label: 'KPI & Hiệu Quả', icon: TrendingUp }
+    { id: 'kpi', label: 'Đánh Giá KPI', icon: Target },
+    { id: 'performance', label: 'Thưởng Hiệu Quả', icon: Zap }
   ];
 
   const sortedActiveMonths = [...(selectionMode === 'single' ? [singleMonth] : selectedMonths)]
@@ -522,55 +532,141 @@ const ReportPage = () => {
     );
   };
 
-  // Tab: KPI
+  // =========================================================================
+  // TAB 4: BÁO CÁO ĐÁNH GIÁ KPI (KPI TRÁCH NHIỆM) THEO TỪNG NGƯỜI & PHÒNG BAN
+  // =========================================================================
   const renderKpi = () => {
     if (!kpiData) return null;
-    let { kpiSummary, deptKpi, topPerformers, recordedCount, totalPayout } = kpiData;
 
-    // Lọc theo phòng ban nếu được chọn
-    if (selectedDepartment) {
-      deptKpi = (deptKpi || []).filter(d => d.department_name === targetDeptName || String(d.department_id) === String(targetDeptId));
-      topPerformers = (topPerformers || []).filter(p => p.department_name === targetDeptName || filteredEmployees.some(e => e.fullname === p.fullname || e.code === p.code));
-      recordedCount = deptKpi.reduce((acc, d) => acc + (d.kpi_count || 0), 0);
-      totalPayout = deptKpi.reduce((acc, d) => acc + (d.total_dept_payout || 0), 0);
-    }
+    const rawEmpList = kpiData.employeeList || [];
+    const rawDeptKpi = kpiData.deptKpi || [];
+    const rawTopKpi = kpiData.topPerformersKpi || [];
+
+    // 1. Lọc theo Phòng Ban
+    const deptFilteredEmpList = selectedDepartment
+      ? rawEmpList.filter(e => String(e.department_id) === String(targetDeptId) || String(e.department_id) === String(targetDeptName) || e.department_name === targetDeptName)
+      : rawEmpList;
+
+    const deptFilteredDeptKpi = selectedDepartment
+      ? rawDeptKpi.filter(d => d.department_name === targetDeptName || String(d.department_id) === String(targetDeptId))
+      : rawDeptKpi;
+
+    // 2. Lọc theo Tìm kiếm & Điều kiện phụ KPI
+    const filteredEmpList = deptFilteredEmpList.filter(emp => {
+      const matchSearch = !kpiSearchTerm || 
+        emp.fullname.toLowerCase().includes(kpiSearchTerm.toLowerCase()) ||
+        emp.code.toLowerCase().includes(kpiSearchTerm.toLowerCase()) ||
+        (emp.department_name && emp.department_name.toLowerCase().includes(kpiSearchTerm.toLowerCase()));
+
+      let matchFilter = true;
+      if (kpiFilterType === 'rate_100') {
+        matchFilter = (emp.avg_responsibility_rate || 0) >= 0.999;
+      } else if (kpiFilterType === 'rate_75') {
+        matchFilter = (emp.avg_responsibility_rate || 0) >= 0.749 && (emp.avg_responsibility_rate || 0) < 0.999;
+      } else if (kpiFilterType === 'rate_below_75') {
+        matchFilter = (emp.avg_responsibility_rate || 0) < 0.749;
+      }
+
+      return matchSearch && matchFilter;
+    });
+
+    // 3. Tính toán các chỉ số KPI
+    const activeTargetSum = deptFilteredEmpList.reduce((acc, e) => acc + (e.total_responsibility_target || 0), 0);
+    const activeRespSum = deptFilteredEmpList.reduce((acc, e) => acc + (e.total_responsibility_amount || 0), 0);
+    const activeDiscSum = deptFilteredEmpList.reduce((acc, e) => acc + (e.total_discipline_deduction || 0), 0);
+    const activeTotalEvaluations = deptFilteredEmpList.reduce((acc, e) => acc + (e.months_count || 0), 0);
+    const activeAvgRate = deptFilteredEmpList.length > 0
+      ? (deptFilteredEmpList.reduce((acc, e) => acc + (e.avg_responsibility_rate || 0), 0) / deptFilteredEmpList.length)
+      : 1.0;
+
+    const filteredTopKpi = selectedDepartment
+      ? [...deptFilteredEmpList].sort((a, b) => b.total_responsibility_amount - a.total_responsibility_amount).slice(0, 5)
+      : rawTopKpi.slice(0, 5);
+
+    const formatRateBadge = (rate) => {
+      const p = Math.round((rate || 0) * 100);
+      if (p >= 100) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">100% (Đạt)</span>;
+      if (p >= 75) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">{p}% (3/4)</span>;
+      if (p >= 50) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">{p}% (2/4)</span>;
+      if (p > 0) return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-orange-100 text-orange-800 border border-orange-200">{p}% (1/4)</span>;
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">0% (0/4)</span>;
+    };
 
     return (
       <div className="space-y-6">
+        {/* 3 Thẻ thống kê KPI Trách Nhiệm */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">SỐ THÁNG TỔNG HỢP</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">{sortedActiveMonths.length} tháng</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{sortedActiveMonths.map(m => `T${m}`).join(', ')}</p>
+          <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/70 to-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">TỔNG TIỀN KPI THỰC NHẬN</span>
+              <div className="p-2 bg-blue-100 rounded-xl text-blue-700">
+                <Target size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-blue-900 mt-2">{formatCurrency(activeRespSum)} đ</p>
+            <p className="text-[11px] text-blue-700 font-semibold mt-1">
+              Đạt trung bình: <strong>{Math.round(activeAvgRate * 100)}%</strong> định mức
+            </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG NGÂN SÁCH KPI & HIỆU QUẢ</p>
-            <p className="text-2xl font-bold text-brand-700 mt-1">{formatCurrency(totalPayout)} đ</p>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">Tổng cộng qua {sortedActiveMonths.length} tháng đã chọn</p>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">TỔNG ĐỊNH MỨC KPI</span>
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
+                <BarChart3 size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2">{formatCurrency(activeTargetSum)} đ</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Tổng định mức đăng ký qua {sortedActiveMonths.length} tháng
+            </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG SỐ LƯỢT ĐÁNH GIÁ</p>
-            <p className="text-2xl font-bold text-emerald-700 mt-1">{recordedCount || 0} lượt</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{selectedDepartment ? activeEmps.length : (kpiData?.totalActive || 0)} nhân sự / tháng</p>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SỐ LƯỢT ĐÁNH GIÁ</span>
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
+                <Users size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-emerald-700 mt-2">{activeTotalEvaluations} lượt</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Quy mô: <strong>{deptFilteredEmpList.length}</strong> nhân sự trực thuộc
+            </p>
           </div>
         </div>
 
+        {/* Khối 1: Ngân sách KPI theo phòng ban & Top KPI cao nhất */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* KPI theo phòng ban */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Tổng Ngân Sách KPI & Hiệu Quả Theo Phòng Ban</h3>
-            {deptKpi?.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
+          {/* Ngân sách KPI theo phòng ban */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                <Layers size={15} className="text-blue-700" />
+                <span>Ngân Sách KPI Theo Phòng Ban</span>
+              </h3>
+              <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                {deptFilteredDeptKpi.length} phòng ban
+              </span>
+            </div>
+
+            {deptFilteredDeptKpi.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu</p>
             ) : (
-              <div className="space-y-3">
-                {(deptKpi || []).map((d, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="space-y-2.5">
+                {deptFilteredDeptKpi.map((d, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between hover:bg-blue-50/40 transition">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{d.department_name || 'Chưa phân bổ'}</p>
-                      <p className="text-xs text-slate-500">{d.kpi_count} lượt • TB {formatCurrency(d.avg_score)} đ/lượt</p>
+                      <p className="text-xs font-bold text-slate-900">{d.department_name || 'Chưa phân bổ'}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {d.kpi_count} lượt • Định mức: {formatCurrency(d.total_dept_responsibility_target || 0)} đ
+                      </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-brand-700">{formatCurrency(d.total_dept_payout)} đ</span>
+                      <p className="text-xs font-black text-blue-700">{formatCurrency(d.total_dept_responsibility_amount || 0)} đ</p>
+                      <span className="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                        Đạt {Math.round((d.avg_responsibility_rate || 1) * 100)}%
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -578,27 +674,592 @@ const ReportPage = () => {
             )}
           </div>
 
-          {/* Top Performers */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top Thưởng KPI & Hiệu Quả Cao Nhất ({sortedActiveMonths.length} Tháng)</h3>
-            {topPerformers?.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
+          {/* Top KPI cao nhất */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                <Award size={15} className="text-amber-500" />
+                <span>Top Nhân Sự Đạt KPI Cao Nhất ({sortedActiveMonths.length} Tháng)</span>
+              </h3>
+            </div>
+
+            {filteredTopKpi.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu</p>
             ) : (
-              <div className="space-y-3">
-                {(topPerformers || []).map((p, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-200 text-slate-700' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{p.fullname}</p>
-                        <p className="text-xs text-slate-500">{p.department_name}</p>
+              <div className="space-y-2.5">
+                {filteredTopKpi.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        i === 0 ? 'bg-amber-100 text-amber-800' : i === 1 ? 'bg-slate-200 text-slate-700' : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-slate-900 truncate">{p.fullname}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{p.department_name} • {p.code}</p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-brand-700">{formatCurrency(p.achieved_score)} đ</span>
+                    <div className="text-right shrink-0 ml-2">
+                      <span className="text-xs font-black text-blue-700">{formatCurrency(p.achieved_score || p.total_responsibility_amount)} đ</span>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Khối 2: BẢNG BÁO CÁO CHI TIẾT KPI THEO TỪNG NGƯỜI */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                  <FileText size={16} className="text-blue-700" />
+                  <span>Bảng Báo Cáo Đánh Giá KPI Từng Nhân Sự</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Chi tiết định mức, % hoàn thành và tiền KPI thực nhận qua {sortedActiveMonths.length} tháng ({sortedActiveMonths.map(m => `T${m}`).join(', ')})
+                </p>
+              </div>
+
+              <div className="text-xs font-semibold text-slate-500">
+                Hiển thị: <strong className="text-blue-700">{filteredEmpList.length}</strong> / {deptFilteredEmpList.length} nhân viên
+              </div>
+            </div>
+
+            {/* Thanh công cụ */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+              <div className="relative flex-1 min-w-[220px] max-w-sm">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm nhân viên theo tên, mã NV..."
+                  value={kpiSearchTerm}
+                  onChange={e => setKpiSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+                {kpiSearchTerm && (
+                  <button onClick={() => setKpiSearchTerm('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-400 mr-1">Lọc KPI:</span>
+                {[
+                  { id: 'all', label: 'Tất cả' },
+                  { id: 'rate_100', label: 'Đạt 100%' },
+                  { id: 'rate_75', label: 'Đạt 75%' },
+                  { id: 'rate_below_75', label: 'Dưới 75%' }
+                ].map(flt => (
+                  <button
+                    key={flt.id}
+                    type="button"
+                    onClick={() => setKpiFilterType(flt.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      kpiFilterType === flt.id
+                        ? 'bg-blue-700 text-white shadow-2xs'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {flt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bảng Dữ Liệu */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
+                  <th className="py-3 px-3 w-10 text-center">#</th>
+                  <th className="py-3 px-3 min-w-[180px]">Nhân viên</th>
+                  <th className="py-3 px-3 min-w-[140px]">Phòng ban</th>
+                  <th className="py-3 px-2 text-center w-16">Tháng</th>
+                  <th className="py-3 px-3 text-right min-w-[120px]">Định mức KPI</th>
+                  <th className="py-3 px-3 text-center min-w-[100px]">% Đạt TB</th>
+                  <th className="py-3 px-3 text-right min-w-[130px] bg-blue-50/70 text-blue-900">🎯 KPI Thực Nhận</th>
+                  <th className="py-3 px-3 text-right min-w-[100px] text-slate-500">Khấu trừ</th>
+                  <th className="py-3 px-3 text-right min-w-[130px] bg-emerald-50/70 text-emerald-950 font-black">💰 KPI Thực Lĩnh</th>
+                  <th className="py-3 px-2 text-center w-16">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredEmpList.length === 0 ? (
+                  <tr>
+                    <td colSpan="10" className="py-8 text-center text-slate-500">
+                      Không tìm thấy nhân viên nào phù hợp với bộ lọc.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEmpList.map((emp, index) => {
+                    const isExpanded = expandedEmpId === emp.employee_id;
+                    const netKpi = Math.max(0, emp.total_responsibility_amount - emp.total_discipline_deduction);
+                    return (
+                      <React.Fragment key={emp.employee_id}>
+                        <tr className={`hover:bg-slate-50/90 transition-colors ${isExpanded ? 'bg-slate-50' : ''}`}>
+                          <td className="py-3 px-3 text-center text-slate-400 font-semibold">{index + 1}</td>
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-slate-900">{emp.fullname}</div>
+                            <div className="text-[11px] text-slate-500">{emp.code} {emp.position_name ? `• ${emp.position_name}` : ''}</div>
+                          </td>
+                          <td className="py-3 px-3 text-slate-700 font-medium">{emp.department_name || 'Chưa phân bổ'}</td>
+                          <td className="py-3 px-2 text-center font-bold text-slate-600">{emp.months_count}T</td>
+                          <td className="py-3 px-3 text-right text-slate-600 font-semibold">{formatCurrency(emp.total_responsibility_target)} đ</td>
+                          <td className="py-3 px-3 text-center">{formatRateBadge(emp.avg_responsibility_rate)}</td>
+                          <td className="py-3 px-3 text-right font-bold text-blue-700 bg-blue-50/30">{formatCurrency(emp.total_responsibility_amount)} đ</td>
+                          <td className="py-3 px-3 text-right text-red-600 font-semibold">
+                            {emp.total_discipline_deduction > 0 ? `-${formatCurrency(emp.total_discipline_deduction)} đ` : '0 đ'}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-brand-800 bg-emerald-50/40 text-[12.5px]">
+                            {formatCurrency(netKpi)} đ
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedEmpId(isExpanded ? null : emp.employee_id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-blue-700 hover:bg-slate-200 transition cursor-pointer"
+                              title="Xem chi tiết các tháng"
+                            >
+                              {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                            </button>
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr className="bg-slate-50/80 border-y border-slate-200">
+                            <td colSpan="10" className="p-4">
+                              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                  <span className="text-xs font-bold text-slate-800">
+                                    Chi tiết KPI qua từng tháng của {emp.fullname} ({emp.code})
+                                  </span>
+                                  <span className="text-[11px] text-slate-500">{emp.monthly_records.length} tháng ghi nhận</span>
+                                </div>
+                                <table className="w-full text-left text-xs border-collapse">
+                                  <thead>
+                                    <tr className="text-slate-500 text-[11px] border-b border-slate-100">
+                                      <th className="py-1.5 px-2">Kỳ Tháng</th>
+                                      <th className="py-1.5 px-2 text-right">Định mức KPI</th>
+                                      <th className="py-1.5 px-2 text-center">Tỷ lệ đạt (%)</th>
+                                      <th className="py-1.5 px-2 text-right text-blue-700 font-bold">KPI Thực Nhận</th>
+                                      <th className="py-1.5 px-2 text-right text-red-600">Khấu trừ</th>
+                                      <th className="py-1.5 px-2 text-right font-bold text-emerald-800">Tổng KPI</th>
+                                      <th className="py-1.5 px-2 text-slate-400">Ghi chú</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {emp.monthly_records.map((mRec, mIdx) => (
+                                      <tr key={mIdx} className="hover:bg-slate-50">
+                                        <td className="py-1.5 px-2 font-bold text-slate-800">Tháng {mRec.month}/{year}</td>
+                                        <td className="py-1.5 px-2 text-right text-slate-600">{formatCurrency(mRec.responsibility_bonus)} đ</td>
+                                        <td className="py-1.5 px-2 text-center">{formatRateBadge(mRec.responsibility_rate)}</td>
+                                        <td className="py-1.5 px-2 text-right font-bold text-blue-700">{formatCurrency(mRec.responsibility_amount)} đ</td>
+                                        <td className="py-1.5 px-2 text-right text-red-600">
+                                          {mRec.discipline_deduction > 0 ? `-${formatCurrency(mRec.discipline_deduction)} đ` : '0 đ'}
+                                        </td>
+                                        <td className="py-1.5 px-2 text-right font-bold text-emerald-800">
+                                          {formatCurrency(Math.max(0, mRec.responsibility_amount - mRec.discipline_deduction))} đ
+                                        </td>
+                                        <td className="py-1.5 px-2 text-[11px] text-slate-500 italic">{mRec.note || '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+              {filteredEmpList.length > 0 && (
+                <tfoot className="bg-slate-100/90 font-bold text-slate-800 border-t-2 border-slate-300">
+                  <tr>
+                    <td colSpan="4" className="py-3 px-3 text-center uppercase tracking-wider text-[11px] text-slate-600 font-extrabold">
+                      TỔNG CỘNG ({filteredEmpList.length} NHÂN SỰ)
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      {formatCurrency(filteredEmpList.reduce((acc, e) => acc + (e.total_responsibility_target || 0), 0))} đ
+                    </td>
+                    <td className="py-3 px-3 text-center text-slate-500">
+                      TB {Math.round((filteredEmpList.reduce((acc, e) => acc + (e.avg_responsibility_rate || 0), 0) / filteredEmpList.length) * 100)}%
+                    </td>
+                    <td className="py-3 px-3 text-right font-extrabold text-blue-800 bg-blue-100/50">
+                      {formatCurrency(filteredEmpList.reduce((acc, e) => acc + (e.total_responsibility_amount || 0), 0))} đ
+                    </td>
+                    <td className="py-3 px-3 text-right text-red-600">
+                      {formatCurrency(filteredEmpList.reduce((acc, e) => acc + (e.total_discipline_deduction || 0), 0))} đ
+                    </td>
+                    <td className="py-3 px-3 text-right font-black text-brand-900 bg-emerald-100/60 text-sm">
+                      {formatCurrency(filteredEmpList.reduce((acc, e) => acc + Math.max(0, e.total_responsibility_amount - e.total_discipline_deduction), 0))} đ
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // =========================================================================
+  // TAB 5: BÁO CÁO THƯỞNG HIỆU QUẢ THEO TỪNG NGƯỜI & PHÒNG BAN
+  // =========================================================================
+  const renderPerformance = () => {
+    if (!kpiData) return null;
+
+    const rawEmpList = kpiData.employeeList || [];
+    const rawDeptKpi = kpiData.deptKpi || [];
+    const rawTopPerf = kpiData.topPerformersPerformance || [];
+
+    // 1. Lọc theo Phòng Ban
+    const deptFilteredEmpList = selectedDepartment
+      ? rawEmpList.filter(e => String(e.department_id) === String(targetDeptId) || String(e.department_id) === String(targetDeptName) || e.department_name === targetDeptName)
+      : rawEmpList;
+
+    const deptFilteredDeptKpi = selectedDepartment
+      ? rawDeptKpi.filter(d => d.department_name === targetDeptName || String(d.department_id) === String(targetDeptId))
+      : rawDeptKpi;
+
+    // 2. Lọc theo Tìm kiếm & Điều kiện phụ Thưởng Hiệu Quả
+    const filteredEmpList = deptFilteredEmpList.filter(emp => {
+      const matchSearch = !kpiSearchTerm || 
+        emp.fullname.toLowerCase().includes(kpiSearchTerm.toLowerCase()) ||
+        emp.code.toLowerCase().includes(kpiSearchTerm.toLowerCase()) ||
+        (emp.department_name && emp.department_name.toLowerCase().includes(kpiSearchTerm.toLowerCase()));
+
+      let matchFilter = true;
+      if (kpiFilterType === 'has_performance') {
+        matchFilter = (emp.total_performance_bonus || 0) > 0;
+      } else if (kpiFilterType === 'perf_high') {
+        matchFilter = (emp.total_performance_bonus || 0) >= 10000000;
+      }
+
+      return matchSearch && matchFilter;
+    });
+
+    // 3. Tính toán các chỉ số Thưởng Hiệu Quả
+    const activePerfSum = deptFilteredEmpList.reduce((acc, e) => acc + (e.total_performance_bonus || 0), 0);
+    const activePerfEmployees = deptFilteredEmpList.filter(e => (e.total_performance_bonus || 0) > 0);
+    const activePerfCount = activePerfEmployees.length;
+    const avgPerfPerEmployee = activePerfCount > 0 ? Math.round(activePerfSum / activePerfCount) : 0;
+
+    const filteredTopPerf = selectedDepartment
+      ? [...deptFilteredEmpList].filter(e => e.total_performance_bonus > 0).sort((a, b) => b.total_performance_bonus - a.total_performance_bonus).slice(0, 5)
+      : rawTopPerf.slice(0, 5);
+
+    return (
+      <div className="space-y-6">
+        {/* 3 Thẻ Thống Kê Thưởng Hiệu Quả */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50/70 to-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider">TỔNG NGÂN SÁCH THƯỞNG HIỆU QUẢ</span>
+              <div className="p-2 bg-purple-100 rounded-xl text-purple-700">
+                <Zap size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-purple-900 mt-2">{formatCurrency(activePerfSum)} đ</p>
+            <p className="text-[11px] text-purple-700 font-semibold mt-1">
+              Tổng cộng qua {sortedActiveMonths.length} tháng ({sortedActiveMonths.map(m => `T${m}`).join(', ')})
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">SỐ NHÂN SỰ ĐƯỢC KHEN THƯỞNG</span>
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
+                <Users size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2">{activePerfCount} nhân sự</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Chiếm {deptFilteredEmpList.length > 0 ? Math.round((activePerfCount / deptFilteredEmpList.length) * 100) : 0}% tổng nhân sự phòng ban
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">MỨC THƯỞNG BÌNH QUÂN</span>
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
+                <Award size={18} />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-emerald-700 mt-2">{formatCurrency(avgPerfPerEmployee)} đ</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Bình quân trên mỗi nhân sự có thưởng hiệu quả
+            </p>
+          </div>
+        </div>
+
+        {/* Khối 1: Tổng Thưởng Hiệu Quả theo phòng ban & Top cao nhất */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Thưởng hiệu quả theo phòng ban */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                <Layers size={15} className="text-purple-700" />
+                <span>Thưởng Hiệu Quả Theo Phòng Ban</span>
+              </h3>
+              <span className="text-[11px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded">
+                {deptFilteredDeptKpi.length} phòng ban
+              </span>
+            </div>
+
+            {deptFilteredDeptKpi.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu</p>
+            ) : (
+              <div className="space-y-2.5">
+                {deptFilteredDeptKpi.map((d, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between hover:bg-purple-50/40 transition">
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">{d.department_name || 'Chưa phân bổ'}</p>
+                      <p className="text-[11px] text-slate-500">{d.kpi_count} lượt ghi nhận</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-black text-purple-700">{formatCurrency(d.total_dept_performance_bonus || 0)} đ</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Top Thưởng Hiệu Quả Cao Nhất */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+                <Award size={15} className="text-purple-600" />
+                <span>Top Thưởng Hiệu Quả Cao Nhất ({sortedActiveMonths.length} Tháng)</span>
+              </h3>
+            </div>
+
+            {filteredTopPerf.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có ai nhận thưởng hiệu quả</p>
+            ) : (
+              <div className="space-y-2.5">
+                {filteredTopPerf.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        i === 0 ? 'bg-purple-200 text-purple-900' : i === 1 ? 'bg-purple-100 text-purple-800' : 'bg-purple-50 text-purple-700'
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-slate-900 truncate">{p.fullname}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{p.department_name} • {p.code}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <span className="text-xs font-black text-purple-700">{formatCurrency(p.achieved_score || p.total_performance_bonus)} đ</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Khối 2: BẢNG BÁO CÁO CHI TIẾT THƯỞNG HIỆU QUẢ THEO TỪNG NGƯỜI */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                  <Zap size={16} className="text-purple-700" />
+                  <span>Bảng Báo Cáo Chi Tiết Thưởng Hiệu Quả Từng Nhân Sự</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tổng hợp tiền thưởng hiệu quả / năng suất / doanh số phát sinh qua {sortedActiveMonths.length} tháng ({sortedActiveMonths.map(m => `T${m}`).join(', ')})
+                </p>
+              </div>
+
+              <div className="text-xs font-semibold text-slate-500">
+                Hiển thị: <strong className="text-purple-700">{filteredEmpList.length}</strong> / {deptFilteredEmpList.length} nhân viên
+              </div>
+            </div>
+
+            {/* Thanh công cụ tìm kiếm */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+              <div className="relative flex-1 min-w-[220px] max-w-sm">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm nhân viên theo tên, mã NV..."
+                  value={kpiSearchTerm}
+                  onChange={e => setKpiSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                />
+                {kpiSearchTerm && (
+                  <button onClick={() => setKpiSearchTerm('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-400 mr-1">Lọc nhanh:</span>
+                {[
+                  { id: 'all', label: 'Tất cả nhân sự' },
+                  { id: 'has_performance', label: 'Có thưởng HQ (>0đ)' },
+                  { id: 'perf_high', label: 'Thưởng cao (≥10 triệu)' }
+                ].map(flt => (
+                  <button
+                    key={flt.id}
+                    type="button"
+                    onClick={() => setKpiFilterType(flt.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      kpiFilterType === flt.id
+                        ? 'bg-purple-700 text-white shadow-2xs'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {flt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bảng Dữ Liệu */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
+                  <th className="py-3 px-3 w-10 text-center">#</th>
+                  <th className="py-3 px-3 min-w-[180px]">Nhân viên</th>
+                  <th className="py-3 px-3 min-w-[140px]">Phòng ban</th>
+                  <th className="py-3 px-2 text-center w-16">Tháng</th>
+                  <th className="py-3 px-3 text-center min-w-[110px]">Số Tháng Thưởng</th>
+                  <th className="py-3 px-3 text-right min-w-[130px]">Thưởng Max / Tháng</th>
+                  <th className="py-3 px-3 text-right min-w-[150px] bg-purple-50/80 text-purple-950 font-black">
+                    🚀 Tổng Thưởng Hiệu Quả
+                  </th>
+                  <th className="py-3 px-2 text-center w-16">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredEmpList.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-8 text-center text-slate-500">
+                      Không tìm thấy nhân viên nào phù hợp với bộ lọc.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEmpList.map((emp, index) => {
+                    const isExpanded = expandedEmpId === emp.employee_id;
+                    const monthsWithPerf = emp.monthly_records.filter(m => (m.performance_bonus || 0) > 0).length;
+                    const maxPerfMonth = Math.max(0, ...emp.monthly_records.map(m => m.performance_bonus || 0));
+
+                    return (
+                      <React.Fragment key={emp.employee_id}>
+                        <tr className={`hover:bg-slate-50/90 transition-colors ${isExpanded ? 'bg-slate-50' : ''}`}>
+                          <td className="py-3 px-3 text-center text-slate-400 font-semibold">{index + 1}</td>
+                          <td className="py-3 px-3">
+                            <div className="font-bold text-slate-900">{emp.fullname}</div>
+                            <div className="text-[11px] text-slate-500">{emp.code} {emp.position_name ? `• ${emp.position_name}` : ''}</div>
+                          </td>
+                          <td className="py-3 px-3 text-slate-700 font-medium">{emp.department_name || 'Chưa phân bổ'}</td>
+                          <td className="py-3 px-2 text-center font-bold text-slate-600">{emp.months_count}T</td>
+                          <td className="py-3 px-3 text-center">
+                            {monthsWithPerf > 0 ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                {monthsWithPerf}/{emp.months_count} tháng
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">0 tháng</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-600 font-semibold">
+                            {maxPerfMonth > 0 ? `${formatCurrency(maxPerfMonth)} đ` : '-'}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-purple-800 bg-purple-50/40 text-[13px]">
+                            {emp.total_performance_bonus > 0 ? (
+                              <span>+{formatCurrency(emp.total_performance_bonus)} đ</span>
+                            ) : (
+                              <span className="text-slate-300 font-normal">0 đ</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedEmpId(isExpanded ? null : emp.employee_id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-purple-700 hover:bg-slate-200 transition cursor-pointer"
+                              title="Xem chi tiết các tháng"
+                            >
+                              {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                            </button>
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr className="bg-slate-50/80 border-y border-slate-200">
+                            <td colSpan="8" className="p-4">
+                              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                  <span className="text-xs font-bold text-slate-800">
+                                    Chi tiết Thưởng Hiệu Quả qua từng tháng của {emp.fullname} ({emp.code})
+                                  </span>
+                                  <span className="text-[11px] text-slate-500">{emp.monthly_records.length} tháng ghi nhận</span>
+                                </div>
+                                <table className="w-full text-left text-xs border-collapse">
+                                  <thead>
+                                    <tr className="text-slate-500 text-[11px] border-b border-slate-100">
+                                      <th className="py-1.5 px-2">Kỳ Tháng</th>
+                                      <th className="py-1.5 px-2 text-right text-purple-700 font-bold">Thưởng Hiệu Quả</th>
+                                      <th className="py-1.5 px-2 text-slate-400">Ghi chú</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {emp.monthly_records.map((mRec, mIdx) => (
+                                      <tr key={mIdx} className="hover:bg-slate-50">
+                                        <td className="py-1.5 px-2 font-bold text-slate-800">Tháng {mRec.month}/{year}</td>
+                                        <td className="py-1.5 px-2 text-right font-bold text-purple-700">
+                                          {mRec.performance_bonus > 0 ? `+${formatCurrency(mRec.performance_bonus)} đ` : '0 đ'}
+                                        </td>
+                                        <td className="py-1.5 px-2 text-[11px] text-slate-500 italic">{mRec.note || '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+              {filteredEmpList.length > 0 && (
+                <tfoot className="bg-slate-100/90 font-bold text-slate-800 border-t-2 border-slate-300">
+                  <tr>
+                    <td colSpan="4" className="py-3 px-3 text-center uppercase tracking-wider text-[11px] text-slate-600 font-extrabold">
+                      TỔNG CỘNG ({filteredEmpList.length} NHÂN SỰ)
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      {filteredEmpList.filter(e => (e.total_performance_bonus || 0) > 0).length} người có thưởng
+                    </td>
+                    <td></td>
+                    <td className="py-3 px-3 text-right font-black text-purple-900 bg-purple-100/70 text-sm">
+                      +{formatCurrency(filteredEmpList.reduce((acc, e) => acc + (e.total_performance_bonus || 0), 0))} đ
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       </div>
@@ -881,6 +1542,7 @@ const ReportPage = () => {
               {activeTab === 'payroll' && renderPayroll()}
               {activeTab === 'attendance' && renderAttendance()}
               {activeTab === 'kpi' && renderKpi()}
+              {activeTab === 'performance' && renderPerformance()}
             </>
           )}
         </div>

@@ -264,7 +264,7 @@ export const getAttendanceReport = async (req, res) => {
   }
 };
 
-// Báo cáo KPI
+// Báo cáo KPI & Hiệu Quả (Tách bạch KPI Trách nhiệm & Thưởng Hiệu quả)
 export const getKpiReport = async (req, res) => {
   try {
     const { month, months, fromMonth, toMonth, year, department_id } = req.query;
@@ -290,7 +290,7 @@ export const getKpiReport = async (req, res) => {
 
     const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
 
-    // Thống kê tổng hợp KPI
+    // Tổng nhân viên hoạt động
     const totalActive = await query.get(
       `SELECT COUNT(*) as count 
        FROM employees e 
@@ -299,33 +299,153 @@ export const getKpiReport = async (req, res) => {
       deptParams
     );
 
+    // Lấy toàn bộ dữ liệu KPI theo các tháng đã chọn
     const savedKpis = await query.all(
-      `SELECT k.*, e.fullname, e.code, COALESCE(d.name, 'Chưa phân bổ') as department_name,
+      `SELECT k.*, e.fullname, e.code, e.avatar, e.gender, e.department_id,
+              COALESCE(d.name, 'Chưa phân bổ') as department_name,
+              COALESCE(pos.name, '') as position_name,
               (MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_payout
        FROM employee_monthly_kpis k
        JOIN employees e ON k.employee_id = e.id
        LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+       LEFT JOIN positions pos ON e.position_id = pos.id
        WHERE k.year = ? AND k.month IN (${placeholders}) ${deptFilter}
-       ORDER BY total_payout DESC`,
+       ORDER BY d.name ASC, e.code ASC, CAST(k.month AS INTEGER) ASC`,
       [targetYear, ...allMatches, ...deptParams]
     );
 
     const recordedCount = savedKpis.length;
-    const totalPayout = savedKpis.reduce((acc, k) => acc + (k.total_payout || 0), 0);
-    const avgPayout = recordedCount > 0 ? Math.round(totalPayout / recordedCount) : 0;
+    let totalResponsibilityTarget = 0;
+    let totalResponsibilityAmount = 0;
+    let totalPerformanceBonus = 0;
+    let totalDisciplineDeduction = 0;
+    let totalGrandPayout = 0;
+    let performanceBonusCount = 0;
+    let allRates = [];
 
-    const kpiSummary = [
-      { status: 'Đã thiết lập', count: recordedCount, avg_score: avgPayout, avg_percent: recordedCount > 0 ? 100 : 0 },
-      { status: 'Chưa có dữ liệu', count: Math.max(0, (totalActive?.count || 0) * selectedMonths.length - recordedCount), avg_score: 0, avg_percent: 0 }
-    ];
+    // Tổng hợp chi tiết theo từng nhân sự
+    const empMap = new Map();
+    for (const k of savedKpis) {
+      const respTarget = Number(k.responsibility_bonus) || 0;
+      const respRate = Number(k.responsibility_rate ?? 1.0);
+      const respAmt = Number(k.responsibility_amount) || 0;
+      const perfBonus = Number(k.performance_bonus) || 0;
+      const discDed = Number(k.discipline_deduction) || 0;
+      const payout = Math.max(0, respAmt + perfBonus - discDed);
 
-    // KPI theo phòng ban (tổng hợp qua tất cả các tháng đã chọn)
+      totalResponsibilityTarget += respTarget;
+      totalResponsibilityAmount += respAmt;
+      totalPerformanceBonus += perfBonus;
+      totalDisciplineDeduction += discDed;
+      totalGrandPayout += payout;
+      if (perfBonus > 0) performanceBonusCount += 1;
+      allRates.push(respRate);
+
+      if (!empMap.has(k.employee_id)) {
+        empMap.set(k.employee_id, {
+          employee_id: k.employee_id,
+          fullname: k.fullname,
+          code: k.code,
+          avatar: k.avatar,
+          gender: k.gender,
+          department_name: k.department_name,
+          department_id: k.department_id,
+          position_name: k.position_name,
+          months_count: 0,
+          total_responsibility_target: 0,
+          total_responsibility_amount: 0,
+          total_performance_bonus: 0,
+          total_discipline_deduction: 0,
+          total_payout: 0,
+          rates: [],
+          monthly_records: []
+        });
+      }
+
+      const emp = empMap.get(k.employee_id);
+      emp.months_count += 1;
+      emp.total_responsibility_target += respTarget;
+      emp.total_responsibility_amount += respAmt;
+      emp.total_performance_bonus += perfBonus;
+      emp.total_discipline_deduction += discDed;
+      emp.total_payout += payout;
+      emp.rates.push(respRate);
+      emp.monthly_records.push({
+        month: k.month,
+        responsibility_bonus: respTarget,
+        responsibility_rate: respRate,
+        responsibility_amount: respAmt,
+        performance_bonus: perfBonus,
+        discipline_deduction: discDed,
+        total_payout: payout,
+        note: k.note || ''
+      });
+    }
+
+    const employeeList = Array.from(empMap.values()).map(e => ({
+      ...e,
+      avg_responsibility_rate: e.rates.length > 0 ? (e.rates.reduce((a, b) => a + b, 0) / e.rates.length) : 1.0
+    }));
+
+    // Bảng xếp hạng Top:
+    // 1. Top KPI Trách Nhiệm cao nhất
+    const topPerformersKpi = [...employeeList]
+      .sort((a, b) => b.total_responsibility_amount - a.total_responsibility_amount)
+      .slice(0, 10)
+      .map(p => ({
+        fullname: p.fullname,
+        code: p.code,
+        department_name: p.department_name,
+        position_name: p.position_name,
+        achieved_score: p.total_responsibility_amount,
+        target_score: p.total_responsibility_target,
+        avg_rate: p.avg_responsibility_rate,
+        criteria: 'KPI Trách nhiệm',
+        percent: p.total_responsibility_target > 0 ? Math.round((p.total_responsibility_amount / p.total_responsibility_target) * 100) : 100
+      }));
+
+    // 2. Top Thưởng Hiệu Quả cao nhất
+    const topPerformersPerformance = [...employeeList]
+      .filter(p => p.total_performance_bonus > 0)
+      .sort((a, b) => b.total_performance_bonus - a.total_performance_bonus)
+      .slice(0, 10)
+      .map(p => ({
+        fullname: p.fullname,
+        code: p.code,
+        department_name: p.department_name,
+        position_name: p.position_name,
+        achieved_score: p.total_performance_bonus,
+        target_score: p.total_performance_bonus,
+        criteria: 'Thưởng Hiệu quả',
+        percent: 100
+      }));
+
+    // 3. Top Tổng Payout (KPI + Hiệu quả)
+    const topPerformers = [...employeeList]
+      .sort((a, b) => b.total_payout - a.total_payout)
+      .slice(0, 10)
+      .map(p => ({
+        fullname: p.fullname,
+        code: p.code,
+        department_name: p.department_name,
+        position_name: p.position_name,
+        achieved_score: p.total_payout,
+        target_score: p.total_responsibility_target + p.total_performance_bonus,
+        criteria: 'Tổng KPI & Hiệu quả',
+        percent: (p.total_responsibility_target + p.total_performance_bonus) > 0 ? Math.round((p.total_payout / (p.total_responsibility_target + p.total_performance_bonus)) * 100) : 100
+      }));
+
+    // Thống kê theo phòng ban tách bạch KPI Trách nhiệm & Thưởng Hiệu Quả
     const deptKpi = await query.all(`
       SELECT COALESCE(d.name, 'Chưa phân bổ') as department_name,
+             d.id as department_id,
              COUNT(k.id) as kpi_count,
+             SUM(k.responsibility_bonus) as total_dept_responsibility_target,
+             SUM(k.responsibility_amount) as total_dept_responsibility_amount,
+             SUM(k.performance_bonus) as total_dept_performance_bonus,
+             SUM(k.discipline_deduction) as total_dept_discipline_deduction,
              SUM(MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as total_dept_payout,
-             AVG(MAX(0, k.responsibility_amount) + MAX(0, k.performance_bonus) - MAX(0, k.discipline_deduction)) as avg_score,
-             100 as avg_percent
+             AVG(k.responsibility_rate) as avg_responsibility_rate
       FROM employee_monthly_kpis k
       JOIN employees e ON k.employee_id = e.id
       LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
@@ -334,35 +454,7 @@ export const getKpiReport = async (req, res) => {
       ORDER BY total_dept_payout DESC
     `, [targetYear, ...allMatches, ...deptParams]);
 
-    // Top performers (tổng thu nhập KPI và hiệu quả qua các tháng đã chọn)
-    const empKpiMap = new Map();
-    for (const k of savedKpis) {
-      if (!empKpiMap.has(k.employee_id)) {
-        empKpiMap.set(k.employee_id, {
-          fullname: k.fullname,
-          code: k.code,
-          department_name: k.department_name,
-          total_payout: 0,
-          target_score: 0
-        });
-      }
-      const item = empKpiMap.get(k.employee_id);
-      item.total_payout += (k.total_payout || 0);
-      item.target_score += ((k.responsibility_bonus || 0) + (k.performance_bonus || 0));
-    }
-
-    const topPerformers = Array.from(empKpiMap.values())
-      .sort((a, b) => b.total_payout - a.total_payout)
-      .slice(0, 10)
-      .map(p => ({
-        fullname: p.fullname,
-        code: p.code,
-        achieved_score: p.total_payout,
-        target_score: p.target_score,
-        criteria: 'Tổng KPI & Hiệu quả',
-        department_name: p.department_name,
-        percent: p.target_score > 0 ? Math.round((p.total_payout / p.target_score) * 100) : 100
-      }));
+    const avgResponsibilityRate = allRates.length > 0 ? (allRates.reduce((a, b) => a + b, 0) / allRates.length) : 1.0;
 
     return res.json({
       months: selectedMonths,
@@ -370,10 +462,18 @@ export const getKpiReport = async (req, res) => {
       year: targetYear,
       totalActive: totalActive?.count || 0,
       recordedCount,
-      totalPayout,
-      kpiSummary,
+      totalPayout: totalGrandPayout,
+      totalResponsibilityTarget,
+      totalResponsibilityAmount,
+      totalPerformanceBonus,
+      totalDisciplineDeduction,
+      performanceBonusCount,
+      avgResponsibilityRate,
       deptKpi,
-      topPerformers
+      topPerformers,
+      topPerformersKpi,
+      topPerformersPerformance,
+      employeeList
     });
   } catch (error) {
     console.error('Lỗi báo cáo KPI:', error);
@@ -481,6 +581,7 @@ export const exportReportExcel = async (req, res) => {
       `;
       const kpis = await query.all(kpiSql, [targetYear, ...allMonthMatches, ...deptParams]);
 
+      // Sheet 1: Báo Cáo Chi Tiết Từng Tháng
       const kpiFormatted = kpis.map((k, idx) => {
         const totalKpiPayout = (k.responsibility_amount || 0) + (k.performance_bonus || 0) - (k.discipline_deduction || 0);
         return {
@@ -493,9 +594,9 @@ export const exportReportExcel = async (req, res) => {
           'Định Mức KPI Trách Nhiệm (đ)': k.responsibility_bonus || 0,
           'Tỷ Lệ Đạt (% Trách Nhiệm)': `${Math.round((k.responsibility_rate || 1) * 100)}%`,
           'KPI Trách Nhiệm Thực Nhận (đ)': k.responsibility_amount || 0,
-          'Thưởng Hiệu Quả Phát Sinh (đ)': k.performance_bonus || 0,
+          'Thưởng Hiệu Quả (đ)': k.performance_bonus || 0,
           'Khấu Trừ Phạt (đ)': (k.responsibility_penalty || 0) + (k.discipline_deduction || 0),
-          'Tổng KPI & Hiệu Quả Thực Nhận (đ)': Math.max(0, totalKpiPayout),
+          'Tổng Thực Nhận (KPI + HQ) (đ)': Math.max(0, totalKpiPayout),
           'Ghi Chú': k.note || ''
         };
       });
@@ -506,7 +607,60 @@ export const exportReportExcel = async (req, res) => {
         { wch: 15 }, { wch: 26 }, { wch: 22 }, { wch: 26 }, { wch: 24 },
         { wch: 16 }, { wch: 30 }, { wch: 25 }
       ];
-      XLSX.utils.book_append_sheet(wb, wsKpi, 'Báo Cáo KPI & Hiệu Quả');
+      XLSX.utils.book_append_sheet(wb, wsKpi, 'Chi Tiết KPI & Hiệu Quả');
+
+      // Sheet 2: Tổng Hợp Gom Theo Từng Nhân Viên
+      const empKpiMap = new Map();
+      for (const k of kpis) {
+        if (!empKpiMap.has(k.employee_id)) {
+          empKpiMap.set(k.employee_id, {
+            code: k.employee_code,
+            fullname: k.fullname,
+            department_name: k.department_name || 'Khác',
+            position_name: k.position_name || '',
+            months_count: 0,
+            target_sum: 0,
+            resp_amount_sum: 0,
+            perf_bonus_sum: 0,
+            penalty_sum: 0,
+            rates: []
+          });
+        }
+        const item = empKpiMap.get(k.employee_id);
+        item.months_count += 1;
+        item.target_sum += (k.responsibility_bonus || 0);
+        item.resp_amount_sum += (k.responsibility_amount || 0);
+        item.perf_bonus_sum += (k.performance_bonus || 0);
+        item.penalty_sum += ((k.responsibility_penalty || 0) + (k.discipline_deduction || 0));
+        item.rates.push(k.responsibility_rate ?? 1.0);
+      }
+
+      const empSummaryFormatted = Array.from(empKpiMap.values()).map((e, idx) => {
+        const avgRate = e.rates.length > 0 ? (e.rates.reduce((a, b) => a + b, 0) / e.rates.length) : 1.0;
+        const totalNet = Math.max(0, e.resp_amount_sum + e.perf_bonus_sum - e.penalty_sum);
+        return {
+          'STT': idx + 1,
+          'Mã NV': e.code,
+          'Họ và Tên': e.fullname,
+          'Phòng Ban': e.department_name,
+          'Chức Vụ': e.position_name,
+          'Số Tháng Ghi Nhận': e.months_count,
+          'Tổng Định Mức KPI (đ)': e.target_sum,
+          'Tỷ Lệ Đạt KPI TB': `${Math.round(avgRate * 100)}%`,
+          'Tổng KPI Trách Nhiệm Thực Nhận (đ)': e.resp_amount_sum,
+          'Tổng Thưởng Hiệu Quả (đ)': e.perf_bonus_sum,
+          'Tổng Khấu Trừ Phạt (đ)': e.penalty_sum,
+          'Tổng Thực Nhận KPI & Hiệu Quả (đ)': totalNet
+        };
+      });
+
+      const wsEmpSummary = XLSX.utils.json_to_sheet(empSummaryFormatted);
+      wsEmpSummary['!cols'] = [
+        { wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 22 }, { wch: 20 },
+        { wch: 18 }, { wch: 24 }, { wch: 18 }, { wch: 32 }, { wch: 24 },
+        { wch: 20 }, { wch: 32 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsEmpSummary, 'Tổng Hợp KPI Theo Nhân Sự');
     }
 
     // 3. CHẤM CÔNG
