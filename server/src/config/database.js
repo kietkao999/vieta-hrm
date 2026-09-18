@@ -286,6 +286,7 @@ export const initDatabase = async () => {
         advance_payment REAL DEFAULT 0,
         hour_deduction REAL DEFAULT 0,
         other_deductions REAL DEFAULT 0,
+        uniform_refund REAL DEFAULT 0,
         net_salary REAL DEFAULT 0,
         status TEXT DEFAULT 'Dự thảo',
         created_at TEXT,
@@ -349,7 +350,8 @@ export const initDatabase = async () => {
       'income_tax REAL DEFAULT 0',
       'advance_payment REAL DEFAULT 0',
       'hour_deduction REAL DEFAULT 0',
-      'other_deductions REAL DEFAULT 0'
+      'other_deductions REAL DEFAULT 0',
+      'uniform_refund REAL DEFAULT 0'
     ];
 
     for (const colDef of payrollNewCols) {

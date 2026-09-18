@@ -134,6 +134,7 @@ export const generatePayroll = async (req, res) => {
       const advancePayment = exist ? parseFloat(exist.advance_payment ?? 0) : 0;
       const hourDeduction = exist ? parseFloat(exist.hour_deduction ?? 0) : 0;
       const otherDeductions = exist ? parseFloat(exist.other_deductions ?? 0) : discDeduct;
+      const uniformRefund = exist ? parseFloat(exist.uniform_refund ?? 0) : 0;
 
       const fullPayroll = calculateFullPayroll({
         tierSalary,
@@ -154,7 +155,8 @@ export const generatePayroll = async (req, res) => {
         incomeTax,
         advancePayment,
         hourDeduction,
-        otherDeduction: otherDeductions
+        otherDeduction: otherDeductions,
+        uniformRefund
       });
 
       if (exist) {
@@ -167,7 +169,7 @@ export const generatePayroll = async (req, res) => {
               performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
               other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
               social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, hour_deduction = ?,
-              other_deductions = ?, net_salary = ?, updated_at = ?
+              other_deductions = ?, uniform_refund = ?, net_salary = ?, updated_at = ?
           WHERE id = ?
         `, [
           tierSalary, gradeSalary,
@@ -177,7 +179,7 @@ export const generatePayroll = async (req, res) => {
           perfBonus, discDeduct, fullPayroll.perfNet, perfBonus,
           otherBonus, mealPhoneAllowance, otherAllowance,
           socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
-          otherDeductions, fullPayroll.netSalary, now,
+          otherDeductions, uniformRefund, fullPayroll.netSalary, now,
           exist.id
         ]);
       } else {
@@ -191,8 +193,8 @@ export const generatePayroll = async (req, res) => {
             performance_bonus, discipline_deduction, performance_net, performance_kpi,
             other_bonus, meal_phone_allowance, other_allowance,
             social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
-            other_deductions, net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
+            other_deductions, uniform_refund, net_salary, status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
         `, [
           emp.id, padMonth, year,
           tierSalary, gradeSalary,
@@ -202,16 +204,19 @@ export const generatePayroll = async (req, res) => {
           perfBonus, discDeduct, fullPayroll.perfNet, perfBonus,
           otherBonus, mealPhoneAllowance, otherAllowance,
           socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
-          otherDeductions, fullPayroll.netSalary, now, now
+          otherDeductions, uniformRefund, fullPayroll.netSalary, now, now
         ]);
       }
       successCount++;
     }
 
-    return res.json({ message: `Đã tính lương thành công cho ${successCount} nhân sự theo công thức Tầng - Bậc và thâm niên.` });
-  } catch (error) {
-    console.error('Lỗi tính lương:', error);
-    return res.status(500).json({ message: 'Lỗi hệ thống khi tính lương.' });
+    res.json({
+      message: `Đã khởi tạo và tính lương thành công cho ${successCount} nhân sự theo Quy chế số 18/2026/TB-VA.`,
+      count: successCount
+    });
+  } catch (err) {
+    console.error('Lỗi tính bảng lương tự động:', err);
+    res.status(500).json({ message: 'Lỗi tính toán bảng lương tự động.', error: err.message });
   }
 };
 
@@ -219,44 +224,46 @@ export const createPayroll = async (req, res) => {
   return res.status(400).json({ message: 'Vui lòng sử dụng chức năng Tính Lương Tự Động.' });
 };
 
+// Cập nhật chi tiết bảng lương từng nhân viên
 export const updatePayroll = async (req, res) => {
-  const { id } = req.params;
-  const {
-    status,
-    tier_salary,
-    grade_salary,
-    grade_level,
-    work_days,
-    ot_hours,
-    responsibility_quota,
-    responsibility_deduction_rate,
-    responsibility_kpi,
-    performance_bonus,
-    performance_kpi,
-    discipline_deduction,
-    other_bonus,
-    meal_phone_allowance,
-    other_allowance,
-    social_insurance,
-    union_fee,
-    income_tax,
-    advance_payment,
-    hour_deduction,
-    other_deductions,
-    sync_to_employee
-  } = req.body;
-  
   try {
-    const payroll = await query.get('SELECT * FROM payrolls WHERE id = ?', [id]);
-    if (!payroll) return res.status(404).json({ message: 'Không tìm thấy phiếu lương.' });
+    const { id } = req.params;
+    const {
+      tier_salary,
+      grade_salary,
+      grade_level,
+      sync_to_employee,
+      work_days,
+      ot_hours,
+      responsibility_quota,
+      responsibility_deduction_rate,
+      responsibility_kpi,
+      performance_bonus,
+      discipline_deduction,
+      performance_kpi,
+      other_bonus,
+      meal_phone_allowance,
+      other_allowance,
+      social_insurance,
+      union_fee,
+      income_tax,
+      advance_payment,
+      hour_deduction,
+      other_deductions,
+      uniform_refund,
+      status
+    } = req.body;
+
+    const payroll = await query.get('SELECT p.*, e.tier as employee_tier FROM payrolls p JOIN employees e ON p.employee_id = e.id WHERE p.id = ?', [id]);
+    if (!payroll) {
+      return res.status(404).json({ message: 'Không tìm thấy bảng lương' });
+    }
 
     const now = new Date().toISOString();
 
-    // Cập nhật riêng trạng thái nếu chỉ truyền status
-    if (status && tier_salary === undefined && grade_salary === undefined && grade_level === undefined) {
-      await query.run(`
-        UPDATE payrolls SET status = ?, updated_at = ? WHERE id = ?
-      `, [status, now, id]);
+    // Nếu chỉ cập nhật trạng thái
+    if (status && Object.keys(req.body).length === 1) {
+      await query.run('UPDATE payrolls SET status = ?, updated_at = ? WHERE id = ?', [status, now, id]);
       return res.json({ message: 'Cập nhật trạng thái thành công.' });
     }
 
@@ -297,6 +304,7 @@ export const updatePayroll = async (req, res) => {
     const advPay = parseFloat(advance_payment !== undefined ? advance_payment : payroll.advance_payment || 0);
     const hrDeduct = parseFloat(hour_deduction !== undefined ? hour_deduction : payroll.hour_deduction || 0);
     const oDeduct = parseFloat(other_deductions !== undefined ? other_deductions : payroll.other_deductions || 0);
+    const uniformRefund = parseFloat(String(uniform_refund !== undefined ? uniform_refund : payroll.uniform_refund || 0).replace(',', '.')) || 0;
 
     const netSalary = Math.round(
       baseWorkSalary +
@@ -311,7 +319,8 @@ export const updatePayroll = async (req, res) => {
       incTax -
       advPay -
       hrDeduct -
-      oDeduct
+      oDeduct +
+      uniformRefund
     );
 
     await query.run(`
@@ -323,7 +332,7 @@ export const updatePayroll = async (req, res) => {
           performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
           other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
           social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, hour_deduction = ?,
-          other_deductions = ?, net_salary = ?, updated_at = ?
+          other_deductions = ?, uniform_refund = ?, net_salary = ?, updated_at = ?
       WHERE id = ?
     `, [
       tSalary, gSalary,
@@ -333,7 +342,7 @@ export const updatePayroll = async (req, res) => {
       perfKpiVal, discDeduct, perfNet, perfKpiVal,
       oBonus, mealPhone, oAllowance,
       socialIns, uFee, incTax, advPay, hrDeduct,
-      oDeduct, netSalary, now, id
+      oDeduct, uniformRefund, netSalary, now, id
     ]);
 
     // Nếu có tùy chọn đồng bộ sang hồ sơ nhân viên để lưu vĩnh viễn
