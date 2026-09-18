@@ -1406,27 +1406,25 @@ const PayrollPage = () => {
                     <tbody>
                       {rows27.map((row) => {
                         let rowClass = 'hover:bg-slate-50/80';
-                        let valClass = 'text-right pr-4 font-medium';
+                        let valClass = 'text-center font-medium';
 
                         if (row.isTotalIncome) {
                           rowClass = 'bg-amber-50 font-bold';
-                          valClass = 'text-right pr-4 font-black text-slate-900';
+                          valClass = 'text-center font-black text-slate-900';
                         } else if (row.isTotalDeduct) {
                           rowClass = 'bg-red-50/70 font-bold text-red-950';
-                          valClass = 'text-right pr-4 font-black text-red-700';
+                          valClass = 'text-center font-black text-red-700';
                         } else if (row.isRefund) {
                           rowClass = 'bg-emerald-50/60 font-medium';
-                          valClass = 'text-right pr-4 font-bold text-emerald-800';
+                          valClass = 'text-center font-bold text-emerald-800';
                         } else if (row.isNet) {
                           rowClass = 'bg-slate-200 font-black text-slate-950 border-t-2 border-slate-400';
-                          valClass = 'text-right pr-4 font-black text-slate-950 text-sm';
+                          valClass = 'text-center font-black text-slate-950 text-sm';
                         } else if (row.isCode) {
                           valClass = 'text-center font-bold text-red-600';
                         } else if (row.isBold) {
                           valClass = 'text-center font-black text-slate-900';
-                        } else if (typeof row.val === 'string' && !row.val.includes('đ') && !row.val.includes('%')) {
-                          valClass = 'text-center font-semibold text-slate-800';
-                        } else if (typeof row.val === 'number' || (typeof row.val === 'string' && row.val.includes('%'))) {
+                        } else {
                           valClass = 'text-center font-semibold text-slate-800';
                         }
 
