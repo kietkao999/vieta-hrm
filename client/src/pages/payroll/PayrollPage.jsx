@@ -1430,13 +1430,13 @@ const PayrollPage = () => {
 
                         return (
                           <tr key={row.stt} className={`${rowClass} transition`}>
-                            <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold text-slate-600">
+                            <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold text-slate-600" style={{ textAlign: 'center' }}>
                               {row.stt}
                             </td>
                             <td className={`border border-slate-300 px-3 py-1.5 ${row.isTotalIncome || row.isTotalDeduct || row.isNet ? 'font-black text-slate-900' : 'font-medium'}`}>
                               {row.name}
                             </td>
-                            <td className={`border border-slate-300 px-3 py-1.5 ${valClass}`}>
+                            <td className={`border border-slate-300 px-3 py-1.5 text-center ${valClass}`} style={{ textAlign: 'center' }}>
                               {row.val}
                             </td>
                           </tr>
