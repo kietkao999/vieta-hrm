@@ -272,8 +272,8 @@ export const updatePayroll = async (req, res) => {
     const tSalary = parseFloat(tier_salary !== undefined ? tier_salary : payroll.tier_salary || 4500000);
     const totalBase = tSalary + gSalary;
 
-    const wDays = parseFloat(work_days !== undefined ? work_days : payroll.work_days ?? 26);
-    const otHrs = parseFloat(ot_hours !== undefined ? ot_hours : payroll.ot_hours ?? 0);
+    const wDays = parseFloat(String(work_days !== undefined ? work_days : payroll.work_days ?? 26).replace(',', '.')) || 0;
+    const otHrs = parseFloat(String(ot_hours !== undefined ? ot_hours : payroll.ot_hours ?? 0).replace(',', '.')) || 0;
 
     const baseWorkSalary = Math.round((totalBase / 26) * wDays);
     const otSalary = Math.round((totalBase / 208) * otHrs * 1.5);

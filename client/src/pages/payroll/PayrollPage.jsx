@@ -180,8 +180,8 @@ const PayrollPage = () => {
         tier_salary: editForm.tier_salary,
         grade_salary: editForm.grade_salary,
         sync_to_employee: editForm.sync_to_employee,
-        work_days: editForm.work_days,
-        ot_hours: editForm.ot_hours,
+        work_days: parseFloat(String(editForm.work_days ?? 26).replace(',', '.')) || 0,
+        ot_hours: parseFloat(String(editForm.ot_hours ?? 0).replace(',', '.')) || 0,
         responsibility_quota: editForm.responsibility_quota,
         responsibility_deduction_rate: editForm.responsibility_deduction_rate,
         responsibility_kpi: editForm.responsibility_kpi,
@@ -213,8 +213,8 @@ const PayrollPage = () => {
     const tSalary = parseFloat(editForm.tier_salary || 0);
     const gSalary = parseFloat(editForm.grade_salary || 0);
     const totalBase = tSalary + gSalary;
-    const wDays = parseFloat(editForm.work_days ?? 26);
-    const otHrs = parseFloat(editForm.ot_hours ?? 0);
+    const wDays = parseFloat(String(editForm.work_days ?? 26).replace(',', '.')) || 0;
+    const otHrs = parseFloat(String(editForm.ot_hours ?? 0).replace(',', '.')) || 0;
 
     const baseWork = Math.round((totalBase / 26) * wDays);
     const otSalary = Math.round((totalBase / 208) * otHrs * 1.5);
@@ -1003,11 +1003,12 @@ const PayrollPage = () => {
                     <label className="text-xs font-semibold text-slate-700">Ngày công thực tế (chuẩn 26 ngày)</label>
                     <input
                       type="number"
-                      step="0.5"
+                      step="any"
                       min="0"
                       max="31"
+                      placeholder="26"
                       value={editForm.work_days}
-                      onChange={(e) => setEditForm({ ...editForm, work_days: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => setEditForm({ ...editForm, work_days: e.target.value })}
                       className="w-full border-2 border-blue-400 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-blue-700 outline-none focus:ring-2 focus:ring-blue-300"
                     />
                   </div>
@@ -1015,10 +1016,11 @@ const PayrollPage = () => {
                     <label className="text-xs font-semibold text-slate-700">Giờ tăng ca (OT × 1.5)</label>
                     <input
                       type="number"
-                      step="0.5"
+                      step="any"
                       min="0"
+                      placeholder="0"
                       value={editForm.ot_hours}
-                      onChange={(e) => setEditForm({ ...editForm, ot_hours: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => setEditForm({ ...editForm, ot_hours: e.target.value })}
                       className="w-full border-2 border-indigo-400 bg-white rounded-lg p-2 text-xs mt-1 font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-300"
                     />
                   </div>
