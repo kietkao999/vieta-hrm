@@ -526,43 +526,71 @@ export const exportReportExcel = async (req, res) => {
       `;
       const payrolls = await query.all(payrollSql, [targetYear, ...allMonthMatches, ...deptParams]);
 
-      const payrollFormatted = payrolls.map((p, idx) => ({
-        'STT': idx + 1,
-        'Mã NV': p.employee_code,
-        'Họ và Tên': p.fullname,
-        'Phòng Ban': p.department_name || 'Khác',
-        'Chức Vụ': p.position_name || '',
-        'Chi Nhánh': p.branch_name || 'Việt Á',
-        'Kỳ Lương': `Tháng ${p.month.toString().padStart(2, '0')}/${p.year}`,
-        'Lương Tầng (đ)': p.tier_salary || 0,
-        'Lương Bậc (đ)': p.grade_salary || 0,
-        'Ngày Công Thực Tế': p.work_days ?? 26,
-        'Lương Theo Ngày Công (đ)': p.base_work_salary || Math.round((((p.tier_salary || 0) + (p.grade_salary || 0)) / 26) * (p.work_days ?? 26)),
-        'Giờ Tăng Ca (h)': p.ot_hours || 0,
-        'Lương Tăng Ca 150% (đ)': p.ot_salary || Math.round((((p.tier_salary || 0) + (p.grade_salary || 0)) / 208) * (p.ot_hours || 0) * 1.5),
-        'Thưởng KPI Trách Nhiệm (đ)': p.responsibility_kpi || p.responsibility_net || 0,
-        'Thưởng KPI Hiệu Quả (đ)': p.performance_kpi || p.performance_bonus || 0,
-        'Thưởng Khác (đ)': p.other_bonus || 0,
-        'PC Cơm & Điện Thoại (đ)': p.meal_phone_allowance || 0,
-        'Phụ Cấp Khác (đ)': p.other_allowance || 0,
-        'BHXH (đ)': p.social_insurance || 0,
-        'Đoàn Phí (đ)': p.union_fee || 0,
-        'Thuế TNCN (đ)': p.income_tax || 0,
-        'Tạm Ứng (đ)': p.advance_payment || 0,
-        'Trừ Cắt Giờ (đ)': p.hour_deduction || 0,
-        'Trừ Khác (đ)': (p.other_deductions || 0) + (p.discipline_deduction || 0),
-        'Tổng Thực Lĩnh (đ)': p.net_salary || 0,
-        'Trạng Thái': p.status || 'Đã chốt'
-      }));
+      const payrollFormatted = payrolls.map((p, idx) => {
+        const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
+        const wDays = p.work_days ?? 26;
+        const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
+        const otHrs = p.ot_hours || 0;
+        const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
+        const respKpi = p.responsibility_kpi || p.responsibility_net || 0;
+        const perfKpi = p.performance_kpi || p.performance_bonus || 0;
+        const oBonus = p.other_bonus || 0;
+        const mealPhone = p.meal_phone_allowance || 0;
+        const oAllowance = p.other_allowance || 0;
+        const totalIncome = baseWork + respKpi + perfKpi + otSal + mealPhone + oAllowance + oBonus;
+
+        const socialIns = p.social_insurance || 0;
+        const uFee = p.union_fee || 0;
+        const incTax = p.income_tax || 0;
+        const hrDeduct = p.hour_deduction || 0;
+        const advPay = p.advance_payment || 0;
+        const otherDeduct = (p.other_deductions || 0) + incTax;
+        const discDeduct = p.discipline_deduction || 0;
+        const totalDeductions = socialIns + uFee + hrDeduct + advPay + otherDeduct + discDeduct;
+        const uniRefund = p.uniform_refund || 0;
+        const netSal = p.net_salary !== undefined && p.net_salary !== null ? p.net_salary : (totalIncome - totalDeductions + uniRefund);
+
+        return {
+          'STT': idx + 1,
+          'Mã NV': p.employee_code,
+          'Họ và Tên': p.fullname,
+          'Phòng Ban': p.department_name || 'Khác',
+          'Chức Vụ': p.position_name || '',
+          'Kỳ Lương': `Tháng ${p.month.toString().padStart(2, '0')}/${p.year}`,
+          '1. Lương Tầng (đ)': p.tier_salary || 0,
+          '2. Lương Bậc (đ)': p.grade_salary || 0,
+          '3. Tổng Lương Tầng + Bậc (đ)': totalBase,
+          '4. Ngày Công Thực Tế': wDays,
+          '5. Lương Vị Trí Theo Ngày Công (đ)': baseWork,
+          '6. Lương Trách Nhiệm Theo KPI (đ)': respKpi,
+          '7. Lương Thưởng Hiệu Quả (đ)': perfKpi,
+          '8. Giờ Tăng Ca (h)': otHrs,
+          '9. Lương Tăng Ca (đ)': otSal,
+          '10. Phụ Cấp Cơm/ ĐT (đ)': mealPhone,
+          '11. Phụ Cấp Khác (đ)': oAllowance,
+          '12. Thưởng Khác (đ)': oBonus,
+          '13. TỔNG THU NHẬP (đ)': totalIncome,
+          '14. Giảm Trừ BHXH (đ)': socialIns,
+          '15. Giảm Trừ Công Đoàn (đ)': uFee,
+          '16. Cắt Giờ / Giảm Trừ (đ)': hrDeduct,
+          '17. Tạm Ứng (đ)': advPay,
+          '18. Trừ Vi Phạm Nội Bộ (đ)': discDeduct,
+          '19. Trừ Khác (đ)': otherDeduct,
+          '20. TỔNG CÁC KHOẢN TRỪ (đ)': totalDeductions,
+          '21. Thanh Trả Tiền Đồng Phục (đ)': uniRefund,
+          '22. THU NHẬP THỰC NHẬN (đ)': netSal,
+          'Trạng Thái': p.status || 'Đã chốt'
+        };
+      });
 
       const wsPayroll = XLSX.utils.json_to_sheet(payrollFormatted);
       wsPayroll['!cols'] = [
         { wch: 6 }, { wch: 12 }, { wch: 25 }, { wch: 22 }, { wch: 20 },
-        { wch: 22 }, { wch: 15 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
-        { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 22 }, { wch: 22 },
-        { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
-        { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 20 },
-        { wch: 14 }
+        { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 16 },
+        { wch: 24 }, { wch: 24 }, { wch: 22 }, { wch: 16 }, { wch: 18 },
+        { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 16 },
+        { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 22 }, { wch: 16 },
+        { wch: 22 }, { wch: 24 }, { wch: 24 }, { wch: 14 }
       ];
       XLSX.utils.book_append_sheet(wb, wsPayroll, 'Bảng Lương Chi Tiết');
     }

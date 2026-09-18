@@ -1296,14 +1296,17 @@ const PayrollPage = () => {
 
         const socialIns = selectedPayroll.social_insurance || 0;
         const uFee = selectedPayroll.union_fee || 0;
+        const incTax = selectedPayroll.income_tax || 0;
         const hrDeduct = selectedPayroll.hour_deduction || 0;
         const advPay = selectedPayroll.advance_payment || 0;
-        const oDeduct = selectedPayroll.other_deductions || 0;
+        const oDeduct = (selectedPayroll.other_deductions || 0) + incTax;
         const discDeduct = selectedPayroll.discipline_deduction || 0;
 
         const totalDeductions = socialIns + uFee + hrDeduct + advPay + oDeduct + discDeduct;
         const uniRefund = selectedPayroll.uniform_refund || 0;
-        const netSalary = totalIncome - totalDeductions + uniRefund;
+        const netSalary = selectedPayroll.net_salary !== undefined && selectedPayroll.net_salary !== null 
+          ? selectedPayroll.net_salary 
+          : (totalIncome - totalDeductions + uniRefund);
 
         // Xác định Tầng & Bậc
         let tierText = selectedPayroll.employee_tier;
