@@ -1362,7 +1362,7 @@ const PayrollPage = () => {
               
               {/* Toolbar */}
               <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center print:hidden shrink-0">
-                <span className="text-xs font-bold text-slate-700">Xem Phiếu Lương Nhân Viên (Chuẩn 27 Dòng)</span>
+                <span className="text-xs font-bold text-slate-700">Xem Phiếu Lương Nhân Viên</span>
                 <div className="flex space-x-2">
                   <button
                     onClick={handlePrint}
@@ -1384,9 +1384,9 @@ const PayrollPage = () => {
                 <div className="border border-slate-300 p-5 md:p-6 rounded-xl print:border-none print:p-0">
                   
                   {/* Header */}
-                  <div className="text-center mb-4 pb-2 border-b border-slate-200">
+                  <div className="text-center mb-5 pb-3 border-b border-slate-200">
                     <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">CÔNG TY TNHH TM SX NỆM VIỆT Á</h3>
-                    <h1 className="text-base md:text-lg font-black text-slate-900 uppercase mt-1">
+                    <h1 className="text-lg md:text-xl font-black text-slate-900 uppercase mt-1">
                       THÔNG BÁO LƯƠNG CÁ NHÂN
                     </h1>
                     <p className="text-xs text-slate-600 italic font-medium mt-0.5">
@@ -1395,33 +1395,33 @@ const PayrollPage = () => {
                   </div>
 
                   {/* 27-row Table */}
-                  <table className="w-full text-xs border border-collapse border-slate-300 text-slate-800">
+                  <table className="w-full text-xs border border-collapse border-slate-300 table-fixed text-slate-800">
                     <thead>
                       <tr className="bg-amber-400 text-slate-900 font-bold">
-                        <th className="border border-slate-400 px-2 py-1.5 text-center w-12">STT</th>
-                        <th className="border border-slate-400 px-3 py-1.5 text-left">Danh mục</th>
-                        <th className="border border-slate-400 px-3 py-1.5 text-center w-48">Thông số</th>
+                        <th className="border border-slate-400 px-2 py-2 text-center w-[10%]">STT</th>
+                        <th className="border border-slate-400 px-3 py-2 text-center w-[52%]">Danh mục</th>
+                        <th className="border border-slate-400 px-3 py-2 text-center w-[38%]">Thông số</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows27.map((row) => {
                         let rowClass = 'hover:bg-slate-50/80';
-                        let valClass = 'text-right font-medium';
+                        let valClass = 'text-right pr-4 font-medium';
 
                         if (row.isTotalIncome) {
-                          rowClass = 'bg-amber-50/90 font-bold';
-                          valClass = 'text-right font-bold text-slate-900';
+                          rowClass = 'bg-amber-50 font-bold';
+                          valClass = 'text-right pr-4 font-black text-slate-900';
                         } else if (row.isTotalDeduct) {
                           rowClass = 'bg-red-50/70 font-bold text-red-950';
-                          valClass = 'text-right font-bold text-red-700';
+                          valClass = 'text-right pr-4 font-black text-red-700';
                         } else if (row.isRefund) {
                           rowClass = 'bg-emerald-50/60 font-medium';
-                          valClass = 'text-right font-semibold text-emerald-800';
+                          valClass = 'text-right pr-4 font-bold text-emerald-800';
                         } else if (row.isNet) {
                           rowClass = 'bg-slate-200 font-black text-slate-950 border-t-2 border-slate-400';
-                          valClass = 'text-right font-black text-slate-950 text-sm';
+                          valClass = 'text-right pr-4 font-black text-slate-950 text-sm';
                         } else if (row.isCode) {
-                          valClass = 'text-center font-bold text-red-600 bg-red-50/40 rounded';
+                          valClass = 'text-center font-bold text-red-600';
                         } else if (row.isBold) {
                           valClass = 'text-center font-black text-slate-900';
                         } else if (typeof row.val === 'string' && !row.val.includes('đ') && !row.val.includes('%')) {
@@ -1432,13 +1432,13 @@ const PayrollPage = () => {
 
                         return (
                           <tr key={row.stt} className={`${rowClass} transition`}>
-                            <td className="border border-slate-300 px-2 py-1 text-center font-semibold text-slate-600">
+                            <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold text-slate-600">
                               {row.stt}
                             </td>
-                            <td className={`border border-slate-300 px-3 py-1 ${row.isTotalIncome || row.isTotalDeduct || row.isNet ? 'font-black' : ''}`}>
+                            <td className={`border border-slate-300 px-3 py-1.5 ${row.isTotalIncome || row.isTotalDeduct || row.isNet ? 'font-black text-slate-900' : 'font-medium'}`}>
                               {row.name}
                             </td>
-                            <td className={`border border-slate-300 px-3 py-1 ${valClass}`}>
+                            <td className={`border border-slate-300 px-3 py-1.5 ${valClass}`}>
                               {row.val}
                             </td>
                           </tr>
@@ -1452,12 +1452,12 @@ const PayrollPage = () => {
                     <div>
                       <p className="font-bold text-slate-800">Người lập biểu</p>
                       <p className="text-slate-400 italic mt-0.5">(Ký, họ tên)</p>
-                      <div className="h-12"></div>
+                      <div className="h-14"></div>
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">Giám đốc duyệt</p>
                       <p className="text-slate-400 italic mt-0.5">(Ký, đóng dấu)</p>
-                      <div className="h-12"></div>
+                      <div className="h-14"></div>
                     </div>
                   </div>
 
