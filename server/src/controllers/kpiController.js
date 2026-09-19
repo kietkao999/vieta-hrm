@@ -131,6 +131,75 @@ export const getKpis = async (req, res) => {
 };
 
 /**
+ * Helper đồng bộ dữ liệu KPI sang bảng Bảng Lương (Payrolls)
+ */
+export const syncKpiToPayroll = async (employeeId, month, year, kpiData) => {
+  try {
+    if (!employeeId || !month || !year) return;
+    const padMonth = month.toString().padStart(2, '0');
+    const rawMonth = parseInt(month, 10).toString();
+    const targetYear = parseInt(year, 10);
+
+    const payroll = await query.get(
+      `SELECT * FROM payrolls WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?`,
+      [employeeId, padMonth, rawMonth, targetYear]
+    );
+
+    const respBonus = parseFloat(kpiData.responsibility_bonus || 0);
+    const respRate = kpiData.responsibility_rate !== undefined && kpiData.responsibility_rate !== null 
+      ? parseFloat(kpiData.responsibility_rate) 
+      : 1.0;
+    const respAmount = kpiData.responsibility_amount !== undefined && kpiData.responsibility_amount !== null
+      ? parseFloat(kpiData.responsibility_amount)
+      : Math.round(respBonus * respRate);
+    const perfBonus = parseFloat(kpiData.performance_bonus || 0);
+    const discDeduct = parseFloat(kpiData.discipline_deduction || 0);
+    const perfNet = Math.max(0, perfBonus - discDeduct);
+    const deductRate = Math.max(0, 1.0 - respRate);
+    const now = new Date().toISOString();
+
+    if (payroll) {
+      const totalBase = (payroll.tier_salary || 0) + (payroll.grade_salary || 0);
+      const wDays = payroll.work_days ?? 26;
+      const baseWork = payroll.base_work_salary !== undefined && payroll.base_work_salary !== null
+        ? payroll.base_work_salary
+        : Math.round((totalBase / 26) * wDays);
+      const otHrs = payroll.ot_hours || 0;
+      const otSal = payroll.ot_salary !== undefined && payroll.ot_salary !== null
+        ? payroll.ot_salary
+        : Math.round((totalBase / 208) * otHrs * 1.5);
+
+      const oBonus = payroll.other_bonus || 0;
+      const mealPhone = payroll.meal_phone_allowance || 0;
+      const oAllowance = payroll.other_allowance || 0;
+
+      const totalIncome = baseWork + otSal + respAmount + perfBonus + oBonus + mealPhone + oAllowance;
+
+      const socialIns = payroll.social_insurance || 0;
+      const uFee = payroll.union_fee || 0;
+      const incTax = payroll.income_tax || 0;
+      const advPay = payroll.advance_payment || 0;
+      const hrDeduct = payroll.hour_deduction || 0;
+      const oDeduct = payroll.other_deductions || 0;
+      const totalDeductions = socialIns + uFee + incTax + advPay + hrDeduct + oDeduct + discDeduct;
+      const uniRefund = payroll.uniform_refund || 0;
+      const netSalary = Math.max(0, totalIncome - totalDeductions + uniRefund);
+
+      await query.run(
+        `UPDATE payrolls
+         SET responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
+             performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
+             net_salary = ?, updated_at = ?
+         WHERE id = ?`,
+        [respBonus, deductRate, respAmount, respAmount, perfBonus, discDeduct, perfNet, perfBonus, netSalary, now, payroll.id]
+      );
+    }
+  } catch (error) {
+    console.error('Lỗi đồng bộ KPI sang Payroll:', error);
+  }
+};
+
+/**
  * Khởi tạo dữ liệu KPI tháng cho toàn bộ nhân sự đang làm việc
  * Body: { month, year }
  */
@@ -167,6 +236,14 @@ export const initMonthlyKpis = async (req, res) => {
           [emp.id, targetMonth, targetYear, defaultBonus, defaultBonus, now, now]
         );
         createdCount++;
+        
+        await syncKpiToPayroll(emp.id, targetMonth, targetYear, {
+          responsibility_bonus: defaultBonus,
+          responsibility_rate: 1.0,
+          responsibility_amount: defaultBonus,
+          performance_bonus: 0,
+          discipline_deduction: 0
+        });
       }
     }
 
@@ -229,6 +306,14 @@ export const saveBulkKpis = async (req, res) => {
           [empId, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, now]
         );
       }
+
+      await syncKpiToPayroll(empId, targetMonth, targetYear, {
+        responsibility_bonus: respBonus,
+        responsibility_rate: respRate,
+        responsibility_amount: respAmount,
+        performance_bonus: perfBonus,
+        discipline_deduction: discDeduction
+      });
     }
 
     return res.json({ message: 'Lưu dữ liệu KPI tháng thành công.' });
@@ -266,6 +351,19 @@ export const createOrUpdateKpi = async (req, res) => {
          WHERE id = ?`,
         [respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, id]
       );
+
+      const targetEmpId = employee_id || existing.employee_id;
+      const targetM = month || existing.month;
+      const targetY = year || existing.year;
+
+      await syncKpiToPayroll(targetEmpId, targetM, targetY, {
+        responsibility_bonus: respBonus,
+        responsibility_rate: respRate,
+        responsibility_amount: respAmount,
+        performance_bonus: perfBonus,
+        discipline_deduction: discDeduction
+      });
+
       return res.json({ message: 'Cập nhật KPI thành công.' });
     }
 
@@ -281,6 +379,7 @@ export const createOrUpdateKpi = async (req, res) => {
       [employee_id, month.toString(), targetMonth, targetYear]
     );
 
+    let savedId = existing?.id;
     if (existing) {
       await query.run(
         `UPDATE employee_monthly_kpis
@@ -288,7 +387,6 @@ export const createOrUpdateKpi = async (req, res) => {
          WHERE id = ?`,
         [respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, existing.id]
       );
-      return res.json({ message: 'Cập nhật KPI thành công.' });
     } else {
       const result = await query.run(
         `INSERT INTO employee_monthly_kpis (
@@ -296,8 +394,18 @@ export const createOrUpdateKpi = async (req, res) => {
         ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
         [employee_id, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note || '', now, now]
       );
-      return res.status(201).json({ message: 'Thêm KPI thành công.', id: result.lastID });
+      savedId = result.lastID;
     }
+
+    await syncKpiToPayroll(employee_id, targetMonth, targetYear, {
+      responsibility_bonus: respBonus,
+      responsibility_rate: respRate,
+      responsibility_amount: respAmount,
+      performance_bonus: perfBonus,
+      discipline_deduction: discDeduction
+    });
+
+    return res.status(existing ? 200 : 201).json({ message: 'Lưu KPI thành công.', id: savedId });
   } catch (error) {
     console.error('Lỗi lưu KPI:', error);
     return res.status(500).json({ message: 'Lỗi lưu dữ liệu KPI.' });
@@ -372,6 +480,17 @@ export const deleteKpi = async (req, res) => {
     if (!kpi) return res.status(404).json({ message: 'Không tìm thấy bản ghi KPI.' });
 
     await query.run('DELETE FROM employee_monthly_kpis WHERE id = ?', [id]);
+
+    if (kpi.employee_id && kpi.month && kpi.year) {
+      await syncKpiToPayroll(kpi.employee_id, kpi.month, kpi.year, {
+        responsibility_bonus: kpi.responsibility_bonus || 0,
+        responsibility_rate: 1.0,
+        responsibility_amount: kpi.responsibility_bonus || 0,
+        performance_bonus: 0,
+        discipline_deduction: 0
+      });
+    }
+
     return res.json({ message: 'Đã xóa bản ghi KPI.' });
   } catch (error) {
     console.error('Lỗi xóa KPI:', error);

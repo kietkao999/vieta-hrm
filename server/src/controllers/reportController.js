@@ -515,12 +515,20 @@ export const exportReportExcel = async (req, res) => {
     if (reportType === 'all' || reportType === 'payroll') {
       const payrollSql = `
         SELECT p.*, e.code as employee_code, e.fullname, e.gender,
-               d.name as department_name, pos.name as position_name, b.name as branch_name
+               d.name as department_name, pos.name as position_name, b.name as branch_name,
+               k.responsibility_bonus as kpi_responsibility_bonus,
+               k.responsibility_rate as kpi_responsibility_rate,
+               k.responsibility_amount as kpi_responsibility_amount,
+               k.performance_bonus as kpi_performance_bonus,
+               k.discipline_deduction as kpi_discipline_deduction
         FROM payrolls p
         JOIN employees e ON p.employee_id = e.id
         LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
         LEFT JOIN positions pos ON e.position_id = pos.id
         LEFT JOIN branches b ON e.branch_id = b.id
+        LEFT JOIN employee_monthly_kpis k ON k.employee_id = p.employee_id
+          AND (k.month = p.month OR CAST(k.month AS INTEGER) = CAST(p.month AS INTEGER))
+          AND k.year = p.year
         WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
         ORDER BY p.month ASC, d.name ASC, e.code ASC
       `;
@@ -532,8 +540,12 @@ export const exportReportExcel = async (req, res) => {
         const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
         const otHrs = p.ot_hours || 0;
         const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
-        const respKpi = p.responsibility_kpi || p.responsibility_net || 0;
-        const perfKpi = p.performance_kpi || p.performance_bonus || 0;
+        const respKpi = p.kpi_responsibility_amount !== undefined && p.kpi_responsibility_amount !== null
+          ? parseFloat(p.kpi_responsibility_amount)
+          : (p.responsibility_kpi !== undefined ? parseFloat(p.responsibility_kpi) : (p.responsibility_net || 0));
+        const perfKpi = p.kpi_performance_bonus !== undefined && p.kpi_performance_bonus !== null
+          ? parseFloat(p.kpi_performance_bonus)
+          : (p.performance_kpi !== undefined ? parseFloat(p.performance_kpi) : (p.performance_bonus || 0));
         const oBonus = p.other_bonus || 0;
         const mealPhone = p.meal_phone_allowance || 0;
         const oAllowance = p.other_allowance || 0;
@@ -545,7 +557,9 @@ export const exportReportExcel = async (req, res) => {
         const hrDeduct = p.hour_deduction || 0;
         const advPay = p.advance_payment || 0;
         const otherDeduct = (p.other_deductions || 0) + incTax;
-        const discDeduct = p.discipline_deduction || 0;
+        const discDeduct = p.kpi_discipline_deduction !== undefined && p.kpi_discipline_deduction !== null
+          ? parseFloat(p.kpi_discipline_deduction)
+          : (p.discipline_deduction || 0);
         const totalDeductions = socialIns + uFee + hrDeduct + advPay + otherDeduct + discDeduct;
         const uniRefund = p.uniform_refund || 0;
         const netSal = p.net_salary !== undefined && p.net_salary !== null ? p.net_salary : (totalIncome - totalDeductions + uniRefund);

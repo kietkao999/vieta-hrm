@@ -297,8 +297,15 @@ const PayrollPage = () => {
     const baseWork = currentSlip?.base_work_salary || (currentSlip ? Math.round((totalBase / 26) * wDays) : 0);
     const otHrs = currentSlip?.ot_hours || 0;
     const otSal = currentSlip?.ot_salary || (currentSlip ? Math.round((totalBase / 208) * otHrs * 1.5) : 0);
-    const respKpi = currentSlip?.responsibility_kpi || currentSlip?.responsibility_net || currentSlip?.responsibility_quota || 0;
-    const perfKpi = currentSlip?.performance_kpi || currentSlip?.performance_bonus || 0;
+    const respKpi = currentSlip?.kpi_responsibility_amount !== undefined && currentSlip?.kpi_responsibility_amount !== null
+      ? parseFloat(currentSlip.kpi_responsibility_amount)
+      : (currentSlip?.responsibility_kpi || currentSlip?.responsibility_net || currentSlip?.responsibility_quota || 0);
+    const perfKpi = currentSlip?.kpi_performance_bonus !== undefined && currentSlip?.kpi_performance_bonus !== null
+      ? parseFloat(currentSlip.kpi_performance_bonus)
+      : (currentSlip?.performance_kpi || currentSlip?.performance_bonus || 0);
+    const discDeduct = currentSlip?.kpi_discipline_deduction !== undefined && currentSlip?.kpi_discipline_deduction !== null
+      ? parseFloat(currentSlip.kpi_discipline_deduction)
+      : (currentSlip?.discipline_deduction || 0);
     const oBonus = currentSlip?.other_bonus || 0;
     const totalBonus = respKpi + perfKpi + oBonus;
 
@@ -311,10 +318,13 @@ const PayrollPage = () => {
     const incTax = currentSlip?.income_tax || 0;
     const advPay = currentSlip?.advance_payment || 0;
     const hrDeduct = currentSlip?.hour_deduction || 0;
-    const otherDeduct = (currentSlip?.other_deductions || 0) + (currentSlip?.discipline_deduction || 0);
+    const otherDeduct = (currentSlip?.other_deductions || 0) + discDeduct;
     const totalDeductions = socialIns + unionFee + incTax + advPay + hrDeduct + otherDeduct;
 
-    const netSalary = currentSlip?.net_salary || (baseWork + otSal + totalBonus + totalAllowances - totalDeductions);
+    const uniRefund = currentSlip?.uniform_refund || 0;
+    const netSalary = currentSlip?.net_salary !== undefined && currentSlip?.net_salary !== null 
+      ? currentSlip.net_salary 
+      : (baseWork + otSal + totalBonus + totalAllowances - totalDeductions + uniRefund);
 
     return (
       <div className="space-y-6">
@@ -1286,8 +1296,15 @@ const PayrollPage = () => {
         const baseWork = selectedPayroll.base_work_salary || Math.round((totalBase / 26) * wDays);
         const otHrs = selectedPayroll.ot_hours || 0;
         const otSal = selectedPayroll.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
-        const respKpi = selectedPayroll.responsibility_kpi || selectedPayroll.responsibility_net || 0;
-        const perfKpi = selectedPayroll.performance_kpi || selectedPayroll.performance_bonus || 0;
+        
+        const respKpi = selectedPayroll.kpi_responsibility_amount !== undefined && selectedPayroll.kpi_responsibility_amount !== null
+          ? parseFloat(selectedPayroll.kpi_responsibility_amount)
+          : (selectedPayroll.responsibility_kpi !== undefined ? parseFloat(selectedPayroll.responsibility_kpi) : (selectedPayroll.responsibility_net || 0));
+
+        const perfKpi = selectedPayroll.kpi_performance_bonus !== undefined && selectedPayroll.kpi_performance_bonus !== null
+          ? parseFloat(selectedPayroll.kpi_performance_bonus)
+          : (selectedPayroll.performance_kpi !== undefined ? parseFloat(selectedPayroll.performance_kpi) : (selectedPayroll.performance_bonus || 0));
+
         const oBonus = selectedPayroll.other_bonus || 0;
         const mealPhone = selectedPayroll.meal_phone_allowance || 0;
         const oAllowance = selectedPayroll.other_allowance || 0;
@@ -1300,7 +1317,10 @@ const PayrollPage = () => {
         const hrDeduct = selectedPayroll.hour_deduction || 0;
         const advPay = selectedPayroll.advance_payment || 0;
         const oDeduct = (selectedPayroll.other_deductions || 0) + incTax;
-        const discDeduct = selectedPayroll.discipline_deduction || 0;
+        
+        const discDeduct = selectedPayroll.kpi_discipline_deduction !== undefined && selectedPayroll.kpi_discipline_deduction !== null
+          ? parseFloat(selectedPayroll.kpi_discipline_deduction)
+          : (selectedPayroll.discipline_deduction || 0);
 
         const totalDeductions = socialIns + uFee + hrDeduct + advPay + oDeduct + discDeduct;
         const uniRefund = selectedPayroll.uniform_refund || 0;
@@ -1322,12 +1342,17 @@ const PayrollPage = () => {
         }
 
         const gradeVal = selectedPayroll.employee_grade !== undefined && selectedPayroll.employee_grade !== null
-          ? selectedPayroll.employee_grade
-          : (selectedPayroll.grade_salary ? Math.round(selectedPayroll.grade_salary / 400000) : 0);
+          ? (String(selectedPayroll.employee_grade).includes('Bậc') ? selectedPayroll.employee_grade : `Bậc ${selectedPayroll.employee_grade}`)
+          : (selectedPayroll.grade_salary ? `Bậc ${Math.round(selectedPayroll.grade_salary / 400000)}` : 'Bậc 0');
 
-        const kpiText = selectedPayroll.responsibility_deduction_rate !== undefined && selectedPayroll.responsibility_deduction_rate !== null
-          ? `${((1 - selectedPayroll.responsibility_deduction_rate) * 100).toFixed(1).replace('.', ',')}%`
-          : '100,0%';
+        const kpiRate = selectedPayroll.kpi_responsibility_rate !== undefined && selectedPayroll.kpi_responsibility_rate !== null
+          ? parseFloat(selectedPayroll.kpi_responsibility_rate)
+          : (selectedPayroll.responsibility_rate !== undefined && selectedPayroll.responsibility_rate !== null
+            ? parseFloat(selectedPayroll.responsibility_rate)
+            : (selectedPayroll.responsibility_deduction_rate !== undefined && selectedPayroll.responsibility_deduction_rate !== null
+              ? 1 - parseFloat(selectedPayroll.responsibility_deduction_rate)
+              : 1.0));
+        const kpiText = `${(kpiRate * 100).toFixed(1).replace('.', ',')}%`;
 
         const rows27 = [
           { stt: 1, name: 'Mã nhân sự:', val: selectedPayroll.employee_code, isCode: true },

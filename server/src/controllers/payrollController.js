@@ -12,11 +12,20 @@ export const getPayroll = async (req, res) => {
     
     let sql = `
       SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, 
-             e.join_date, e.department_id, d.name as department_name, pos.name as position_name
+             e.join_date, e.department_id, d.name as department_name, pos.name as position_name,
+             k.responsibility_bonus as kpi_responsibility_bonus,
+             k.responsibility_rate as kpi_responsibility_rate,
+             k.responsibility_amount as kpi_responsibility_amount,
+             k.performance_bonus as kpi_performance_bonus,
+             k.discipline_deduction as kpi_discipline_deduction,
+             k.note as kpi_note
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN positions pos ON e.position_id = pos.id
+      LEFT JOIN employee_monthly_kpis k ON k.employee_id = p.employee_id
+        AND (k.month = p.month OR CAST(k.month AS INTEGER) = CAST(p.month AS INTEGER))
+        AND k.year = p.year
       WHERE 1=1
     `;
     const params = [];
@@ -49,11 +58,52 @@ export const getPayroll = async (req, res) => {
     sql += ` ORDER BY p.year DESC, p.month DESC, e.fullname ASC`;
     const records = await query.all(sql, params);
 
-    // Tính toán bổ sung thông tin thâm niên tự động cho từng bản ghi
+    // Tính toán bổ sung thông tin thâm niên tự động và đồng bộ KPI cho từng bản ghi
     const enrichedRecords = (records || []).map(r => {
       const seniority = calculateSeniority(r.join_date, r.month || month || 8, r.year || year || 2026);
+      
+      const hasKpi = r.kpi_responsibility_amount !== null && r.kpi_responsibility_amount !== undefined;
+      const respQuota = hasKpi ? parseFloat(r.kpi_responsibility_bonus || 0) : (r.responsibility_quota || 0);
+      const respRate = r.kpi_responsibility_rate !== undefined && r.kpi_responsibility_rate !== null 
+        ? parseFloat(r.kpi_responsibility_rate) 
+        : (r.responsibility_deduction_rate !== undefined && r.responsibility_deduction_rate !== null ? 1 - parseFloat(r.responsibility_deduction_rate) : 1.0);
+      const respAmount = hasKpi ? parseFloat(r.kpi_responsibility_amount) : (r.responsibility_kpi || r.responsibility_net || Math.round(respQuota * respRate));
+      const perfBonus = r.kpi_performance_bonus !== undefined && r.kpi_performance_bonus !== null ? parseFloat(r.kpi_performance_bonus) : (r.performance_kpi || r.performance_bonus || 0);
+      const discDeduct = r.kpi_discipline_deduction !== undefined && r.kpi_discipline_deduction !== null ? parseFloat(r.kpi_discipline_deduction) : (r.discipline_deduction || 0);
+
+      const totalBase = (r.tier_salary || 0) + (r.grade_salary || 0);
+      const wDays = r.work_days ?? 26;
+      const baseWork = r.base_work_salary !== undefined && r.base_work_salary !== null ? r.base_work_salary : Math.round((totalBase / 26) * wDays);
+      const otHrs = r.ot_hours || 0;
+      const otSal = r.ot_salary !== undefined && r.ot_salary !== null ? r.ot_salary : Math.round((totalBase / 208) * otHrs * 1.5);
+      const otherBonus = r.other_bonus || 0;
+      const mealPhone = r.meal_phone_allowance || 0;
+      const otherAllowance = r.other_allowance || 0;
+      const totalIncome = baseWork + otSal + respAmount + perfBonus + otherBonus + mealPhone + otherAllowance;
+
+      const socialIns = r.social_insurance || 0;
+      const uFee = r.union_fee || 0;
+      const incTax = r.income_tax || 0;
+      const advPay = r.advance_payment || 0;
+      const hrDeduct = r.hour_deduction || 0;
+      const otherDeduct = r.other_deductions || 0;
+      const totalDeductions = socialIns + uFee + incTax + advPay + hrDeduct + otherDeduct + discDeduct;
+      const uniformRefund = r.uniform_refund || 0;
+      const netSalary = Math.max(0, totalIncome - totalDeductions + uniformRefund);
+
       return {
         ...r,
+        responsibility_quota: respQuota,
+        responsibility_deduction_rate: 1 - respRate,
+        responsibility_rate: respRate,
+        responsibility_net: respAmount,
+        responsibility_kpi: respAmount,
+        performance_bonus: perfBonus,
+        performance_kpi: perfBonus,
+        discipline_deduction: discDeduct,
+        total_income: totalIncome,
+        total_deductions: totalDeductions,
+        net_salary: netSalary,
         seniority_text: seniority.seniorityText,
         seniority_years: seniority.years
       };
