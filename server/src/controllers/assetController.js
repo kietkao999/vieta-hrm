@@ -170,72 +170,112 @@ const SAMPLE_ASSETS = [
   }
 ];
 
-// Hàm tự động nạp tài sản mẫu nếu chưa có
+import { COMPANY_ALL_ASSETS } from '../config/company_assets_data.js';
+
+// Hàm tự động nạp toàn bộ 287 tài sản thực tế của Nệm Việt Á nếu chưa có hoặc đang là bản cũ
 export const ensureSampleAssets = async () => {
   try {
     const count = await query.get('SELECT COUNT(*) as total FROM assets');
-    if (count.total === 0) {
-      console.log('Đang tự động khởi tạo danh mục tài sản mẫu cho Nệm Việt Á...');
+    if (!count || count.total < 287) {
+      console.log('Đang tự động khởi tạo / nâng cấp toàn bộ 287 tài sản thực tế cho Nệm Việt Á...');
       const now = new Date().toISOString();
 
-      for (const item of SAMPLE_ASSETS) {
-        // Tìm department_id
-        let dept = await query.get('SELECT id FROM departments WHERE name LIKE ?', [`%${item.dept_name}%`]);
-        let deptId = dept ? dept.id : null;
+      // Lấy danh sách nhân viên
+      const employees = await query.all('SELECT id, code, fullname FROM employees');
+      const empByCode = {};
+      employees.forEach(e => { empByCode[e.code] = e; });
 
-        // Tìm employee_id
-        let emp = await query.get('SELECT id FROM employees WHERE code = ?', [item.emp_code]);
-        let empId = emp ? emp.id : null;
+      const getAssignee = (name, deptId, model) => {
+        const upper = (name + ' ' + (model || '')).toUpperCase();
+        if (deptId === 8 && upper.includes('63C-18628')) return empByCode['VietA 007']?.id || null; // Hoài (Cần Thơ)
+        if (deptId === 11 && upper.includes('XE TẢI')) return empByCode['VietA 023']?.id || null; // Quân (Mỹ Tho)
+        if (deptId === 13 && (upper.includes('MÁY ẢNH') || upper.includes('GIMBAL') || upper.includes('POCKET') || upper.includes('PC'))) {
+          return empByCode['VietA 043']?.id || null; // Phan Tuấn Kiệt (Marketing)
+        }
+        if (deptId === 9 && upper.includes('BÀN GỖ LÀM VIỆC (PGĐ)')) return empByCode['VietA 002']?.id || null; // Võ Minh Cường
+        if (deptId === 9 && (upper.includes('MÁY IN') || upper.includes('MÁY CHẤM CÔNG'))) return empByCode['VietA 032']?.id || null; // Huỳnh Thị Trúc Xinh
+        if (deptId === 9 && upper.includes('KẾ TOÁN')) return empByCode['VietA 031']?.id || null; // Nguyễn Quốc Hùng
+        if (deptId === 10 && (upper.includes('MÁY MAY') || upper.includes('MÁY ÉP') || upper.includes('XE TẢI'))) {
+          return empByCode['VietA 048']?.id || null; // Trần Minh Lý
+        }
+        if (deptId === 8 && (upper.includes('MÁY CHẤM CÔNG') || upper.includes('MÁY ĐẾM TIỀN') || upper.includes('MÁY LẠNH'))) {
+          return empByCode['VietA 003']?.id || null; // Nguyễn Thị Thu Tâm
+        }
+        if (deptId === 11 && (upper.includes('MÁY ĐẾM TIỀN') || upper.includes('MÁY IN') || upper.includes('MÁY LẠNH'))) {
+          return empByCode['VietA 015']?.id || null; // Dương Thị Tuyết Hường
+        }
+        return null;
+      };
+
+      await query.run('DELETE FROM asset_allocations');
+      await query.run('DELETE FROM asset_maintenance_tickets');
+      await query.run('DELETE FROM assets');
+
+      for (const item of COMPANY_ALL_ASSETS) {
+        const assignedEmpId = getAssignee(item.name, item.dept_id, item.serial_number);
+        let nextMaintenance = null;
+        if (item.category === 'Xe cộ & Vận tải') {
+          nextMaintenance = '2026-10-30';
+        } else if (item.category === 'Máy móc sản xuất' && item.purchase_price >= 10000000) {
+          nextMaintenance = '2026-11-15';
+        }
 
         const res = await query.run(`
           INSERT INTO assets (
             code, name, category, department_id, assigned_to, serial_number,
             purchase_date, purchase_price, status, specifications, next_maintenance_date,
-            location, notes, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            location, notes, quantity, asset_type, years_used, lifespan_years, remaining_value,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           item.code,
           item.name,
           item.category,
-          deptId,
-          empId,
-          item.serial_number,
-          item.purchase_date,
-          item.purchase_price,
-          item.status,
-          item.specifications,
-          item.next_maintenance_date,
-          item.location,
-          item.notes,
+          item.dept_id,
+          assignedEmpId,
+          item.serial_number || '',
+          '2022-09-01',
+          item.purchase_price || 0,
+          'Đang sử dụng',
+          item.specifications || '',
+          nextMaintenance,
+          item.location || item.dept_name,
+          item.notes || '',
+          item.quantity || 1,
+          item.asset_type || 'CCDC',
+          item.years_used || 0,
+          item.lifespan_years || 0,
+          item.remaining_value || 0,
           now,
           now
         ]);
 
-        if (empId && res.lastID) {
+        if (assignedEmpId && res.lastID) {
           await query.run(`
             INSERT INTO asset_allocations (
               asset_id, employee_id, allocated_date, condition_on_alloc, notes, created_at
             ) VALUES (?, ?, ?, ?, ?, ?)
           `, [
             res.lastID,
-            empId,
-            item.purchase_date,
-            'Hoạt động tốt 100%, mới nguyên đai nguyên kiện',
-            'Bàn giao trách nhiệm quản lý và bảo quản tài sản',
+            assignedEmpId,
+            '2022-09-01',
+            'Hoạt động tốt, đang phục vụ công việc',
+            'Bàn giao trách nhiệm quản lý tài sản đơn vị',
             now
           ]);
         }
       }
-      console.log('Đã tạo thành công danh mục tài sản ban đầu cho các phòng ban Nệm Việt Á.');
+      console.log('✓ Đã nạp thành công 287 danh mục tài sản thực tế cho Nệm Việt Á.');
     }
   } catch (err) {
-    console.error('Lỗi khởi tạo tài sản ban đầu:', err);
+    console.error('Lỗi nạp tài sản thực tế:', err);
   }
 };
 
 // 1. Lấy danh sách tài sản (kèm phân quyền & bộ lọc)
 export const getAssets = async (req, res) => {
   try {
+    await ensureSampleAssets();
     const { department_id, category, status, asset_type, assigned_to, search } = req.query;
 
     let sql = `
@@ -774,6 +814,7 @@ export const updateMaintenanceTicket = async (req, res) => {
 // 10. Thống kê Dashboard tài sản
 export const getAssetStats = async (req, res) => {
   try {
+    await ensureSampleAssets();
     const totalAssets = await query.get(`
       SELECT 
         COUNT(*) as count, 
