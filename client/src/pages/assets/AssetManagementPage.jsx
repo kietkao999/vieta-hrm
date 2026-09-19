@@ -198,23 +198,64 @@ const AssetManagementPage = () => {
     }
   };
 
+  // Dynamic department counts
+  const deptCounts = React.useMemo(() => {
+    const counts = {};
+    assets.forEach(a => {
+      const dId = String(a.department_id || '');
+      counts[dId] = (counts[dId] || 0) + 1;
+    });
+    return counts;
+  }, [assets]);
+
   // Filtered Assets
-  const filteredAssets = assets.filter(item => {
-    const matchSearch = !searchTerm ||
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.specifications?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.assigned_to_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredAssets = React.useMemo(() => {
+    return assets.filter(item => {
+      const matchSearch = !searchTerm ||
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.specifications?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.assigned_to_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.location?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchDept = !filterDept || String(item.department_id) === String(filterDept);
-    const matchCategory = !filterCategory || item.category === filterCategory;
-    const matchType = !filterType || item.asset_type === filterType;
-    const matchStatus = !filterStatus || item.status === filterStatus;
+      const matchDept = !filterDept || String(item.department_id) === String(filterDept) || String(item.department_name) === String(filterDept);
+      const matchCategory = !filterCategory || item.category === filterCategory;
+      const matchType = !filterType || item.asset_type === filterType;
+      const matchStatus = !filterStatus || item.status === filterStatus;
 
-    return matchSearch && matchDept && matchCategory && matchType && matchStatus;
-  });
+      return matchSearch && matchDept && matchCategory && matchType && matchStatus;
+    });
+  }, [assets, searchTerm, filterDept, filterCategory, filterType, filterStatus]);
+
+  // Dynamic filtered summary stats
+  const filteredSummary = React.useMemo(() => {
+    let totalOrig = 0;
+    let totalRem = 0;
+    let tscd = 0;
+    let ccdc = 0;
+    let inUse = 0;
+
+    filteredAssets.forEach(a => {
+      const qty = a.quantity || 1;
+      const orig = (a.purchase_price || 0) * qty;
+      const rem = a.remaining_value || 0;
+      totalOrig += orig;
+      totalRem += rem;
+      if (a.asset_type === 'TSCĐ') tscd++;
+      else ccdc++;
+      if (a.status === 'Đang sử dụng') inUse++;
+    });
+
+    return {
+      count: filteredAssets.length,
+      totalOrig,
+      totalRem,
+      tscd,
+      ccdc,
+      inUse
+    };
+  }, [filteredAssets]);
 
   // Handle Save Asset (Create / Update)
   const handleSaveAsset = async (e) => {
@@ -445,12 +486,14 @@ const AssetManagementPage = () => {
             <Package size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Tổng Danh Mục</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+              {filterDept ? 'Danh Mục (Đang Chọn)' : 'Tổng Danh Mục'}
+            </span>
             <span className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
-              {stats?.total_count || assets.length} <span className="text-xs font-normal text-slate-500">mục</span>
+              {filteredSummary.count} <span className="text-xs font-normal text-slate-500">mục</span>
             </span>
             <span className="text-[10px] text-blue-700 font-semibold block mt-0.5">
-              {stats?.tscd_count || 0} TSCĐ • {stats?.ccdc_count || 0} CCDC
+              {filteredSummary.tscd} TSCĐ • {filteredSummary.ccdc} CCDC
             </span>
           </div>
         </div>
@@ -460,9 +503,11 @@ const AssetManagementPage = () => {
             <DollarSign size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Tổng Nguyên Giá</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+              {filterDept ? 'Nguyên Giá (Đang Chọn)' : 'Tổng Nguyên Giá'}
+            </span>
             <span className="text-base sm:text-lg font-black text-indigo-900 leading-tight">
-              {Number(stats?.total_value || 0).toLocaleString('vi-VN')} đ
+              {Number(filteredSummary.totalOrig).toLocaleString('vi-VN')} đ
             </span>
             <span className="text-[10px] text-slate-400 block mt-0.5">Giá trị đầu tư ban đầu</span>
           </div>
@@ -473,9 +518,11 @@ const AssetManagementPage = () => {
             <ShieldCheck size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Giá Trị Còn Lại</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+              {filterDept ? 'Còn Lại (Đang Chọn)' : 'Giá Trị Còn Lại'}
+            </span>
             <span className="text-base sm:text-lg font-black text-emerald-700 leading-tight">
-              {Number(stats?.total_remaining_value || 0).toLocaleString('vi-VN')} đ
+              {Number(filteredSummary.totalRem).toLocaleString('vi-VN')} đ
             </span>
             <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">Sau tính toán khấu hao</span>
           </div>
@@ -488,7 +535,7 @@ const AssetManagementPage = () => {
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Vận Hành & Bảo Trì</span>
             <span className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
-              {stats?.in_use_count || 0} <span className="text-xs font-normal text-emerald-600 font-bold">đang dùng</span>
+              {filteredSummary.inUse} <span className="text-xs font-normal text-emerald-600 font-bold">đang dùng</span>
             </span>
             <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
               {stats?.upcoming_maintenance?.length || 0} mục sắp đến hạn bảo trì
@@ -558,10 +605,15 @@ const AssetManagementPage = () => {
                 onChange={(e) => setFilterDept(e.target.value)}
                 className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full"
               >
-                <option value="">Tất cả phòng ban / kho / xưởng</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
+                <option value="">Tất cả phòng ban / kho / xưởng ({assets.length})</option>
+                {departments.map(d => {
+                  const count = deptCounts[String(d.id)] || 0;
+                  return (
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({count})
+                    </option>
+                  );
+                })}
               </select>
 
               <select
