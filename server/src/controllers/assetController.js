@@ -1,4 +1,5 @@
 import { query } from '../config/database.js';
+import XLSX from 'xlsx';
 
 // Danh sách tài sản mẫu chuẩn thực tế cho Nệm Việt Á
 const SAMPLE_ASSETS = [
@@ -235,9 +236,7 @@ export const ensureSampleAssets = async () => {
 // 1. Lấy danh sách tài sản (kèm phân quyền & bộ lọc)
 export const getAssets = async (req, res) => {
   try {
-    await ensureSampleAssets();
-
-    const { department_id, category, status, assigned_to, search } = req.query;
+    const { department_id, category, status, asset_type, assigned_to, search } = req.query;
 
     let sql = `
       SELECT a.*, 
@@ -284,6 +283,11 @@ export const getAssets = async (req, res) => {
       params.push(status);
     }
 
+    if (asset_type) {
+      sql += ` AND a.asset_type = ?`;
+      params.push(asset_type);
+    }
+
     if (assigned_to) {
       sql += ` AND a.assigned_to = ?`;
       params.push(assigned_to);
@@ -294,7 +298,7 @@ export const getAssets = async (req, res) => {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ` ORDER BY a.id DESC`;
+    sql += ` ORDER BY a.id ASC`;
     const records = await query.all(sql, params);
 
     return res.json(records);
@@ -770,9 +774,16 @@ export const updateMaintenanceTicket = async (req, res) => {
 // 10. Thống kê Dashboard tài sản
 export const getAssetStats = async (req, res) => {
   try {
-    await ensureSampleAssets();
+    const totalAssets = await query.get(`
+      SELECT 
+        COUNT(*) as count, 
+        SUM(purchase_price * COALESCE(quantity, 1)) as total_value,
+        SUM(COALESCE(remaining_value, 0)) as total_remaining_value,
+        SUM(CASE WHEN asset_type = 'TSCĐ' THEN 1 ELSE 0 END) as tscd_count,
+        SUM(CASE WHEN asset_type = 'CCDC' THEN 1 ELSE 0 END) as ccdc_count
+      FROM assets
+    `);
 
-    const totalAssets = await query.get('SELECT COUNT(*) as count, SUM(purchase_price) as total_value FROM assets');
     const inUse = await query.get(`SELECT COUNT(*) as count FROM assets WHERE status = 'Đang sử dụng'`);
     const available = await query.get(`SELECT COUNT(*) as count FROM assets WHERE status = 'Sẵn sàng cấp phát'`);
     const maintaining = await query.get(`SELECT COUNT(*) as count FROM assets WHERE status IN ('Đang bảo trì / Sửa chữa', 'Hỏng / Chờ thanh lý')`);
@@ -791,7 +802,7 @@ export const getAssetStats = async (req, res) => {
 
     // Thống kê theo danh mục
     const byCategory = await query.all(`
-      SELECT category, COUNT(*) as count, SUM(purchase_price) as value
+      SELECT category, COUNT(*) as count, SUM(purchase_price * COALESCE(quantity, 1)) as value, SUM(COALESCE(remaining_value, 0)) as remaining_value
       FROM assets
       GROUP BY category
       ORDER BY count DESC
@@ -799,16 +810,22 @@ export const getAssetStats = async (req, res) => {
 
     // Thống kê theo phòng ban
     const byDepartment = await query.all(`
-      SELECT COALESCE(d.name, 'Chưa phân bổ') as department_name, COUNT(a.id) as count, SUM(a.purchase_price) as value
+      SELECT COALESCE(d.name, 'Chưa phân bổ') as department_name, 
+             COUNT(a.id) as count, 
+             SUM(a.purchase_price * COALESCE(a.quantity, 1)) as value,
+             SUM(COALESCE(a.remaining_value, 0)) as remaining_value
       FROM assets a
       LEFT JOIN departments d ON a.department_id = d.id
       GROUP BY a.department_id
-      ORDER BY count DESC
+      ORDER BY value DESC
     `);
 
     return res.json({
       total_count: totalAssets?.count || 0,
       total_value: totalAssets?.total_value || 0,
+      total_remaining_value: totalAssets?.total_remaining_value || 0,
+      tscd_count: totalAssets?.tscd_count || 0,
+      ccdc_count: totalAssets?.ccdc_count || 0,
       in_use_count: inUse?.count || 0,
       available_count: available?.count || 0,
       maintaining_count: maintaining?.count || 0,
@@ -819,5 +836,112 @@ export const getAssetStats = async (req, res) => {
   } catch (error) {
     console.error('Lỗi lấy thống kê tài sản:', error);
     return res.status(500).json({ message: 'Lỗi lấy dữ liệu thống kê.' });
+  }
+};
+
+// 11. Xuất báo cáo tài sản sang Excel
+export const exportAssets = async (req, res) => {
+  try {
+    const { department_id, category, status, asset_type, search } = req.query;
+
+    let sql = `
+      SELECT a.*, 
+             d.name as department_name, 
+             e.fullname as assigned_to_name, 
+             e.code as assigned_to_code
+      FROM assets a
+      LEFT JOIN departments d ON a.department_id = d.id
+      LEFT JOIN employees e ON a.assigned_to = e.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (department_id) {
+      sql += ` AND a.department_id = ?`;
+      params.push(department_id);
+    }
+    if (category) {
+      sql += ` AND a.category = ?`;
+      params.push(category);
+    }
+    if (status) {
+      sql += ` AND a.status = ?`;
+      params.push(status);
+    }
+    if (asset_type) {
+      sql += ` AND a.asset_type = ?`;
+      params.push(asset_type);
+    }
+    if (search) {
+      sql += ` AND (a.name LIKE ? OR a.code LIKE ? OR a.serial_number LIKE ? OR a.location LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    sql += ` ORDER BY a.department_id ASC, a.id ASC`;
+    const assets = await query.all(sql, params);
+
+    // Format data for Excel
+    const dataRows = assets.map((item, idx) => {
+      const qty = item.quantity || 1;
+      const unitPrice = item.purchase_price || 0;
+      const totalOriginal = unitPrice * qty;
+      const remaining = item.remaining_value || 0;
+      const rate = totalOriginal > 0 ? ((remaining / totalOriginal) * 100).toFixed(1) + '%' : '0%';
+
+      return {
+        'STT': idx + 1,
+        'Mã Tài Sản': item.code,
+        'Tên Tài Sản / Thiết Bị': item.name,
+        'Phân Loại': item.asset_type || 'CCDC',
+        'Danh Mục': item.category,
+        'Phòng Ban / Kho / Xưởng': item.department_name || 'Chưa phân bổ',
+        'Model / Quy Cách': item.serial_number || item.specifications || '',
+        'Số Lượng': qty,
+        'Đơn Giá Mua Mới (VNĐ)': unitPrice,
+        'Thành Tiền Nguyên Giá (VNĐ)': totalOriginal,
+        'Số Năm Sử Dụng': item.years_used || 0,
+        'Vòng Đời Tối Thiểu (năm)': item.lifespan_years || 0,
+        'Tỷ Lệ Còn Lại': rate,
+        'Giá Trị Còn Lại (VNĐ)': remaining,
+        'Người Quản Lý / Sử Dụng': item.assigned_to_name ? `${item.assigned_to_name} (${item.assigned_to_code})` : 'Chưa bàn giao',
+        'Trạng Thái': item.status,
+        'Ghi Chú': item.notes || ''
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataRows);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 6 },  // STT
+      { wch: 14 }, // Mã
+      { wch: 35 }, // Tên
+      { wch: 12 }, // Phân loại
+      { wch: 22 }, // Danh mục
+      { wch: 22 }, // Phòng ban
+      { wch: 25 }, // Model
+      { wch: 10 }, // SL
+      { wch: 20 }, // Đơn giá
+      { wch: 24 }, // Thành tiền
+      { wch: 15 }, // Năm SD
+      { wch: 20 }, // Vòng đời
+      { wch: 15 }, // Tỷ lệ
+      { wch: 22 }, // Giá trị còn lại
+      { wch: 25 }, // Người giữ
+      { wch: 18 }, // Trạng thái
+      { wch: 30 }  // Ghi chú
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Danh Mục Tài Sản');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="Bao_Cao_Tai_San_Nem_Viet_A.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Lỗi xuất báo cáo tài sản:', error);
+    return res.status(500).json({ message: 'Lỗi xuất file Excel.' });
   }
 };

@@ -9,7 +9,8 @@ import {
   getMaintenanceTickets,
   createMaintenanceTicket,
   updateMaintenanceTicket,
-  getAssetStats
+  getAssetStats,
+  exportAssets
 } from '../controllers/assetController.js';
 import { authMiddleware, requireRoles } from '../middleware/auth.js';
 
@@ -25,6 +26,7 @@ router.post('/maintenance/tickets', createMaintenanceTicket);
 router.put('/maintenance/tickets/:id', requireRoles(['ADMIN', 'MANAGER']), updateMaintenanceTicket);
 
 // CRUD Danh mục tài sản
+router.get('/export', exportAssets);
 router.get('/', getAssets);
 router.get('/:id', getAssetById);
 router.post('/', requireRoles(['ADMIN', 'MANAGER']), createAsset);

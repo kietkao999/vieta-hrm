@@ -600,6 +600,20 @@ export const initDatabase = async () => {
       )
     `);
 
+    const assetNewCols = [
+      'quantity INTEGER DEFAULT 1',
+      "asset_type TEXT DEFAULT 'CCDC'",
+      'years_used REAL DEFAULT 0',
+      'lifespan_years REAL DEFAULT 0',
+      'remaining_value REAL DEFAULT 0'
+    ];
+
+    for (const colDef of assetNewCols) {
+      try {
+        await query.run(`ALTER TABLE assets ADD COLUMN ${colDef}`);
+      } catch (e) {}
+    }
+
     console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ (bao gồm quản lý tài sản & thiết bị).');
 
     // Tự động nạp dữ liệu cơ bản nếu bảng roles trống

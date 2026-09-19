@@ -26,7 +26,8 @@ import {
   ArrowRightLeft,
   Check,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 
 const CATEGORY_CONFIG = {
@@ -74,7 +75,9 @@ const AssetManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDept, setFilterDept] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterType, setFilterType] = useState(''); // 'TSCĐ' | 'CCDC'
   const [filterStatus, setFilterStatus] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Modal: Add / Edit Asset
   const [assetModalOpen, setAssetModalOpen] = useState(false);
@@ -83,11 +86,16 @@ const AssetManagementPage = () => {
     code: '',
     name: '',
     category: 'Máy móc sản xuất',
+    asset_type: 'CCDC',
     department_id: '',
     assigned_to: '',
     serial_number: '',
     purchase_date: new Date().toISOString().split('T')[0],
     purchase_price: 0,
+    quantity: 1,
+    years_used: 0,
+    lifespan_years: 0,
+    remaining_value: 0,
     status: 'Đang sử dụng',
     specifications: '',
     next_maintenance_date: '',
@@ -157,20 +165,55 @@ const AssetManagementPage = () => {
     fetchData();
   }, []);
 
+  // Handle Export Excel
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const params = new URLSearchParams();
+      if (filterDept) params.append('department_id', filterDept);
+      if (filterCategory) params.append('category', filterCategory);
+      if (filterType) params.append('asset_type', filterType);
+      if (filterStatus) params.append('status', filterStatus);
+      if (searchTerm) params.append('search', searchTerm);
+
+      const response = await api.get(`/assets/export?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Bao_Cao_Tai_San_Nem_Viet_A_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setSuccess('Đã xuất báo cáo danh mục tài sản sang file Excel thành công!');
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+      console.error('Lỗi xuất Excel:', err);
+      setError('Không thể xuất file Excel. Vui lòng thử lại.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Filtered Assets
   const filteredAssets = assets.filter(item => {
     const matchSearch = !searchTerm ||
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.specifications?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.assigned_to_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.location?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchDept = !filterDept || String(item.department_id) === String(filterDept);
     const matchCategory = !filterCategory || item.category === filterCategory;
+    const matchType = !filterType || item.asset_type === filterType;
     const matchStatus = !filterStatus || item.status === filterStatus;
 
-    return matchSearch && matchDept && matchCategory && matchStatus;
+    return matchSearch && matchDept && matchCategory && matchType && matchStatus;
   });
 
   // Handle Save Asset (Create / Update)
@@ -201,11 +244,16 @@ const AssetManagementPage = () => {
       code: item.code || '',
       name: item.name || '',
       category: item.category || 'Máy móc sản xuất',
+      asset_type: item.asset_type || 'CCDC',
       department_id: item.department_id || '',
       assigned_to: item.assigned_to || '',
       serial_number: item.serial_number || '',
       purchase_date: item.purchase_date || '',
       purchase_price: item.purchase_price || 0,
+      quantity: item.quantity || 1,
+      years_used: item.years_used || 0,
+      lifespan_years: item.lifespan_years || 0,
+      remaining_value: item.remaining_value || 0,
       status: item.status || 'Đang sử dụng',
       specifications: item.specifications || '',
       next_maintenance_date: item.next_maintenance_date || '',
@@ -321,6 +369,16 @@ const AssetManagementPage = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+            title="Xuất báo cáo danh mục tài sản và khấu hao sang file Excel"
+          >
+            <Download size={14} className={exporting ? 'animate-bounce' : ''} />
+            <span>{exporting ? 'Đang Xuất Excel...' : 'Xuất Excel'}</span>
+          </button>
+
+          <button
             onClick={() => {
               setTicketForm({ asset_id: '', title: '', description: '', priority: 'Trung bình' });
               setTicketModalOpen(true);
@@ -339,11 +397,16 @@ const AssetManagementPage = () => {
                   code: '',
                   name: '',
                   category: 'Máy móc sản xuất',
+                  asset_type: 'CCDC',
                   department_id: '',
                   assigned_to: '',
                   serial_number: '',
                   purchase_date: new Date().toISOString().split('T')[0],
                   purchase_price: 0,
+                  quantity: 1,
+                  years_used: 0,
+                  lifespan_years: 0,
+                  remaining_value: 0,
                   status: 'Đang sử dụng',
                   specifications: '',
                   next_maintenance_date: '',
@@ -382,52 +445,54 @@ const AssetManagementPage = () => {
             <Package size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Tổng Tài Sản</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Tổng Danh Mục</span>
             <span className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
-              {stats?.total_count || assets.length} <span className="text-xs font-normal text-slate-500">thiết bị</span>
+              {stats?.total_count || assets.length} <span className="text-xs font-normal text-slate-500">mục</span>
             </span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">
-              Giá trị: {Number(stats?.total_value || 0).toLocaleString('vi-VN')} đ
+            <span className="text-[10px] text-blue-700 font-semibold block mt-0.5">
+              {stats?.tscd_count || 0} TSCĐ • {stats?.ccdc_count || 0} CCDC
             </span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center space-x-3.5">
-          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-            <CheckCircle2 size={22} />
-          </div>
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Đang Sử Dụng</span>
-            <span className="text-lg sm:text-xl font-black text-emerald-700 leading-tight">
-              {stats?.in_use_count || 0} <span className="text-xs font-normal text-slate-500">thiết bị</span>
-            </span>
-            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">Vận hành bình thường</span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center space-x-3.5">
-          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 shrink-0">
-            <Wrench size={22} />
-          </div>
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Bảo Trì & Báo Hỏng</span>
-            <span className="text-lg sm:text-xl font-black text-amber-700 leading-tight">
-              {tickets.filter(t => t.status === 'Chờ tiếp nhận' || t.status === 'Đang xử lý').length} <span className="text-xs font-normal text-slate-500">phiếu</span>
-            </span>
-            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">Cần kỹ thuật xử lý</span>
           </div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center space-x-3.5">
           <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+            <DollarSign size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Tổng Nguyên Giá</span>
+            <span className="text-base sm:text-lg font-black text-indigo-900 leading-tight">
+              {Number(stats?.total_value || 0).toLocaleString('vi-VN')} đ
+            </span>
+            <span className="text-[10px] text-slate-400 block mt-0.5">Giá trị đầu tư ban đầu</span>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center space-x-3.5">
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Giá Trị Còn Lại</span>
+            <span className="text-base sm:text-lg font-black text-emerald-700 leading-tight">
+              {Number(stats?.total_remaining_value || 0).toLocaleString('vi-VN')} đ
+            </span>
+            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">Sau tính toán khấu hao</span>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center space-x-3.5">
+          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 shrink-0">
             <Truck size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Đăng Kiểm & Bảo Dưỡng</span>
-            <span className="text-lg sm:text-xl font-black text-indigo-700 leading-tight">
-              {stats?.upcoming_maintenance?.length || 0} <span className="text-xs font-normal text-slate-500">đến hạn</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">Vận Hành & Bảo Trì</span>
+            <span className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+              {stats?.in_use_count || 0} <span className="text-xs font-normal text-emerald-600 font-bold">đang dùng</span>
             </span>
-            <span className="text-[10px] text-indigo-600 font-semibold block mt-0.5">Trong 45 ngày tới</span>
+            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
+              {stats?.upcoming_maintenance?.length || 0} mục sắp đến hạn bảo trì
+            </span>
           </div>
         </div>
       </div>
@@ -475,34 +540,44 @@ const AssetManagementPage = () => {
       {activeTab === 'inventory' && (
         <div className="space-y-4">
           {/* Bộ lọc tài sản */}
-          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row gap-2.5 items-center justify-between">
-            <div className="flex items-center space-x-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col lg:flex-row gap-2.5 items-center justify-between">
+            <div className="flex items-center space-x-2 w-full lg:w-72 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
               <Search size={14} className="text-slate-400 shrink-0" />
               <input
                 type="text"
-                placeholder="Tìm mã, tên máy, biển số, người giữ..."
+                placeholder="Tìm tên, mã, model, người giữ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-transparent text-xs font-semibold text-slate-800 outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto md:flex md:items-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto">
               <select
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full"
               >
-                <option value="">Tất cả phòng ban / xưởng / kho</option>
+                <option value="">Tất cả phòng ban / kho / xưởng</option>
                 {departments.map(d => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
 
               <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full"
+              >
+                <option value="">Tất cả phân loại</option>
+                <option value="TSCĐ">Tài sản cố định (TSCĐ)</option>
+                <option value="CCDC">Công cụ dụng cụ (CCDC)</option>
+              </select>
+
+              <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full"
               >
                 <option value="">Tất cả loại tài sản</option>
                 {Object.keys(CATEGORY_CONFIG).map(c => (
@@ -513,7 +588,7 @@ const AssetManagementPage = () => {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full md:w-auto"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none w-full"
               >
                 <option value="">Tất cả trạng thái</option>
                 {Object.keys(STATUS_CONFIG).map(s => (
@@ -539,14 +614,20 @@ const AssetManagementPage = () => {
                 const CatIcon = catInfo.icon;
                 const statusInfo = STATUS_CONFIG[item.status] || STATUS_CONFIG['Đang sử dụng'];
                 const StatusIcon = statusInfo.icon;
+                const totalOrig = (item.purchase_price || 0) * (item.quantity || 1);
 
                 return (
                   <div key={item.id} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2.5">
-                    {/* Header: Code + Status Badge */}
+                    {/* Header: Code + Asset Type + Status Badge */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-lg">
-                        {item.code}
-                      </span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-[10px] text-brand-700 font-mono font-bold bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-lg">
+                          {item.code}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${item.asset_type === 'TSCĐ' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}`}>
+                          {item.asset_type || 'CCDC'}
+                        </span>
+                      </div>
                       <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusInfo.badge}`}>
                         <StatusIcon size={10} />
                         <span>{item.status}</span>
@@ -563,7 +644,7 @@ const AssetManagementPage = () => {
                         </span>
                         {item.serial_number && (
                           <span className="text-[10px] text-slate-700 font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                            Seri/Biển: {item.serial_number}
+                            {item.serial_number}
                           </span>
                         )}
                       </div>
@@ -586,54 +667,61 @@ const AssetManagementPage = () => {
                       </div>
                     </div>
 
-                    {/* Footer: Price & Actions */}
-                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                    {/* Financial stats: Nguyên giá & Còn lại */}
+                    <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Giá trị</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Nguyên giá (SL: {item.quantity || 1})</span>
                         <span className="text-xs font-black text-slate-900">
-                          {Number(item.purchase_price || 0).toLocaleString('vi-VN')} đ
+                          {Number(totalOrig).toLocaleString('vi-VN')} đ
                         </span>
                       </div>
-
-                      <div className="flex items-center space-x-1.5">
-                        <button
-                          onClick={() => handleOpenDetail(item.id)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1 cursor-pointer"
-                        >
-                          <Eye size={13} />
-                          <span>Xem</span>
-                        </button>
-
-                        {isAdminOrManager && (
-                          <>
-                            <button
-                              onClick={() => handleOpenAlloc(item, item.assigned_to ? 'revoke' : 'allocate')}
-                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center space-x-1 cursor-pointer"
-                            >
-                              <ArrowRightLeft size={13} />
-                              <span>{item.assigned_to ? 'Thu hồi' : 'Giao'}</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 cursor-pointer"
-                              title="Sửa"
-                            >
-                              <Edit size={14} />
-                            </button>
-                          </>
-                        )}
-
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDeleteAsset(item.id, item.name)}
-                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 cursor-pointer"
-                            title="Xóa"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Giá trị còn lại</span>
+                        <span className="text-xs font-black text-emerald-700">
+                          {Number(item.remaining_value || 0).toLocaleString('vi-VN')} đ
+                        </span>
                       </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-end space-x-1.5">
+                      <button
+                        onClick={() => handleOpenDetail(item.id)}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Eye size={13} />
+                        <span>Xem</span>
+                      </button>
+
+                      {isAdminOrManager && (
+                        <>
+                          <button
+                            onClick={() => handleOpenAlloc(item, item.assigned_to ? 'revoke' : 'allocate')}
+                            className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                          >
+                            <ArrowRightLeft size={13} />
+                            <span>{item.assigned_to ? 'Thu hồi' : 'Giao'}</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEdit(item)}
+                            className="p-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 cursor-pointer"
+                            title="Sửa"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        </>
+                      )}
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteAsset(item.id, item.name)}
+                          className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 cursor-pointer"
+                          title="Xóa"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -644,60 +732,88 @@ const AssetManagementPage = () => {
           {/* GIAO DIỆN DESKTOP / TABLET: BẢNG DỮ LIỆU (hidden md:block) */}
           <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto custom-scroll-x">
-              <table className="w-full text-left text-xs border-collapse min-w-[850px]">
+              <table className="w-full text-left text-xs border-collapse min-w-[1000px]">
                 <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px] border-b border-slate-100">
                   <tr>
-                    <th className="px-4 py-3">Mã & Tên Tài Sản</th>
-                    <th className="px-4 py-3">Loại Tài Sản</th>
-                    <th className="px-4 py-3">Phòng Ban / Vị Trí</th>
-                    <th className="px-4 py-3">Người Chịu Trách Nhiệm</th>
-                    <th className="px-4 py-3">Số Seri / Biển Số</th>
-                    <th className="px-4 py-3 text-center">Trạng Thái</th>
-                    <th className="px-4 py-3 text-right">Thao Tác</th>
+                    <th className="px-3.5 py-3">Mã & Tên Tài Sản</th>
+                    <th className="px-3 py-3 text-center">Phân Loại</th>
+                    <th className="px-3.5 py-3">Bộ Phận / Vị Trí</th>
+                    <th className="px-3 py-3 text-center">Số Lượng</th>
+                    <th className="px-3.5 py-3 text-right">Đơn Giá</th>
+                    <th className="px-3.5 py-3 text-right">Nguyên Giá</th>
+                    <th className="px-3.5 py-3 text-right">Giá Trị Còn Lại</th>
+                    <th className="px-3.5 py-3">Người Phụ Trách</th>
+                    <th className="px-3 py-3 text-center">Trạng Thái</th>
+                    <th className="px-3.5 py-3 text-right">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                      <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                         <RefreshCw className="animate-spin inline mr-2" size={16} /> Đang tải danh mục tài sản...
                       </td>
                     </tr>
                   ) : filteredAssets.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                      <td colSpan={10} className="px-4 py-8 text-center text-slate-400">
                         Không tìm thấy tài sản nào phù hợp với bộ lọc.
                       </td>
                     </tr>
                   ) : (
                     filteredAssets.map(item => {
                       const catInfo = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG['Máy móc sản xuất'];
-                      const CatIcon = catInfo.icon;
                       const statusInfo = STATUS_CONFIG[item.status] || STATUS_CONFIG['Đang sử dụng'];
                       const StatusIcon = statusInfo.icon;
+                      const qty = item.quantity || 1;
+                      const totalOriginal = (item.purchase_price || 0) * qty;
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/70 transition">
-                          <td className="px-4 py-3">
+                          <td className="px-3.5 py-3">
                             <div className="font-bold text-slate-900 leading-snug">{item.name}</div>
-                            <div className="text-[10px] text-brand-700 font-mono font-bold mt-0.5">{item.code}</div>
+                            <div className="flex items-center space-x-1.5 mt-0.5">
+                              <span className="text-[10px] text-brand-700 font-mono font-bold">{item.code}</span>
+                              {item.serial_number && (
+                                <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-1 rounded">
+                                  {item.serial_number}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${catInfo.badge}`}>
-                              <CatIcon size={11} />
-                              <span>{item.category}</span>
+                          <td className="px-3 py-3 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                              item.asset_type === 'TSCĐ' 
+                                ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {item.asset_type || 'CCDC'}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3">
+                          <td className="px-3.5 py-3">
                             <div className="font-semibold text-slate-800 flex items-center space-x-1">
-                              <Building2 size={12} className="text-slate-400" />
-                              <span>{item.department_name || 'Toàn công ty'}</span>
+                              <Building2 size={12} className="text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[150px]">{item.department_name || 'Toàn công ty'}</span>
                             </div>
-                            {item.location && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">{item.location}</div>
-                            )}
+                            <div className="text-[10px] text-slate-500 mt-0.5">{item.category}</div>
+                          </td>
+
+                          <td className="px-3 py-3 text-center font-bold text-slate-800">
+                            {qty}
+                          </td>
+
+                          <td className="px-3.5 py-3 text-right font-medium text-slate-600">
+                            {Number(item.purchase_price || 0).toLocaleString('vi-VN')} đ
+                          </td>
+
+                          <td className="px-3.5 py-3 text-right font-bold text-slate-900">
+                            {Number(totalOriginal).toLocaleString('vi-VN')} đ
+                          </td>
+
+                          <td className="px-3.5 py-3 text-right font-black text-emerald-700">
+                            {Number(item.remaining_value || 0).toLocaleString('vi-VN')} đ
                           </td>
 
                           <td className="px-4 py-3">
@@ -714,10 +830,6 @@ const AssetManagementPage = () => {
                             ) : (
                               <span className="text-[10px] text-slate-400 italic">Chưa bàn giao</span>
                             )}
-                          </td>
-
-                          <td className="px-4 py-3 font-mono font-semibold text-slate-700">
-                            {item.serial_number || '---'}
                           </td>
 
                           <td className="px-4 py-3 text-center">
@@ -1044,7 +1156,19 @@ const AssetManagementPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phân loại *</label>
+                  <select
+                    value={assetForm.asset_type}
+                    onChange={(e) => setAssetForm({ ...assetForm, asset_type: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-800"
+                  >
+                    <option value="CCDC">CCDC (Nguyên giá &lt; 30tr)</option>
+                    <option value="TSCĐ">TSCĐ (Nguyên giá ≥ 30tr)</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Loại tài sản *</label>
                   <select
@@ -1087,7 +1211,66 @@ const AssetManagementPage = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Số lượng</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={assetForm.quantity}
+                    onChange={(e) => setAssetForm({ ...assetForm, quantity: Number(e.target.value) || 1 })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Đơn giá mua mới (VNĐ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={assetForm.purchase_price}
+                    onChange={(e) => setAssetForm({ ...assetForm, purchase_price: Number(e.target.value) || 0 })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Số năm sử dụng</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={assetForm.years_used}
+                    onChange={(e) => setAssetForm({ ...assetForm, years_used: Number(e.target.value) || 0 })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Vòng đời tối thiểu (năm)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={assetForm.lifespan_years}
+                    onChange={(e) => setAssetForm({ ...assetForm, lifespan_years: Number(e.target.value) || 0 })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Giá trị còn lại (VNĐ)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={assetForm.remaining_value}
+                    onChange={(e) => setAssetForm({ ...assetForm, remaining_value: Number(e.target.value) || 0 })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
+                  />
+                </div>
+
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Số Seri / Biển Số Xe</label>
                   <input
@@ -1100,22 +1283,11 @@ const AssetManagementPage = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Ngày mua / Đưa vào dùng</label>
+                  <label className="block font-bold text-slate-700 mb-1">Ngày mua / Bắt đầu dùng</label>
                   <input
                     type="date"
                     value={assetForm.purchase_date}
                     onChange={(e) => setAssetForm({ ...assetForm, purchase_date: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Nguyên giá (VNĐ)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={assetForm.purchase_price}
-                    onChange={(e) => setAssetForm({ ...assetForm, purchase_price: e.target.value })}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 font-semibold text-slate-900"
                   />
                 </div>
@@ -1488,30 +1660,64 @@ const AssetManagementPage = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <div>
-                <span className="text-slate-400 block text-[10px]">Loại tài sản:</span>
+                <span className="text-slate-400 block text-[10px]">Phân loại:</span>
+                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  selectedAssetDetail.asset_type === 'TSCĐ' ? 'bg-purple-100 text-purple-800' : 'bg-slate-200 text-slate-800'
+                }`}>
+                  {selectedAssetDetail.asset_type || 'CCDC'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Danh mục:</span>
                 <strong className="text-slate-800">{selectedAssetDetail.category}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Phòng ban / Xưởng:</span>
-                <strong className="text-slate-800">{selectedAssetDetail.department_name || 'Chung'}</strong>
+                <span className="text-slate-400 block text-[10px]">Phòng ban / Vị trí:</span>
+                <strong className="text-slate-800">{selectedAssetDetail.department_name || selectedAssetDetail.location || 'Chung'}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Người chịu trách nhiệm:</span>
+                <strong className="text-slate-800">{selectedAssetDetail.assigned_to_name || 'Chưa bàn giao'}</strong>
+              </div>
+
+              <div>
+                <span className="text-slate-400 block text-[10px]">Số lượng:</span>
+                <strong className="text-slate-800 font-mono text-sm">{selectedAssetDetail.quantity || 1}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Đơn giá mua mới:</span>
+                <strong className="text-slate-800">{Number(selectedAssetDetail.purchase_price || 0).toLocaleString('vi-VN')} đ</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Thành tiền nguyên giá:</span>
+                <strong className="text-slate-900 font-bold">
+                  {Number((selectedAssetDetail.purchase_price || 0) * (selectedAssetDetail.quantity || 1)).toLocaleString('vi-VN')} đ
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Giá trị còn lại:</span>
+                <strong className="text-emerald-700 font-black">
+                  {Number(selectedAssetDetail.remaining_value || 0).toLocaleString('vi-VN')} đ
+                </strong>
+              </div>
+
+              <div>
+                <span className="text-slate-400 block text-[10px]">Số năm đã dùng:</span>
+                <strong className="text-slate-800">{selectedAssetDetail.years_used || 0} năm</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Vòng đời tối thiểu:</span>
+                <strong className="text-slate-800">{selectedAssetDetail.lifespan_years || 0} năm</strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px]">Số seri / Biển số:</span>
                 <strong className="font-mono text-slate-800">{selectedAssetDetail.serial_number || '---'}</strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Người chịu trách nhiệm:</span>
-                <strong className="text-slate-800">{selectedAssetDetail.assigned_to_name || 'Chưa bàn giao'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">Ngày đưa vào dùng:</span>
-                <strong className="text-slate-800">{selectedAssetDetail.purchase_date || '---'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">Nguyên giá:</span>
-                <strong className="text-slate-800">{Number(selectedAssetDetail.purchase_price || 0).toLocaleString('vi-VN')} đ</strong>
+                <span className="text-slate-400 block text-[10px]">Trạng thái:</span>
+                <strong className="text-slate-800">{selectedAssetDetail.status}</strong>
               </div>
             </div>
 
