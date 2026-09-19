@@ -1,6 +1,7 @@
 import { query } from './database.js';
 import { danhSachNhanVienVaKPI } from '../data/danhSachNhanVienVaKPI.js';
 import { danhSachThang8 } from '../data/danhSachThang8.js';
+import { getMonth8OfficialData } from './month8_official_data.js';
 import bcrypt from 'bcryptjs';
 
 export const SEED_EMPLOYEES_RAW = danhSachNhanVienVaKPI.map(e => {
@@ -298,10 +299,15 @@ export async function runMigration() {
     await query.run('COMMIT');
     console.log('--- HOÀN TẤT ĐỒNG BỘ 57 NHÂN SỰ VÀ TÀI KHOẢN PHÂN QUYỀN 3 CẤP ĐỘ ---');
 
-    // 5. Đồng bộ dữ liệu KPI & Bảng Lương Tháng 08/2026 chính xác 100% từ danhSachThang8
-    if (Array.isArray(danhSachThang8) && danhSachThang8.length > 0) {
-      for (const m8 of danhSachThang8) {
+    // 5. Đồng bộ dữ liệu KPI & Bảng Lương Tháng 08/2026 chính xác 100% từ Excel chính thức
+    const officialM8 = getMonth8OfficialData();
+    const sourceM8 = (officialM8 && officialM8.length > 0) ? officialM8 : danhSachThang8;
+
+    if (Array.isArray(sourceM8) && sourceM8.length > 0) {
+      for (const m8 of sourceM8) {
         const cleanCode = m8.code.trim();
+        if (cleanCode === 'VietA 001' || cleanCode === 'VietA 072') continue;
+
         const emp = await query.get('SELECT id, base_salary, tier_salary, grade_salary FROM employees WHERE code = ?', [cleanCode]);
         if (!emp) continue;
 
@@ -313,22 +319,23 @@ export async function runMigration() {
         const baseWorkSalary = m8.baseWorkSalary || Math.round((totalBase / 26) * workDays);
         const respBonus = Number(m8.kpiQuota) || Number(m8.respBonus) || 0;
         const respRate = m8.kpiRate !== undefined && m8.kpiRate !== null ? Number(m8.kpiRate) : (m8.respRate !== undefined ? Number(m8.respRate) : 1.0);
-        const respAmount = Number(m8.respAmount) || Math.round(respBonus * respRate);
+        const respAmount = Number(m8.kpiAmount) || Number(m8.respAmount) || Math.round(respBonus * respRate);
         const perfBonus = Number(m8.perfBonus) || 0;
+        const otHours = Number(m8.otHours) || 0;
         const otSalary = Number(m8.otSalary) || 0;
         const otherBonus = Number(m8.otherBonus) || 0;
-        const otherAllow = Number(m8.driverAllow) || Number(m8.driverAllowance) || 0;
-        const mealPhone = Number(m8.mealPhone) || Number(m8.mealPhoneAllowance) || 0;
-        const socialIns = Number(m8.socialIns) || Number(m8.socialInsurance) || 0;
+        const otherAllow = Number(m8.otherAllowance) || Number(m8.driverAllow) || Number(m8.driverAllowance) || 0;
+        const mealPhone = Number(m8.mealPhoneAllowance) || Number(m8.mealPhone) || 0;
+        const socialIns = Number(m8.socialInsurance) || Number(m8.socialIns) || 0;
         const unionFee = Number(m8.unionFee) || 0;
-        const hrDeduct = Number(m8.hourDeduct) || Number(m8.hourDeduction) || 0;
-        const advance = Number(m8.advance) || Number(m8.advancePayment) || 0;
-        const otherDeduct = Number(m8.otherDeduct) || Number(m8.otherDeductions) || 0;
-        const discDeduct = Number(m8.perfDeduct) || Number(m8.disciplineDeduction) || 0;
+        const hrDeduct = Number(m8.hourDeduction) || Number(m8.hourDeduct) || 0;
+        const advance = Number(m8.advancePayment) || Number(m8.advance) || 0;
+        const otherDeduct = Number(m8.otherDeductions) || Number(m8.otherDeduct) || 0;
+        const discDeduct = Number(m8.discDeduct) || Number(m8.perfDeduct) || Number(m8.disciplineDeduction) || 0;
         const uniformRefund = Number(m8.uniformRefund) || 0;
 
         const totalDeductions = socialIns + unionFee + hrDeduct + advance + otherDeduct + discDeduct;
-        const netSalary = Number(m8.netSalary) || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + (otherBonus + uniformRefund) + mealPhone + otherAllow - totalDeductions);
+        const netSalary = Number(m8.netSalary) || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + otherBonus + mealPhone + otherAllow - totalDeductions + uniformRefund);
 
         // Cập nhật lại thông tin tầng bậc vào hồ sơ nhân viên
         await query.run(`
@@ -362,7 +369,7 @@ export async function runMigration() {
           respAmount,
           perfBonus,
           discDeduct,
-          'Dữ liệu Tháng 08/2026 chính thức',
+          'Dữ liệu Tháng 08/2026 chính thức từ Excel',
           now,
           now
         ]);
@@ -377,13 +384,14 @@ export async function runMigration() {
             performance_bonus, discipline_deduction, performance_net, performance_kpi,
             other_bonus, meal_phone_allowance, other_allowance,
             social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
-            other_deductions, net_salary, status, created_at, updated_at
-          ) VALUES (?, '08', 2026, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'Đã chốt', ?, ?)
+            other_deductions, uniform_refund, net_salary, status, created_at, updated_at
+          ) VALUES (?, '08', 2026, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 'Đã chốt', ?, ?)
           ON CONFLICT(employee_id, month, year) DO UPDATE SET
             tier_salary = excluded.tier_salary,
             grade_salary = excluded.grade_salary,
             work_days = excluded.work_days,
             base_work_salary = excluded.base_work_salary,
+            ot_hours = excluded.ot_hours,
             ot_salary = excluded.ot_salary,
             responsibility_quota = excluded.responsibility_quota,
             responsibility_deduction_rate = excluded.responsibility_deduction_rate,
@@ -401,6 +409,7 @@ export async function runMigration() {
             advance_payment = excluded.advance_payment,
             hour_deduction = excluded.hour_deduction,
             other_deductions = excluded.other_deductions,
+            uniform_refund = excluded.uniform_refund,
             net_salary = excluded.net_salary,
             status = 'Đã chốt',
             updated_at = excluded.updated_at
@@ -410,6 +419,7 @@ export async function runMigration() {
           gradeSalary,
           workDays,
           baseWorkSalary,
+          otHours,
           otSalary,
           respBonus,
           1 - respRate,
@@ -419,7 +429,7 @@ export async function runMigration() {
           discDeduct,
           Math.max(0, perfBonus - discDeduct),
           perfBonus,
-          otherBonus + uniformRefund,
+          otherBonus,
           mealPhone,
           otherAllow,
           socialIns,
@@ -427,12 +437,13 @@ export async function runMigration() {
           advance,
           hrDeduct,
           otherDeduct,
+          uniformRefund,
           netSalary,
           now,
           now
         ]);
       }
-      console.log('✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 từ danhSachThang8!');
+      console.log('✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 chính thức từ 2 file Excel!');
     }
 
     // 4. KHỞI TẠO VÀ ĐỒNG BỘ BẢNG VĂN BẢN, QUY ĐỊNH & PHÚC LỢI 2026
