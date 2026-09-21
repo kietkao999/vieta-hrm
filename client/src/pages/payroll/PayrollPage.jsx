@@ -267,13 +267,347 @@ const PayrollPage = () => {
     return Number(amount).toLocaleString('vi-VN') + ' đ';
   };
 
-  const formatInputNumber = (val) => {
-    if (val === undefined || val === null || val === '') return '';
-    return Number(val).toLocaleString('vi-VN');
+  const printPayslipA5 = (p) => {
+    if (!p) return;
+
+    const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
+    const wDays = p.work_days ?? 26;
+    const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
+    const otHrs = p.ot_hours || 0;
+    const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
+    
+    const respKpi = p.kpi_responsibility_amount !== undefined && p.kpi_responsibility_amount !== null
+      ? parseFloat(p.kpi_responsibility_amount)
+      : (p.responsibility_kpi !== undefined ? parseFloat(p.responsibility_kpi) : (p.responsibility_net || 0));
+
+    const perfKpi = p.kpi_performance_bonus !== undefined && p.kpi_performance_bonus !== null
+      ? parseFloat(p.kpi_performance_bonus)
+      : (p.performance_kpi !== undefined ? parseFloat(p.performance_kpi) : (p.performance_bonus || 0));
+
+    const oBonus = p.other_bonus || 0;
+    const mealPhone = p.meal_phone_allowance || 0;
+    const oAllowance = p.other_allowance || 0;
+
+    const totalIncome = baseWork + respKpi + perfKpi + otSal + mealPhone + oAllowance + oBonus;
+
+    const socialIns = p.social_insurance || 0;
+    const uFee = p.union_fee || 0;
+    const hrDeduct = p.hour_deduction || 0;
+    const advPay = p.advance_payment || 0;
+    const oDeduct = (p.other_deductions || 0) + (p.income_tax || 0);
+    
+    const discDeduct = p.kpi_discipline_deduction !== undefined && p.kpi_discipline_deduction !== null
+      ? parseFloat(p.kpi_discipline_deduction)
+      : (p.discipline_deduction || 0);
+
+    const totalDeductions = socialIns + uFee + hrDeduct + advPay + oDeduct + discDeduct;
+    const uniRefund = p.uniform_refund || 0;
+    const netSalary = p.net_salary !== undefined && p.net_salary !== null 
+      ? p.net_salary 
+      : (totalIncome - totalDeductions + uniRefund);
+
+    // Xác định Tầng & Bậc
+    let tierText = p.employee_tier;
+    if (!tierText) {
+      const t = p.tier_salary || 0;
+      if (t >= 9500000) tierText = 'Tầng 7';
+      else if (t >= 8000000) tierText = 'Tầng 6';
+      else if (t >= 6500000) tierText = 'Tầng 5';
+      else if (t >= 6000000) tierText = 'Tầng 4';
+      else if (t >= 5500000) tierText = 'Tầng 3';
+      else if (t >= 5000000) tierText = 'Tầng 2';
+      else tierText = 'Tầng 1';
+    }
+
+    const gradeVal = p.employee_grade !== undefined && p.employee_grade !== null
+      ? (String(p.employee_grade).includes('Bậc') ? p.employee_grade : `Bậc ${p.employee_grade}`)
+      : (p.grade_salary ? `Bậc ${Math.round(p.grade_salary / 400000)}` : 'Bậc 0');
+
+    const kpiRate = p.kpi_responsibility_rate !== undefined && p.kpi_responsibility_rate !== null
+      ? parseFloat(p.kpi_responsibility_rate)
+      : (p.responsibility_rate !== undefined && p.responsibility_rate !== null
+        ? parseFloat(p.responsibility_rate)
+        : (p.responsibility_deduction_rate !== undefined && p.responsibility_deduction_rate !== null
+          ? 1 - parseFloat(p.responsibility_deduction_rate)
+          : 1.0));
+    const kpiText = `${(kpiRate * 100).toFixed(1).replace('.', ',')}%`;
+
+    const mPad = p.month ? p.month.toString().padStart(2, '0') : '08';
+    const yStr = p.year || 2026;
+
+    const rows = [
+      { stt: 1, name: 'Mã nhân sự:', val: p.employee_code || p.code, isCode: true },
+      { stt: 2, name: 'Họ và tên:', val: p.fullname, isBold: true },
+      { stt: 3, name: 'Phòng ban:', val: p.department_name || p.dept },
+      { stt: 4, name: 'Chức vụ:', val: p.position_name || p.pos || 'Nhân viên' },
+      { stt: 5, name: 'Tầng nhân sự:', val: tierText },
+      { stt: 6, name: 'Bậc nhân sự:', val: gradeVal },
+      { stt: 7, name: 'Ngày công thực tế:', val: `${wDays} ngày` },
+      { stt: 8, name: 'Số giờ tăng ca (OT):', val: `${otHrs} giờ` },
+      { stt: 9, name: 'Tỷ lệ KPI trách nhiệm:', val: kpiText },
+      { stt: 10, name: 'Lương vị trí theo tầng:', val: formatVND(p.tier_salary || 0) },
+      { stt: 11, name: 'Lương theo Tầng + Bậc:', val: formatVND(totalBase) },
+      { stt: 12, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
+      { stt: 13, name: 'Lương trách nhiệm theo KPI:', val: `+${formatVND(respKpi)}` },
+      { stt: 14, name: 'Lương thưởng hiệu quả:', val: `+${formatVND(perfKpi)}` },
+      { stt: 15, name: `Lương tăng ca (${otHrs}h):`, val: `+${formatVND(otSal)}` },
+      { stt: 16, name: 'Phụ cấp Cơm & Điện thoại:', val: `+${formatVND(mealPhone)}` },
+      { stt: 17, name: 'Phụ cấp Tài xế / Khác:', val: `+${formatVND(oAllowance)}` },
+      { stt: 18, name: 'Thưởng khác / Sáng kiến:', val: `+${formatVND(oBonus)}` },
+      { stt: 19, name: 'Tổng thu nhập:', val: formatVND(totalIncome), isTotalIncome: true },
+      { stt: 20, name: 'Giảm trừ BHXH:', val: `-${formatVND(socialIns)}` },
+      { stt: 21, name: 'Giảm trừ Đoàn phí Công đoàn:', val: `-${formatVND(uFee)}` },
+      { stt: 22, name: 'Cắt giờ / Giảm trừ:', val: `-${formatVND(hrDeduct)}` },
+      { stt: 23, name: 'Tạm ứng trong kỳ:', val: `-${formatVND(advPay)}` },
+      { stt: 24, name: 'Trừ khác:', val: `-${formatVND(oDeduct)}` },
+      { stt: 25, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả):', val: `-${formatVND(discDeduct)}` },
+      { stt: 26, name: 'Tổng các khoản giảm trừ:', val: `-${formatVND(totalDeductions)}`, isTotalDeduct: true },
+      { stt: 27, name: 'Thanh trả tiền giam đồng phục:', val: `+${formatVND(uniRefund)}`, isRefund: true },
+      { stt: 28, name: 'Thu nhập thực nhận:', val: formatVND(netSalary), isNet: true }
+    ];
+
+    const today = new Date();
+    const dayNow = String(today.getDate()).padStart(2, '0');
+    const monthNow = String(today.getMonth() + 1).padStart(2, '0');
+    const yearNow = today.getFullYear();
+
+    const printWin = window.open('', '_blank', 'width=800,height=900');
+    if (!printWin) {
+      alert('Vui lòng cho phép mở cửa sổ popup để in phiếu lương!');
+      return;
+    }
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Phiếu Lương A5 - ${p.fullname} - T${mPad}/${yStr}</title>
+        <style>
+          @page {
+            size: A5 portrait;
+            margin: 4mm 6mm;
+          }
+          @media print {
+            body {
+              margin: 0;
+              padding: 0;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 8.5pt;
+            line-height: 1.25;
+            color: #111;
+            margin: 0 auto;
+            padding: 4mm 5mm;
+            background: #fff;
+          }
+          .no-print {
+            text-align: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: 8px;
+          }
+          .btn-print {
+            background: #1e3a8a;
+            color: #fff;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+          }
+          .btn-close {
+            background: #64748b;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            margin-left: 8px;
+            cursor: pointer;
+          }
+          .payslip-container {
+            border: 1px solid #94a3b8;
+            padding: 6px 8px;
+            border-radius: 4px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 4px;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 3px;
+          }
+          .header .company-name {
+            font-size: 8.5pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+            color: #0f172a;
+          }
+          .header .doc-title {
+            font-size: 12.5pt;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #b45309;
+            margin: 2px 0 1px 0;
+          }
+          .header .month-sub {
+            font-size: 8pt;
+            font-style: italic;
+            margin: 0;
+            color: #334155;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 3px;
+            font-size: 8pt;
+          }
+          th, td {
+            border: 1px solid #475569;
+            padding: 1.8px 4px;
+          }
+          th {
+            background-color: #f59e0b !important;
+            color: #000;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8pt;
+          }
+          .col-stt { width: 8%; text-align: center; font-weight: bold; }
+          .col-name { width: 56%; }
+          .col-val { width: 36%; text-align: center; }
+          .row-income {
+            background-color: #fef3c7 !important;
+            font-weight: bold;
+          }
+          .row-deduct {
+            background-color: #fee2e2 !important;
+            font-weight: bold;
+            color: #991b1b;
+          }
+          .row-refund {
+            background-color: #ecfdf5 !important;
+            font-weight: bold;
+            color: #065f46;
+          }
+          .row-net {
+            background-color: #e2e8f0 !important;
+            font-weight: 900;
+            font-size: 9pt;
+            border-top: 2px solid #000 !important;
+          }
+          .code-text { color: #dc2626; font-weight: bold; }
+          .bold-text { font-weight: bold; color: #000; }
+          .signatures {
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            font-size: 7.8pt;
+          }
+          .sig-box { width: 45%; }
+          .sig-title { font-weight: bold; }
+          .sig-sub { font-style: italic; font-size: 7.2pt; color: #475569; }
+          .sig-space { height: 32px; }
+          .date-sub {
+            text-align: right;
+            font-style: italic;
+            font-size: 7.5pt;
+            margin-top: 4px;
+            color: #334155;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="no-print">
+          <button class="btn-print" onclick="window.print()">🖨️ In Khổ Giấy A5</button>
+          <button class="btn-close" onclick="window.close()">Đóng</button>
+        </div>
+
+        <div class="payslip-container">
+          <div class="header">
+            <div class="company-name">CÔNG TY TNHH TM SX NỆM VIỆT Á</div>
+            <div class="doc-title">THÔNG BÁO LƯƠNG CÁ NHÂN</div>
+            <div class="month-sub">Tháng ${mPad} Năm ${yStr}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th class="col-stt">STT</th>
+                <th class="col-name">Danh mục</th>
+                <th class="col-val">Thông số</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => {
+                let rClass = '';
+                let vClass = '';
+                if (r.isTotalIncome) rClass = 'row-income';
+                else if (r.isTotalDeduct) rClass = 'row-deduct';
+                else if (r.isRefund) rClass = 'row-refund';
+                else if (r.isNet) rClass = 'row-net';
+
+                if (r.isCode) vClass = 'code-text';
+                else if (r.isBold || r.isNet || r.isTotalIncome || r.isTotalDeduct) vClass = 'bold-text';
+
+                return `
+                  <tr class="${rClass}">
+                    <td class="col-stt">${r.stt}</td>
+                    <td class="col-name ${r.isNet || r.isTotalIncome || r.isTotalDeduct ? 'bold-text' : ''}">${r.name}</td>
+                    <td class="col-val ${vClass}">${r.val}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+
+          <div class="date-sub">
+            Ngày ${dayNow} tháng ${monthNow} năm ${yearNow}
+          </div>
+
+          <div class="signatures">
+            <div class="sig-box">
+              <div class="sig-title">Người lập biểu</div>
+              <div class="sig-sub">(Ký, họ tên)</div>
+              <div class="sig-space"></div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-title">Giám đốc duyệt</div>
+              <div class="sig-sub">(Ký, đóng dấu)</div>
+              <div class="sig-space"></div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   };
 
   const handlePrint = () => {
-    window.print();
+    if (selectedPayroll) {
+      printPayslipA5(selectedPayroll);
+    } else if (payrolls && payrolls.length > 0) {
+      printPayslipA5(payrolls[0]);
+    } else {
+      window.print();
+    }
   };
 
   const isAdmin = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
@@ -357,11 +691,13 @@ const PayrollPage = () => {
               </p>
               <div className="mt-3 flex justify-end space-x-2">
                 <button
-                  onClick={handlePrint}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-black transition shadow cursor-pointer"
+                  onClick={() => printPayslipA5(currentSlip)}
+                  disabled={!currentSlip}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-black transition shadow cursor-pointer disabled:opacity-50"
+                  title="In thông báo lương cá nhân chuẩn khổ A5"
                 >
                   <Printer size={14} className="text-brand-700" />
-                  <span>In phiếu lương</span>
+                  <span>In phiếu lương (Khổ A5)</span>
                 </button>
               </div>
             </div>
@@ -1414,10 +1750,10 @@ const PayrollPage = () => {
                 <span className="text-xs font-bold text-slate-700">Xem Phiếu Lương Nhân Viên</span>
                 <div className="flex space-x-2">
                   <button
-                    onClick={handlePrint}
+                    onClick={() => printPayslipA5(selectedPayroll)}
                     className="px-4 py-1.5 bg-brand-700 text-white rounded-xl text-xs font-semibold inline-flex items-center space-x-1.5 hover:bg-brand-800 shadow-sm"
                   >
-                    <Printer size={14} /> <span>In Phiếu Lương</span>
+                    <Printer size={14} /> <span>In Phiếu Lương (Khổ A5)</span>
                   </button>
                   <button
                     onClick={() => setPayslipModalOpen(false)}
