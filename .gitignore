@@ -8,3 +8,4 @@ hrm.db-wal
 hrm.db-shm
 *.db
 server/hrm.db
+~$*

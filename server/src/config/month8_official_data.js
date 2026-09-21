@@ -1,4 +1,4 @@
-import * as xlsx from '../../node_modules/xlsx/xlsx.mjs';
+import XLSX from 'xlsx';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,9 +16,9 @@ export function getMonth8OfficialData() {
   }
 
   const bufTc = fs.readFileSync(tcPath);
-  const wbTc = xlsx.read(bufTc, { type: 'buffer' });
+  const wbTc = XLSX.read(bufTc, { type: 'buffer' });
   const sheetTc = wbTc.Sheets[wbTc.SheetNames[0]];
-  const rowsTc = xlsx.utils.sheet_to_json(sheetTc, { header: 1 });
+  const rowsTc = XLSX.utils.sheet_to_json(sheetTc, { header: 1 });
   
   const otMap = new Map();
   rowsTc.slice(3).forEach(row => {
@@ -30,9 +30,9 @@ export function getMonth8OfficialData() {
   });
 
   const bufLuong = fs.readFileSync(luongPath);
-  const wbLuong = xlsx.read(bufLuong, { type: 'buffer' });
+  const wbLuong = XLSX.read(bufLuong, { type: 'buffer' });
   const sheetLuong = wbLuong.Sheets[wbLuong.SheetNames[0]];
-  const rowsLuong = xlsx.utils.sheet_to_json(sheetLuong, { header: 1 });
+  const rowsLuong = XLSX.utils.sheet_to_json(sheetLuong, { header: 1 });
 
   const result = [];
   for (let i = 5; i < rowsLuong.length; i++) {

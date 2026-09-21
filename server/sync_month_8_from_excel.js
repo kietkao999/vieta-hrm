@@ -7,12 +7,34 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function syncMonth8Data() {
-  const excelPath = path.resolve(__dirname, '../Copy of Bảng lương Việt Á Tháng 8.2026.xlsx');
+  console.log('=== BẮT ĐẦU ĐỒNG BỘ BẢNG LƯƠNG THÁNG 8/2026 TỪ FILE EXCEL GỐC ===');
+
+  const excelPath = path.resolve(__dirname, '../BẢNG LƯƠNG CÔNG TY THÁNG 8.2026.xlsx');
   const wb = XLSX.readFile(excelPath);
-  const sheet = wb.Sheets['Bảng lương'];
+  const sheet = wb.Sheets['Sheet1'] || wb.Sheets[wb.SheetNames[0]];
   if (!sheet) {
-    console.error('Không tìm thấy sheet Bảng lương trong file Excel Tháng 8.');
+    console.error('Không tìm thấy sheet dữ liệu trong file BẢNG LƯƠNG CÔNG TY THÁNG 8.2026.xlsx');
     return;
+  }
+
+  // Đọc file tăng ca tháng 8
+  const otMap = new Map();
+  try {
+    const otPath = path.resolve(__dirname, '../TĂNG CA THÁNG 8.2026.xlsx');
+    const otWb = XLSX.readFile(otPath);
+    const otSheet = otWb.Sheets[otWb.SheetNames[0]];
+    const otData = XLSX.utils.sheet_to_json(otSheet, { header: 1 });
+    for (let r = 2; r < otData.length; r++) {
+      const row = otData[r];
+      if (row && row[1] && typeof row[1] === 'string') {
+        const c = row[1].trim();
+        const otHours = parseFloat(row[5]) || 0;
+        otMap.set(c, otHours);
+      }
+    }
+    console.log(`✓ Đã nạp dữ liệu tăng ca cho ${otMap.size} nhân sự.`);
+  } catch (err) {
+    console.warn('Không thể đọc file TĂNG CA THÁNG 8.2026.xlsx:', err.message);
   }
 
   const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -27,22 +49,28 @@ export async function syncMonth8Data() {
     if (!code || typeof code !== 'string' || !code.includes('VietA')) continue;
 
     const cleanCode = code.trim();
-    const emp = await query.get('SELECT id, base_salary, tier_salary, grade_salary FROM employees WHERE code = ?', [cleanCode]);
+    if (cleanCode === 'VietA 001' || cleanCode === 'VietA 072') {
+      continue; // Bỏ qua 2 nhân sự đã nghỉ việc
+    }
+
+    const emp = await query.get('SELECT id, base_salary, tier_salary, grade_salary, department_id, position_id FROM employees WHERE code = ?', [cleanCode]);
     if (!emp) {
-      console.log('Không tìm thấy nhân sự trong DB:', cleanCode, name);
+      console.log(`[Bỏ qua - Không có trong danh sách nhân viên] ${cleanCode} - ${name}`);
       continue;
     }
 
-    const tierSalary = parseFloat(row[6]) || emp.tier_salary || 0;
-    const gradeSalary = parseFloat(row[7]) || emp.grade_salary || 0;
-    const totalBase = (tierSalary + gradeSalary) || emp.base_salary || 0;
-    const workDays = parseFloat(row[10]) !== undefined && row[10] !== null ? parseFloat(row[10]) : 26;
-    const baseWorkSalary = parseFloat(row[11]) || Math.round((totalBase / 26) * workDays);
+    const tierSalary = row[6] !== undefined && row[6] !== null ? (parseFloat(row[6]) || 0) : (cleanCode === 'VietA 001' ? 0 : (emp.tier_salary || 0));
+    const gradeLevel = parseFloat(row[7]) || 0;
+    const gradeSalary = gradeLevel * 400000;
+    const totalBase = (tierSalary + gradeSalary) || (row[8] !== undefined && row[8] !== null ? (parseFloat(row[8]) || 0) : (emp.base_salary || 0));
+    const workDays = row[10] !== undefined && row[10] !== null ? (parseFloat(row[10]) || 0) : (cleanCode === 'VietA 001' ? 0 : 26);
+    const baseWorkSalary = row[11] !== undefined && row[11] !== null ? (parseFloat(row[11]) || 0) : Math.round((totalBase / 26) * workDays);
     const respBonus = parseFloat(row[12]) || 0;
     const respRate = row[13] !== undefined && row[13] !== null ? parseFloat(row[13]) : 1.0;
-    const respAmount = parseFloat(row[14]) || Math.round(respBonus * respRate);
+    const respAmount = parseFloat(row[14]) !== undefined && row[14] !== null ? parseFloat(row[14]) : Math.round(respBonus * respRate);
     const perfBonus = parseFloat(row[15]) || 0;
     const otSalary = parseFloat(row[16]) || 0;
+    const otHours = otMap.get(cleanCode) || 0;
     const otherBonus = parseFloat(row[17]) || 0;
     const otherAllow = parseFloat(row[18]) || 0; // Phụ cấp tài xế
     const mealPhone = parseFloat(row[19]) || 0; // Phụ cấp cơm / ĐT
@@ -54,8 +82,11 @@ export async function syncMonth8Data() {
     const discDeduct = parseFloat(row[27]) || 0;
     const uniformRefund = parseFloat(row[29]) || 0;
 
+    const totalIncome = baseWorkSalary + respAmount + perfBonus + otSalary + otherBonus + mealPhone + otherAllow;
     const totalDeductions = socialIns + unionFee + hrDeduct + advance + otherDeduct + discDeduct;
-    const netSalary = parseFloat(row[30]) || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + (otherBonus + uniformRefund) + mealPhone + otherAllow - totalDeductions);
+    const netSalary = parseFloat(row[30]) !== undefined && row[30] !== null 
+      ? Math.round(parseFloat(row[30])) 
+      : Math.round(totalIncome - totalDeductions + uniformRefund);
 
     // 1. Lưu chính xác vào employee_monthly_kpis cho Tháng 08/2026
     await query.run(`
@@ -79,7 +110,7 @@ export async function syncMonth8Data() {
       respAmount,
       perfBonus,
       discDeduct,
-      'Cập nhật từ Bảng lương Tháng 8.2026 thực tế',
+      'Cập nhật từ Bảng lương Tháng 8.2026 chính thức',
       now,
       now
     ]);
@@ -95,13 +126,14 @@ export async function syncMonth8Data() {
         performance_bonus, discipline_deduction, performance_net, performance_kpi,
         other_bonus, meal_phone_allowance, other_allowance,
         social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
-        other_deductions, net_salary, status, created_at, updated_at
-      ) VALUES (?, '08', 2026, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'Đã chốt', ?, ?)
+        other_deductions, uniform_refund, net_salary, status, created_at, updated_at
+      ) VALUES (?, '08', 2026, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 'Đã chốt', ?, ?)
       ON CONFLICT(employee_id, month, year) DO UPDATE SET
         tier_salary = excluded.tier_salary,
         grade_salary = excluded.grade_salary,
         work_days = excluded.work_days,
         base_work_salary = excluded.base_work_salary,
+        ot_hours = excluded.ot_hours,
         ot_salary = excluded.ot_salary,
         responsibility_quota = excluded.responsibility_quota,
         responsibility_deduction_rate = excluded.responsibility_deduction_rate,
@@ -119,6 +151,7 @@ export async function syncMonth8Data() {
         advance_payment = excluded.advance_payment,
         hour_deduction = excluded.hour_deduction,
         other_deductions = excluded.other_deductions,
+        uniform_refund = excluded.uniform_refund,
         net_salary = excluded.net_salary,
         status = 'Đã chốt',
         updated_at = excluded.updated_at
@@ -128,6 +161,7 @@ export async function syncMonth8Data() {
       gradeSalary,
       workDays,
       baseWorkSalary,
+      otHours,
       otSalary,
       respBonus,
       1 - respRate,
@@ -137,7 +171,7 @@ export async function syncMonth8Data() {
       discDeduct,
       Math.max(0, perfBonus - discDeduct),
       perfBonus,
-      otherBonus + uniformRefund,
+      otherBonus,
       mealPhone,
       otherAllow,
       socialIns,
@@ -145,6 +179,7 @@ export async function syncMonth8Data() {
       advance,
       hrDeduct,
       otherDeduct,
+      uniformRefund,
       netSalary,
       now,
       now
@@ -153,7 +188,7 @@ export async function syncMonth8Data() {
     updatedCount++;
   }
 
-  console.log(`✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 từ file Excel chính thức cho ${updatedCount} nhân sự!`);
+  console.log(`✓ Đã đồng bộ thành công dữ liệu Tháng 08/2026 từ file Excel chính thức cho toàn bộ ${updatedCount} nhân sự!`);
 }
 
 // Chạy trực tiếp nếu gọi từ command line
