@@ -551,6 +551,14 @@ export async function runMigration() {
     }
     console.log('✓ Đã đồng bộ thành công 8 tài liệu với link Google Docs Preview & Download gốc!');
 
+    // 5. Đồng bộ dữ liệu chấm công và tăng ca chi tiết từ file Excel
+    try {
+      const { syncAttendanceData } = await import('../../sync_attendance_data.js');
+      await syncAttendanceData();
+    } catch (attErr) {
+      console.log('Không thể nạp chấm công tự động:', attErr.message);
+    }
+
   } catch (error) {
     await query.run('ROLLBACK').catch(() => {});
     console.error('Lỗi khi chạy migration:', error);

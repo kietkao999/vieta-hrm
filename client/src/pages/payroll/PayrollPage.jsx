@@ -800,25 +800,45 @@ const PayrollPage = () => {
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
-                            <div className="text-[10px] text-slate-400">
-                              {wDays} công {otSal > 0 ? `| OT: +${formatVND(otSal)}` : ''}
+                            <div className="text-[10px] text-slate-500 font-medium">
+                              <span className="bg-slate-100 px-1 py-0.2 rounded mr-1">{wDays} công</span>
+                              {otHrs > 0 ? (
+                                <span className="text-indigo-700 bg-indigo-50 px-1 py-0.2 rounded font-bold">
+                                  {otHrs}h OT (+{formatVND(otSal)})
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">0h OT</span>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-bold text-emerald-600">{formatVND(totalBonus)}</div>
-                            <div className="text-[10px] text-slate-400">
-                              TN: {formatVND(respKpi)} | HQ: {formatVND(perfKpi)}
+                            <div className="text-[10px] text-slate-500 space-x-1">
+                              <span>TN: {formatVND(respKpi)}</span>
+                              <span>| HQ: {formatVND(perfKpi)}</span>
+                              {oBonus > 0 && <span className="text-amber-700 font-semibold">| Khác: +{formatVND(oBonus)}</span>}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-semibold text-slate-700">{formatVND(totalAllowances)}</div>
-                            <div className="text-[10px] text-slate-400">
-                              Cơm&ĐT: {formatVND(p.meal_phone_allowance || 0)}
+                            <div className="text-[10px] text-slate-500 flex flex-col items-end gap-0.5">
+                              {p.meal_phone_allowance > 0 && <span>Cơm/ĐT: +{formatVND(p.meal_phone_allowance)}</span>}
+                              {p.other_allowance > 0 && <span className="text-blue-700 font-semibold">Tài xế: +{formatVND(p.other_allowance)}</span>}
+                              {totalAllowances === 0 && <span className="text-slate-400">0 đ</span>}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className={`font-semibold ${totalDeductions > 0 ? 'text-red-600' : 'text-slate-400'}`}>
                               {totalDeductions > 0 ? `-${formatVND(totalDeductions)}` : '0 đ'}
+                            </div>
+                            <div className="text-[10px] text-slate-500 flex flex-wrap justify-end gap-1 mt-0.5 max-w-[200px] ml-auto">
+                              {p.social_insurance > 0 && <span className="bg-red-50 text-red-700 px-1 rounded">BH: -{formatVND(p.social_insurance)}</span>}
+                              {p.union_fee > 0 && <span className="bg-red-50 text-red-700 px-1 rounded">CĐ: -{formatVND(p.union_fee)}</span>}
+                              {p.hour_deduction > 0 && <span className="bg-amber-50 text-amber-800 px-1 rounded">Cắt giờ: -{formatVND(p.hour_deduction)}</span>}
+                              {p.advance_payment > 0 && <span className="bg-orange-50 text-orange-800 px-1 rounded">T.Ứng: -{formatVND(p.advance_payment)}</span>}
+                              {p.other_deductions > 0 && <span className="bg-slate-100 text-slate-700 px-1 rounded">Khác: -{formatVND(p.other_deductions)}</span>}
+                              {p.discipline_deduction > 0 && <span className="bg-rose-100 text-rose-800 px-1 rounded">K.Luật: -{formatVND(p.discipline_deduction)}</span>}
+                              {p.uniform_refund > 0 && <span className="bg-emerald-50 text-emerald-700 font-bold px-1 rounded">Đ.Phục: +{formatVND(p.uniform_refund)}</span>}
                             </div>
                           </td>
                           <td className="px-3 py-3 text-right">
@@ -1361,27 +1381,28 @@ const PayrollPage = () => {
           { stt: 4, name: 'Chức vụ:', val: selectedPayroll.position_name || 'Nhân viên' },
           { stt: 5, name: 'Tầng nhân sự:', val: tierText },
           { stt: 6, name: 'Bậc nhân sự:', val: gradeVal },
-          { stt: 7, name: 'Ngày công thực tế:', val: wDays },
-          { stt: 8, name: 'KPI:', val: kpiText },
-          { stt: 9, name: 'Lương theo tầng', val: formatVND(selectedPayroll.tier_salary || 0) },
-          { stt: 10, name: 'Lương theo tầng + bậc', val: formatVND(totalBase) },
-          { stt: 11, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
-          { stt: 12, name: 'Lương trách nhiệm theo KPI:', val: formatVND(respKpi) },
-          { stt: 13, name: 'Lương thưởng hiệu quả:', val: formatVND(perfKpi) },
-          { stt: 14, name: 'Lương tăng ca', val: formatVND(otSal) },
-          { stt: 15, name: 'Phụ cấp cơm/ ĐT', val: formatVND(mealPhone) },
-          { stt: 16, name: 'Phụ cấp khác', val: formatVND(oAllowance) },
-          { stt: 17, name: 'Thưởng khác', val: formatVND(oBonus) },
-          { stt: 18, name: 'Tổng thu nhập:', val: formatVND(totalIncome), isTotalIncome: true },
-          { stt: 19, name: 'Giảm trừ BHXH', val: formatVND(socialIns) },
-          { stt: 20, name: 'Giảm trừ Công đoàn', val: formatVND(uFee) },
-          { stt: 21, name: 'Cắt giờ / Giảm trừ', val: formatVND(hrDeduct) },
-          { stt: 22, name: 'Tạm ứng', val: formatVND(advPay) },
-          { stt: 23, name: 'Trừ khác', val: formatVND(oDeduct) },
-          { stt: 24, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả)', val: formatVND(discDeduct) },
-          { stt: 25, name: 'Tổng các khoản trừ:', val: formatVND(totalDeductions), isTotalDeduct: true },
-          { stt: 26, name: 'Thanh trả tiền đồng phục', val: formatVND(uniRefund), isRefund: true },
-          { stt: 27, name: 'Thu nhập thực nhận:', val: formatVND(netSalary), isNet: true }
+          { stt: 7, name: 'Ngày công thực tế:', val: `${wDays} ngày` },
+          { stt: 8, name: 'Số giờ tăng ca (OT):', val: `${otHrs} giờ` },
+          { stt: 9, name: 'Tỷ lệ KPI trách nhiệm:', val: kpiText },
+          { stt: 10, name: 'Lương vị trí theo tầng:', val: formatVND(selectedPayroll.tier_salary || 0) },
+          { stt: 11, name: 'Lương theo Tầng + Bậc:', val: formatVND(totalBase) },
+          { stt: 12, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
+          { stt: 13, name: 'Lương trách nhiệm theo KPI:', val: `+${formatVND(respKpi)}` },
+          { stt: 14, name: 'Lương thưởng hiệu quả:', val: `+${formatVND(perfKpi)}` },
+          { stt: 15, name: `Lương tăng ca (${otHrs}h):`, val: `+${formatVND(otSal)}` },
+          { stt: 16, name: 'Phụ cấp Cơm & Điện thoại:', val: `+${formatVND(mealPhone)}` },
+          { stt: 17, name: 'Phụ cấp Tài xế / Khác:', val: `+${formatVND(oAllowance)}` },
+          { stt: 18, name: 'Thưởng khác / Sáng kiến:', val: `+${formatVND(oBonus)}` },
+          { stt: 19, name: 'Tổng thu nhập:', val: formatVND(totalIncome), isTotalIncome: true },
+          { stt: 20, name: 'Giảm trừ BHXH:', val: `-${formatVND(socialIns)}` },
+          { stt: 21, name: 'Giảm trừ Đoàn phí Công đoàn:', val: `-${formatVND(uFee)}` },
+          { stt: 22, name: 'Cắt giờ / Giảm trừ:', val: `-${formatVND(hrDeduct)}` },
+          { stt: 23, name: 'Tạm ứng trong kỳ:', val: `-${formatVND(advPay)}` },
+          { stt: 24, name: 'Trừ khác:', val: `-${formatVND(oDeduct)}` },
+          { stt: 25, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả):', val: `-${formatVND(discDeduct)}` },
+          { stt: 26, name: 'Tổng các khoản giảm trừ:', val: `-${formatVND(totalDeductions)}`, isTotalDeduct: true },
+          { stt: 27, name: 'Thanh trả tiền giam đồng phục:', val: `+${formatVND(uniRefund)}`, isRefund: true },
+          { stt: 28, name: 'Thu nhập thực nhận:', val: formatVND(netSalary), isNet: true }
         ];
 
         return (
