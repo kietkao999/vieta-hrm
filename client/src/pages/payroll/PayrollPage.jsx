@@ -267,18 +267,35 @@ const PayrollPage = () => {
     return Number(amount).toLocaleString('vi-VN') + ' đ';
   };
 
-  const printPayslipA5 = (p) => {
-    if (!p) return;
-
+  const getPayslipRows = (p) => {
+    if (!p) return [];
     const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
     const wDays = p.work_days ?? 26;
-    const baseWork = p.base_work_salary || Math.round((totalBase / 26) * wDays);
+    const baseWork = p.base_work_salary !== undefined && p.base_work_salary !== null 
+      ? p.base_work_salary 
+      : Math.round((totalBase / 26) * wDays);
     const otHrs = p.ot_hours || 0;
-    const otSal = p.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
+    const otSal = p.ot_salary !== undefined && p.ot_salary !== null 
+      ? p.ot_salary 
+      : Math.round((totalBase / 208) * otHrs * 1.5);
     
+    const hasKpi = p.kpi_responsibility_amount !== undefined && p.kpi_responsibility_amount !== null;
+    const respQuota = hasKpi 
+      ? parseFloat(p.kpi_responsibility_bonus || 0) 
+      : (p.responsibility_quota !== undefined && p.responsibility_quota !== null ? parseFloat(p.responsibility_quota) : 0);
+    
+    const kpiRate = p.kpi_responsibility_rate !== undefined && p.kpi_responsibility_rate !== null
+      ? parseFloat(p.kpi_responsibility_rate)
+      : (p.responsibility_rate !== undefined && p.responsibility_rate !== null
+        ? parseFloat(p.responsibility_rate)
+        : (p.responsibility_deduction_rate !== undefined && p.responsibility_deduction_rate !== null
+          ? 1 - parseFloat(p.responsibility_deduction_rate)
+          : 1.0));
+    const kpiText = `${(kpiRate * 100).toFixed(1).replace('.', ',')}%`;
+
     const respKpi = p.kpi_responsibility_amount !== undefined && p.kpi_responsibility_amount !== null
       ? parseFloat(p.kpi_responsibility_amount)
-      : (p.responsibility_kpi !== undefined ? parseFloat(p.responsibility_kpi) : (p.responsibility_net || 0));
+      : (p.responsibility_kpi !== undefined ? parseFloat(p.responsibility_kpi) : (p.responsibility_net || Math.round(respQuota * kpiRate)));
 
     const perfKpi = p.kpi_performance_bonus !== undefined && p.kpi_performance_bonus !== null
       ? parseFloat(p.kpi_performance_bonus)
@@ -287,20 +304,21 @@ const PayrollPage = () => {
     const oBonus = p.other_bonus || 0;
     const mealPhone = p.meal_phone_allowance || 0;
     const oAllowance = p.other_allowance || 0;
-
-    const totalIncome = baseWork + respKpi + perfKpi + otSal + mealPhone + oAllowance + oBonus;
+    const totalBonusAndAllow = respKpi + perfKpi + otSal + mealPhone + oAllowance + oBonus;
+    const totalIncome = baseWork + totalBonusAndAllow;
 
     const socialIns = p.social_insurance || 0;
     const uFee = p.union_fee || 0;
+    const incTax = p.income_tax || 0;
     const hrDeduct = p.hour_deduction || 0;
     const advPay = p.advance_payment || 0;
-    const oDeduct = (p.other_deductions || 0) + (p.income_tax || 0);
+    const oDeduct = p.other_deductions || 0;
     
     const discDeduct = p.kpi_discipline_deduction !== undefined && p.kpi_discipline_deduction !== null
       ? parseFloat(p.kpi_discipline_deduction)
       : (p.discipline_deduction || 0);
 
-    const totalDeductions = socialIns + uFee + hrDeduct + advPay + oDeduct + discDeduct;
+    const totalDeductions = socialIns + uFee + incTax + hrDeduct + advPay + oDeduct + discDeduct;
     const uniRefund = p.uniform_refund || 0;
     const netSalary = p.net_salary !== undefined && p.net_salary !== null 
       ? p.net_salary 
@@ -323,48 +341,48 @@ const PayrollPage = () => {
       ? (String(p.employee_grade).includes('Bậc') ? p.employee_grade : `Bậc ${p.employee_grade}`)
       : (p.grade_salary ? `Bậc ${Math.round(p.grade_salary / 400000)}` : 'Bậc 0');
 
-    const kpiRate = p.kpi_responsibility_rate !== undefined && p.kpi_responsibility_rate !== null
-      ? parseFloat(p.kpi_responsibility_rate)
-      : (p.responsibility_rate !== undefined && p.responsibility_rate !== null
-        ? parseFloat(p.responsibility_rate)
-        : (p.responsibility_deduction_rate !== undefined && p.responsibility_deduction_rate !== null
-          ? 1 - parseFloat(p.responsibility_deduction_rate)
-          : 1.0));
-    const kpiText = `${(kpiRate * 100).toFixed(1).replace('.', ',')}%`;
-
-    const mPad = p.month ? p.month.toString().padStart(2, '0') : '08';
-    const yStr = p.year || 2026;
-
-    const rows = [
+    return [
       { stt: 1, name: 'Mã nhân sự:', val: p.employee_code || p.code, isCode: true },
       { stt: 2, name: 'Họ và tên:', val: p.fullname, isBold: true },
       { stt: 3, name: 'Phòng ban:', val: p.department_name || p.dept },
       { stt: 4, name: 'Chức vụ:', val: p.position_name || p.pos || 'Nhân viên' },
       { stt: 5, name: 'Tầng nhân sự:', val: tierText },
       { stt: 6, name: 'Bậc nhân sự:', val: gradeVal },
-      { stt: 7, name: 'Ngày công thực tế:', val: `${wDays} ngày` },
-      { stt: 8, name: 'Số giờ tăng ca (OT):', val: `${otHrs} giờ` },
-      { stt: 9, name: 'Tỷ lệ KPI trách nhiệm:', val: kpiText },
-      { stt: 10, name: 'Lương vị trí theo tầng:', val: formatVND(p.tier_salary || 0) },
-      { stt: 11, name: 'Lương theo Tầng + Bậc:', val: formatVND(totalBase) },
-      { stt: 12, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
-      { stt: 13, name: 'Lương trách nhiệm theo KPI:', val: `+${formatVND(respKpi)}` },
-      { stt: 14, name: 'Lương thưởng hiệu quả:', val: `+${formatVND(perfKpi)}` },
-      { stt: 15, name: `Lương tăng ca (${otHrs}h):`, val: `+${formatVND(otSal)}` },
-      { stt: 16, name: 'Phụ cấp Cơm & Điện thoại:', val: `+${formatVND(mealPhone)}` },
-      { stt: 17, name: 'Phụ cấp Tài xế / Khác:', val: `+${formatVND(oAllowance)}` },
-      { stt: 18, name: 'Thưởng khác / Sáng kiến:', val: `+${formatVND(oBonus)}` },
-      { stt: 19, name: 'Tổng thu nhập:', val: formatVND(totalIncome), isTotalIncome: true },
-      { stt: 20, name: 'Giảm trừ BHXH:', val: `-${formatVND(socialIns)}` },
-      { stt: 21, name: 'Giảm trừ Đoàn phí Công đoàn:', val: `-${formatVND(uFee)}` },
-      { stt: 22, name: 'Cắt giờ / Giảm trừ:', val: `-${formatVND(hrDeduct)}` },
-      { stt: 23, name: 'Tạm ứng trong kỳ:', val: `-${formatVND(advPay)}` },
-      { stt: 24, name: 'Trừ khác:', val: `-${formatVND(oDeduct)}` },
-      { stt: 25, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả):', val: `-${formatVND(discDeduct)}` },
-      { stt: 26, name: 'Tổng các khoản giảm trừ:', val: `-${formatVND(totalDeductions)}`, isTotalDeduct: true },
-      { stt: 27, name: 'Thanh trả tiền giam đồng phục:', val: `+${formatVND(uniRefund)}`, isRefund: true },
-      { stt: 28, name: 'Thu nhập thực nhận:', val: formatVND(netSalary), isNet: true }
+      { stt: 7, name: 'Lương vị trí theo tầng:', val: formatVND(p.tier_salary || 0) },
+      { stt: 8, name: 'Lương theo Tầng + Bậc (Chuẩn 26 ngày):', val: formatVND(totalBase) },
+      { stt: 9, name: 'Ngày công quy định (NCqđ):', val: '26 ngày' },
+      { stt: 10, name: 'Ngày công làm việc thực tế:', val: `${wDays} ngày` },
+      { stt: 11, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
+      { stt: 12, name: 'Định mức thưởng KPI trách nhiệm:', val: formatVND(respQuota) },
+      { stt: 13, name: 'Tỷ lệ hoàn thành KPI trách nhiệm:', val: kpiText },
+      { stt: 14, name: 'Lương trách nhiệm theo KPI:', val: `+${formatVND(respKpi)}` },
+      { stt: 15, name: 'Lương thưởng hiệu quả:', val: `+${formatVND(perfKpi)}` },
+      { stt: 16, name: 'Số giờ làm thêm / Tăng ca (OT):', val: `${otHrs} giờ` },
+      { stt: 17, name: `Lương tăng ca (${otHrs}h x 150%):`, val: `+${formatVND(otSal)}` },
+      { stt: 18, name: 'Phụ cấp Tài xế / Khác:', val: `+${formatVND(oAllowance)}` },
+      { stt: 19, name: 'Phụ cấp Cơm & Điện thoại:', val: `+${formatVND(mealPhone)}` },
+      { stt: 20, name: 'Thưởng khác / Sáng kiến:', val: `+${formatVND(oBonus)}` },
+      { stt: 21, name: 'Tổng các khoản thưởng & phụ cấp:', val: `+${formatVND(totalBonusAndAllow)}`, isSubTotal: true },
+      { stt: 22, name: 'TỔNG THU NHẬP:', val: formatVND(totalIncome), isTotalIncome: true },
+      { stt: 23, name: 'Giảm trừ BHXH (BHYT, BHTN):', val: `-${formatVND(socialIns)}` },
+      { stt: 24, name: 'Giảm trừ Đoàn phí Công đoàn:', val: `-${formatVND(uFee)}` },
+      { stt: 25, name: 'Thuế thu nhập cá nhân (TNCN):', val: `-${formatVND(incTax)}` },
+      { stt: 26, name: 'Cắt giờ / Giảm trừ:', val: `-${formatVND(hrDeduct)}` },
+      { stt: 27, name: 'Tạm ứng trong kỳ:', val: `-${formatVND(advPay)}` },
+      { stt: 28, name: 'Trừ khác:', val: `-${formatVND(oDeduct)}` },
+      { stt: 29, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả):', val: `-${formatVND(discDeduct)}` },
+      { stt: 30, name: 'TỔNG CÁC KHOẢN GIẢM TRỪ:', val: `-${formatVND(totalDeductions)}`, isTotalDeduct: true },
+      { stt: 31, name: 'Thanh trả tiền giam đồng phục:', val: `+${formatVND(uniRefund)}`, isRefund: true },
+      { stt: 32, name: 'THU NHẬP THỰC NHẬN (THỰC LĨNH):', val: formatVND(netSalary), isNet: true }
     ];
+  };
+
+  const printPayslipA5 = (p) => {
+    if (!p) return;
+
+    const rows = getPayslipRows(p);
+    const mPad = p.month ? p.month.toString().padStart(2, '0') : '08';
+    const yStr = p.year || 2026;
 
     const today = new Date();
     const dayNow = String(today.getDate()).padStart(2, '0');
@@ -386,17 +404,27 @@ const PayrollPage = () => {
         <style>
           @page {
             size: A5 portrait;
-            margin: 4mm 6mm;
+            margin: 3mm 4mm;
           }
           @media print {
-            body {
-              margin: 0;
-              padding: 0;
+            html, body {
+              width: 148mm;
+              height: 210mm;
+              margin: 0 !important;
+              padding: 0 !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              overflow: hidden !important;
             }
             .no-print {
               display: none !important;
+            }
+            .payslip-container {
+              border: 1px solid #1e293b !important;
+              padding: 2.5mm 3.5mm !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              box-sizing: border-box !important;
             }
           }
           * {
@@ -404,92 +432,95 @@ const PayrollPage = () => {
           }
           body {
             font-family: "Times New Roman", Times, serif;
-            font-size: 8.5pt;
-            line-height: 1.25;
-            color: #111;
+            font-size: 7.2pt;
+            line-height: 1.15;
+            color: #000;
             margin: 0 auto;
-            padding: 4mm 5mm;
+            padding: 3mm 4mm;
             background: #fff;
           }
           .no-print {
             text-align: center;
-            margin-bottom: 12px;
-            padding: 8px;
+            margin-bottom: 8px;
+            padding: 6px;
             background: #f1f5f9;
-            border-radius: 8px;
+            border-radius: 6px;
           }
           .btn-print {
             background: #1e3a8a;
             color: #fff;
             border: none;
-            padding: 6px 18px;
-            border-radius: 6px;
+            padding: 5px 16px;
+            border-radius: 5px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
           }
           .btn-close {
             background: #64748b;
             color: #fff;
             border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
+            padding: 5px 12px;
+            border-radius: 5px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             margin-left: 8px;
             cursor: pointer;
           }
           .payslip-container {
-            border: 1px solid #94a3b8;
-            padding: 6px 8px;
-            border-radius: 4px;
+            border: 1px solid #475569;
+            padding: 2.5mm 3.5mm;
+            border-radius: 3px;
+            background: #fff;
           }
           .header {
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             border-bottom: 1.5px solid #000;
-            padding-bottom: 3px;
+            padding-bottom: 2px;
           }
           .header .company-name {
-            font-size: 8.5pt;
+            font-size: 7.8pt;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             margin: 0;
-            color: #0f172a;
+            color: #000;
           }
           .header .doc-title {
-            font-size: 12.5pt;
+            font-size: 11pt;
             font-weight: 900;
             text-transform: uppercase;
             color: #b45309;
-            margin: 2px 0 1px 0;
+            margin: 1px 0 0 0;
           }
           .header .month-sub {
-            font-size: 8pt;
+            font-size: 7.2pt;
             font-style: italic;
             margin: 0;
-            color: #334155;
+            color: #1e293b;
           }
           table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 3px;
-            font-size: 8pt;
+            margin-top: 2px;
+            font-size: 6.9pt;
           }
           th, td {
             border: 1px solid #475569;
-            padding: 1.8px 4px;
+            padding: 1px 3px;
+            line-height: 1.12;
           }
           th {
             background-color: #f59e0b !important;
             color: #000;
             font-weight: bold;
             text-align: center;
-            font-size: 8pt;
+            font-size: 7.2pt;
+            padding: 1.5px 3px;
           }
-          .col-stt { width: 8%; text-align: center; font-weight: bold; }
-          .col-name { width: 56%; }
+          .col-stt { width: 7%; text-align: center; font-weight: bold; }
+          .col-name { width: 57%; }
           .col-val { width: 36%; text-align: center; }
           .row-income {
             background-color: #fef3c7 !important;
@@ -505,31 +536,37 @@ const PayrollPage = () => {
             font-weight: bold;
             color: #065f46;
           }
+          .row-subtotal {
+            background-color: #f8fafc !important;
+            font-weight: bold;
+            color: #1e293b;
+          }
           .row-net {
             background-color: #e2e8f0 !important;
             font-weight: 900;
-            font-size: 9pt;
-            border-top: 2px solid #000 !important;
+            font-size: 7.8pt;
+            border-top: 1.5px solid #000 !important;
           }
           .code-text { color: #dc2626; font-weight: bold; }
           .bold-text { font-weight: bold; color: #000; }
           .signatures {
-            margin-top: 6px;
+            margin-top: 4px;
             display: flex;
             justify-content: space-between;
             text-align: center;
-            font-size: 7.8pt;
+            font-size: 7pt;
+            page-break-inside: avoid;
           }
           .sig-box { width: 45%; }
           .sig-title { font-weight: bold; }
-          .sig-sub { font-style: italic; font-size: 7.2pt; color: #475569; }
-          .sig-space { height: 32px; }
+          .sig-sub { font-style: italic; font-size: 6.5pt; color: #475569; }
+          .sig-space { height: 20px; }
           .date-sub {
             text-align: right;
             font-style: italic;
-            font-size: 7.5pt;
-            margin-top: 4px;
-            color: #334155;
+            font-size: 6.8pt;
+            margin-top: 2px;
+            color: #1e293b;
           }
         </style>
       </head>
@@ -561,15 +598,16 @@ const PayrollPage = () => {
                 if (r.isTotalIncome) rClass = 'row-income';
                 else if (r.isTotalDeduct) rClass = 'row-deduct';
                 else if (r.isRefund) rClass = 'row-refund';
+                else if (r.isSubTotal) rClass = 'row-subtotal';
                 else if (r.isNet) rClass = 'row-net';
 
                 if (r.isCode) vClass = 'code-text';
-                else if (r.isBold || r.isNet || r.isTotalIncome || r.isTotalDeduct) vClass = 'bold-text';
+                else if (r.isBold || r.isNet || r.isTotalIncome || r.isTotalDeduct || r.isSubTotal) vClass = 'bold-text';
 
                 return `
                   <tr class="${rClass}">
                     <td class="col-stt">${r.stt}</td>
-                    <td class="col-name ${r.isNet || r.isTotalIncome || r.isTotalDeduct ? 'bold-text' : ''}">${r.name}</td>
+                    <td class="col-name ${r.isNet || r.isTotalIncome || r.isTotalDeduct || r.isSubTotal ? 'bold-text' : ''}">${r.name}</td>
                     <td class="col-val ${vClass}">${r.val}</td>
                   </tr>
                 `;
@@ -1645,101 +1683,9 @@ const PayrollPage = () => {
         </div>
       )}
 
-      {/* Payslip Modal - Mẫu chuẩn 27 dòng Thông Báo Lương Cá Nhân */}
+      {/* Payslip Modal - Mẫu chuẩn 32 dòng Thông Báo Lương Cá Nhân */}
       {payslipModalOpen && selectedPayroll && (() => {
-        const totalBase = (selectedPayroll.tier_salary || 0) + (selectedPayroll.grade_salary || 0);
-        const wDays = selectedPayroll.work_days ?? 26;
-        const baseWork = selectedPayroll.base_work_salary || Math.round((totalBase / 26) * wDays);
-        const otHrs = selectedPayroll.ot_hours || 0;
-        const otSal = selectedPayroll.ot_salary || Math.round((totalBase / 208) * otHrs * 1.5);
-        
-        const respKpi = selectedPayroll.kpi_responsibility_amount !== undefined && selectedPayroll.kpi_responsibility_amount !== null
-          ? parseFloat(selectedPayroll.kpi_responsibility_amount)
-          : (selectedPayroll.responsibility_kpi !== undefined ? parseFloat(selectedPayroll.responsibility_kpi) : (selectedPayroll.responsibility_net || 0));
-
-        const perfKpi = selectedPayroll.kpi_performance_bonus !== undefined && selectedPayroll.kpi_performance_bonus !== null
-          ? parseFloat(selectedPayroll.kpi_performance_bonus)
-          : (selectedPayroll.performance_kpi !== undefined ? parseFloat(selectedPayroll.performance_kpi) : (selectedPayroll.performance_bonus || 0));
-
-        const oBonus = selectedPayroll.other_bonus || 0;
-        const mealPhone = selectedPayroll.meal_phone_allowance || 0;
-        const oAllowance = selectedPayroll.other_allowance || 0;
-
-        const totalIncome = baseWork + respKpi + perfKpi + otSal + mealPhone + oAllowance + oBonus;
-
-        const socialIns = selectedPayroll.social_insurance || 0;
-        const uFee = selectedPayroll.union_fee || 0;
-        const incTax = selectedPayroll.income_tax || 0;
-        const hrDeduct = selectedPayroll.hour_deduction || 0;
-        const advPay = selectedPayroll.advance_payment || 0;
-        const oDeduct = (selectedPayroll.other_deductions || 0) + incTax;
-        
-        const discDeduct = selectedPayroll.kpi_discipline_deduction !== undefined && selectedPayroll.kpi_discipline_deduction !== null
-          ? parseFloat(selectedPayroll.kpi_discipline_deduction)
-          : (selectedPayroll.discipline_deduction || 0);
-
-        const totalDeductions = socialIns + uFee + hrDeduct + advPay + oDeduct + discDeduct;
-        const uniRefund = selectedPayroll.uniform_refund || 0;
-        const netSalary = selectedPayroll.net_salary !== undefined && selectedPayroll.net_salary !== null 
-          ? selectedPayroll.net_salary 
-          : (totalIncome - totalDeductions + uniRefund);
-
-        // Xác định Tầng & Bậc
-        let tierText = selectedPayroll.employee_tier;
-        if (!tierText) {
-          const t = selectedPayroll.tier_salary || 0;
-          if (t >= 9500000) tierText = 'Tầng 7';
-          else if (t >= 8000000) tierText = 'Tầng 6';
-          else if (t >= 6500000) tierText = 'Tầng 5';
-          else if (t >= 6000000) tierText = 'Tầng 4';
-          else if (t >= 5500000) tierText = 'Tầng 3';
-          else if (t >= 5000000) tierText = 'Tầng 2';
-          else tierText = 'Tầng 1';
-        }
-
-        const gradeVal = selectedPayroll.employee_grade !== undefined && selectedPayroll.employee_grade !== null
-          ? (String(selectedPayroll.employee_grade).includes('Bậc') ? selectedPayroll.employee_grade : `Bậc ${selectedPayroll.employee_grade}`)
-          : (selectedPayroll.grade_salary ? `Bậc ${Math.round(selectedPayroll.grade_salary / 400000)}` : 'Bậc 0');
-
-        const kpiRate = selectedPayroll.kpi_responsibility_rate !== undefined && selectedPayroll.kpi_responsibility_rate !== null
-          ? parseFloat(selectedPayroll.kpi_responsibility_rate)
-          : (selectedPayroll.responsibility_rate !== undefined && selectedPayroll.responsibility_rate !== null
-            ? parseFloat(selectedPayroll.responsibility_rate)
-            : (selectedPayroll.responsibility_deduction_rate !== undefined && selectedPayroll.responsibility_deduction_rate !== null
-              ? 1 - parseFloat(selectedPayroll.responsibility_deduction_rate)
-              : 1.0));
-        const kpiText = `${(kpiRate * 100).toFixed(1).replace('.', ',')}%`;
-
-        const rows27 = [
-          { stt: 1, name: 'Mã nhân sự:', val: selectedPayroll.employee_code, isCode: true },
-          { stt: 2, name: 'Họ và tên:', val: selectedPayroll.fullname, isBold: true },
-          { stt: 3, name: 'Phòng ban:', val: selectedPayroll.department_name },
-          { stt: 4, name: 'Chức vụ:', val: selectedPayroll.position_name || 'Nhân viên' },
-          { stt: 5, name: 'Tầng nhân sự:', val: tierText },
-          { stt: 6, name: 'Bậc nhân sự:', val: gradeVal },
-          { stt: 7, name: 'Ngày công thực tế:', val: `${wDays} ngày` },
-          { stt: 8, name: 'Số giờ tăng ca (OT):', val: `${otHrs} giờ` },
-          { stt: 9, name: 'Tỷ lệ KPI trách nhiệm:', val: kpiText },
-          { stt: 10, name: 'Lương vị trí theo tầng:', val: formatVND(selectedPayroll.tier_salary || 0) },
-          { stt: 11, name: 'Lương theo Tầng + Bậc:', val: formatVND(totalBase) },
-          { stt: 12, name: 'Lương vị trí theo ngày công:', val: formatVND(baseWork) },
-          { stt: 13, name: 'Lương trách nhiệm theo KPI:', val: `+${formatVND(respKpi)}` },
-          { stt: 14, name: 'Lương thưởng hiệu quả:', val: `+${formatVND(perfKpi)}` },
-          { stt: 15, name: `Lương tăng ca (${otHrs}h):`, val: `+${formatVND(otSal)}` },
-          { stt: 16, name: 'Phụ cấp Cơm & Điện thoại:', val: `+${formatVND(mealPhone)}` },
-          { stt: 17, name: 'Phụ cấp Tài xế / Khác:', val: `+${formatVND(oAllowance)}` },
-          { stt: 18, name: 'Thưởng khác / Sáng kiến:', val: `+${formatVND(oBonus)}` },
-          { stt: 19, name: 'Tổng thu nhập:', val: formatVND(totalIncome), isTotalIncome: true },
-          { stt: 20, name: 'Giảm trừ BHXH:', val: `-${formatVND(socialIns)}` },
-          { stt: 21, name: 'Giảm trừ Đoàn phí Công đoàn:', val: `-${formatVND(uFee)}` },
-          { stt: 22, name: 'Cắt giờ / Giảm trừ:', val: `-${formatVND(hrDeduct)}` },
-          { stt: 23, name: 'Tạm ứng trong kỳ:', val: `-${formatVND(advPay)}` },
-          { stt: 24, name: 'Trừ khác:', val: `-${formatVND(oDeduct)}` },
-          { stt: 25, name: 'Trừ vi phạm nội bộ (thưởng hiệu quả):', val: `-${formatVND(discDeduct)}` },
-          { stt: 26, name: 'Tổng các khoản giảm trừ:', val: `-${formatVND(totalDeductions)}`, isTotalDeduct: true },
-          { stt: 27, name: 'Thanh trả tiền giam đồng phục:', val: `+${formatVND(uniRefund)}`, isRefund: true },
-          { stt: 28, name: 'Thu nhập thực nhận:', val: formatVND(netSalary), isNet: true }
-        ];
+        const rows32 = getPayslipRows(selectedPayroll);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 print:p-0 print:bg-white print:static print:z-auto overflow-y-auto">
@@ -1769,27 +1715,27 @@ const PayrollPage = () => {
                 <div className="border border-slate-300 p-5 md:p-6 rounded-xl print:border-none print:p-0">
                   
                   {/* Header */}
-                  <div className="text-center mb-5 pb-3 border-b border-slate-200">
+                  <div className="text-center mb-4 pb-3 border-b border-slate-200">
                     <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wide">CÔNG TY TNHH TM SX NỆM VIỆT Á</h3>
                     <h1 className="text-lg md:text-xl font-black text-slate-900 uppercase mt-1">
                       THÔNG BÁO LƯƠNG CÁ NHÂN
                     </h1>
                     <p className="text-xs text-slate-600 italic font-medium mt-0.5">
-                      Tháng {selectedPayroll.month.toString().padStart(2, '0')} Năm {selectedPayroll.year}
+                      Tháng {selectedPayroll.month ? selectedPayroll.month.toString().padStart(2, '0') : '08'} Năm {selectedPayroll.year || 2026}
                     </p>
                   </div>
 
-                  {/* 27-row Table */}
+                  {/* 32-row Table */}
                   <table className="w-full text-xs border border-collapse border-slate-300 table-fixed text-slate-800">
                     <thead>
                       <tr className="bg-amber-400 text-slate-900 font-bold">
-                        <th className="border border-slate-400 px-2 py-2 text-center w-[10%]">STT</th>
-                        <th className="border border-slate-400 px-3 py-2 text-center w-[52%]">Danh mục</th>
-                        <th className="border border-slate-400 px-3 py-2 text-center w-[38%]">Thông số</th>
+                        <th className="border border-slate-400 px-2 py-1.5 text-center w-[10%]">STT</th>
+                        <th className="border border-slate-400 px-3 py-1.5 text-center w-[52%]">Danh mục</th>
+                        <th className="border border-slate-400 px-3 py-1.5 text-center w-[38%]">Thông số</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows27.map((row) => {
+                      {rows32.map((row) => {
                         let rowClass = 'hover:bg-slate-50/80';
                         let valClass = 'text-center font-medium';
 
@@ -1802,6 +1748,9 @@ const PayrollPage = () => {
                         } else if (row.isRefund) {
                           rowClass = 'bg-emerald-50/60 font-medium';
                           valClass = 'text-center font-bold text-emerald-800';
+                        } else if (row.isSubTotal) {
+                          rowClass = 'bg-slate-50 font-bold text-slate-800';
+                          valClass = 'text-center font-bold text-slate-900';
                         } else if (row.isNet) {
                           rowClass = 'bg-slate-200 font-black text-slate-950 border-t-2 border-slate-400';
                           valClass = 'text-center font-black text-slate-950 text-sm';
@@ -1815,13 +1764,13 @@ const PayrollPage = () => {
 
                         return (
                           <tr key={row.stt} className={`${rowClass} transition`}>
-                            <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold text-slate-600" style={{ textAlign: 'center' }}>
+                            <td className="border border-slate-300 px-2 py-1 text-center font-semibold text-slate-600" style={{ textAlign: 'center' }}>
                               {row.stt}
                             </td>
-                            <td className={`border border-slate-300 px-3 py-1.5 ${row.isTotalIncome || row.isTotalDeduct || row.isNet ? 'font-black text-slate-900' : 'font-medium'}`}>
+                            <td className={`border border-slate-300 px-3 py-1 ${row.isTotalIncome || row.isTotalDeduct || row.isNet || row.isSubTotal ? 'font-black text-slate-900' : 'font-medium'}`}>
                               {row.name}
                             </td>
-                            <td className={`border border-slate-300 px-3 py-1.5 text-center ${valClass}`} style={{ textAlign: 'center' }}>
+                            <td className={`border border-slate-300 px-3 py-1 text-center ${valClass}`} style={{ textAlign: 'center' }}>
                               {row.val}
                             </td>
                           </tr>
