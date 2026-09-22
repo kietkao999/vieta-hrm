@@ -28,8 +28,8 @@ import { useAuth } from '../../contexts/AuthContext';
 const getFullFileUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  // Nếu url là dạng /uploads/... thì dùng relative path để lấy đúng domain hiện tại (Railway hoặc localhost)
-  return url;
+  const backendBase = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '');
+  return `${backendBase}${url}`;
 };
 
 const ONBOARDING_MATERIALS = [
