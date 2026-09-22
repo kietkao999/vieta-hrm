@@ -459,58 +459,61 @@ const TrainingPage = () => {
         </div>
       )}
 
-      {/* MODAL VIEW TÀI LIỆU / SÁCH PDF */}
+      {/* MODAL VIEW TÀI LIỆU / SÁCH PDF - KHỔ A4 DỌC RỘNG RÃI */}
       {viewerModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
-          <div className="flex flex-col h-[90vh] w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-brand-100 text-brand-800 rounded-xl">
-                  <BookOpen size={20} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-2 md:p-4 animate-fadeIn">
+          <div className="flex flex-col h-[97vh] w-[98vw] max-w-[1400px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700/20">
+            {/* Modal Header Tinh Gọn */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-brand-100 text-brand-800 rounded-xl shrink-0">
+                  <BookOpen size={18} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base md:text-lg">{viewerModal.title}</h3>
-                  <p className="text-xs text-slate-500">Đọc tài liệu trực tuyến • Hệ thống HRM Nệm Việt Á</p>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-sm md:text-base truncate">{viewerModal.title}</h3>
+                  <p className="text-[11px] text-slate-500 hidden sm:block">Đọc tài liệu trực tuyến khổ A4 • Nệm Việt Á HRM</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <a
                   href={viewerModal.fileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-2 text-slate-600 hover:text-brand-700 hover:bg-white rounded-lg transition"
-                  title="Mở tab mới toàn màn hình"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition shadow-sm"
+                  title="Mở toàn màn hình trong tab mới"
                 >
-                  <ExternalLink size={18} />
+                  <ExternalLink size={14} />
+                  <span className="hidden sm:inline">Mở Tab Toàn Màn Hình</span>
                 </a>
                 <a
                   href={viewerModal.fileUrl}
                   download
-                  className="p-2 text-slate-600 hover:text-brand-700 hover:bg-white rounded-lg transition"
-                  title="Tải về máy"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition shadow-sm"
+                  title="Tải sách PDF về máy"
                 >
-                  <Download size={18} />
+                  <Download size={14} />
+                  <span className="hidden sm:inline">Tải Về</span>
                 </a>
                 <button
                   onClick={() => setViewerModal({ isOpen: false, title: '', fileUrl: '', type: 'pdf' })}
-                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition ml-1"
+                  title="Đóng khung đọc"
                 >
                   <X size={20} />
                 </button>
               </div>
             </div>
 
-            {/* Modal Content: Nhúng Viewer */}
-            <div className="flex-1 bg-slate-100 p-2 overflow-hidden">
+            {/* Modal Content: Nhúng Viewer Chuẩn Khổ A4 */}
+            <div className="flex-1 bg-slate-900 p-1 md:p-2 overflow-hidden flex justify-center items-center">
               {viewerModal.type === 'pdf' ? (
                 <iframe
-                  src={viewerModal.fileUrl}
+                  src={`${viewerModal.fileUrl}#view=FitH`}
                   title={viewerModal.title}
-                  className="w-full h-full rounded-xl border border-slate-200 bg-white"
+                  className="w-full h-full rounded-xl border border-slate-700/30 bg-white shadow-inner"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white rounded-xl">
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white rounded-xl w-full">
                   <FileText size={64} className="text-brand-600 mb-4" />
                   <h4 className="text-lg font-bold text-slate-800 mb-2">{viewerModal.title}</h4>
                   <p className="text-sm text-slate-500 max-w-md mb-6">
