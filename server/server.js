@@ -5,16 +5,11 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Đảm bảo database đã được khởi tạo
+    // Đảm bảo database đã được khởi tạo cấu trúc bảng
     await initDatabase();
     
-    // Tự động chạy migration đồng bộ nhân sự & phòng ban khi khởi động
-    try {
-      const { runMigration } = await import('./src/config/run_migration.js');
-      await runMigration();
-    } catch (migError) {
-      console.error('Lỗi chạy tự động migration:', migError);
-    }
+    // Lưu ý: Toàn bộ dữ liệu nhân sự, lương, KPI hiện được quản trị & cập nhật trực tiếp qua Web UI.
+    // Tự động ghi đè migration đã được tắt để bảo toàn 100% các thay đổi của người dùng.
     
     app.listen(PORT, () => {
       console.log(`==================================================`);

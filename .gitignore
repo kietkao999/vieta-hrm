@@ -7,5 +7,6 @@ hrm.db-journal
 hrm.db-wal
 hrm.db-shm
 *.db
-server/hrm.db
 ~$*
+TƯ DUY PHƯƠNG PHÁP QUẢN LÝ ĐÚNG PTK.pdf
+server/add_book.js

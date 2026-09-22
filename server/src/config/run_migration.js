@@ -59,24 +59,8 @@ export async function runMigration() {
       console.log('Lỗi dọn dẹp dữ liệu tương lai:', cleanupError.message);
     }
 
-    // 1. DỌN DẸP SẠCH: Xóa tất cả nhân sự ngoài 57 mã chuẩn
-    const allEmps = await query.all('SELECT id, code FROM employees');
-    if (allEmps && allEmps.length > 0) {
-      const invalidIds = allEmps.filter(e => !validCodes.includes(e.code)).map(e => e.id);
-      if (invalidIds.length > 0) {
-        for (const invId of invalidIds) {
-          await query.run('DELETE FROM employee_monthly_kpis WHERE employee_id = ?', [invId]);
-          await query.run('DELETE FROM payrolls WHERE employee_id = ?', [invId]);
-          await query.run('DELETE FROM payroll WHERE employee_id = ?', [invId]);
-          await query.run('DELETE FROM contracts WHERE employee_id = ?', [invId]);
-          await query.run('DELETE FROM attendance WHERE employee_id = ?', [invId]);
-          await query.run('DELETE FROM employees WHERE id = ?', [invId]);
-        }
-        console.log(`✓ Đã xóa ${invalidIds.length} nhân sự tạo thừa ngoài danh sách.`);
-      }
-    }
-
-    // 2. Nạp/Cập nhật chính xác 57 nhân sự chính thức
+    // 1. Chỉ bổ sung nhân sự nếu chưa có trong DB (không tự ý xóa nhân sự mới tạo qua Web)
+    // 2. Nạp chính xác 57 nhân sự chính thức (nếu chưa có)
     for (const item of danhSachNhanVienVaKPI) {
       const code = item["Mã NV"].trim();
       const fullname = item["Họ và Tên"].trim();
@@ -112,28 +96,7 @@ export async function runMigration() {
           tier, grade, tier_salary, grade_salary,
           created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(code) DO UPDATE SET
-          fullname = excluded.fullname,
-          gender = excluded.gender,
-          dob = excluded.dob,
-          phone = excluded.phone,
-          cccd = excluded.cccd,
-          email = excluded.email,
-          address = excluded.address,
-          branch_id = excluded.branch_id,
-          department_id = excluded.department_id,
-          position_id = excluded.position_id,
-          join_date = excluded.join_date,
-          status = excluded.status,
-          contract_type = excluded.contract_type,
-          base_salary = excluded.base_salary,
-          tier = excluded.tier,
-          grade = excluded.grade,
-          tier_salary = excluded.tier_salary,
-          grade_salary = excluded.grade_salary,
-          allowance = excluded.allowance,
-          kpi_bonus = excluded.kpi_bonus,
-          updated_at = excluded.updated_at
+        ON CONFLICT(code) DO NOTHING
       `;
 
       await query.run(sql, [
@@ -190,12 +153,7 @@ export async function runMigration() {
             responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
             performance_bonus, discipline_deduction, note, created_at, updated_at
           ) VALUES (?, ?, 2026, ?, 0, ?, ?, ?, 0, ?, ?, ?)
-          ON CONFLICT(employee_id, month, year) DO UPDATE SET
-            responsibility_bonus = excluded.responsibility_bonus,
-            responsibility_rate = excluded.responsibility_rate,
-            responsibility_amount = excluded.responsibility_amount,
-            performance_bonus = excluded.performance_bonus,
-            updated_at = excluded.updated_at
+          ON CONFLICT(employee_id, month, year) DO NOTHING
         `, [
           emp.id,
           m.month,
@@ -220,16 +178,7 @@ export async function runMigration() {
             performance_bonus, discipline_deduction, performance_net,
             other_deductions, net_salary, status, created_at, updated_at
           ) VALUES (?, ?, 2026, ?, ?, ?, ?, ?, ?, 0, ?, 0, ?, 'Đã chốt', ?, ?)
-          ON CONFLICT(employee_id, month, year) DO UPDATE SET
-            tier_salary = excluded.tier_salary,
-            grade_salary = excluded.grade_salary,
-            responsibility_quota = excluded.responsibility_quota,
-            responsibility_deduction_rate = excluded.responsibility_deduction_rate,
-            responsibility_net = excluded.responsibility_net,
-            performance_bonus = excluded.performance_bonus,
-            performance_net = excluded.performance_net,
-            net_salary = excluded.net_salary,
-            updated_at = excluded.updated_at
+          ON CONFLICT(employee_id, month, year) DO NOTHING
         `, [
           emp.id,
           m.month,
@@ -247,7 +196,7 @@ export async function runMigration() {
       }
     }
 
-    // 4. Đồng bộ toàn bộ tài khoản đăng nhập theo Mã Nhân viên và phân quyền 3 cấp độ
+    // 4. Đồng bộ tài khoản đăng nhập theo Mã Nhân viên (nếu chưa có)
     const salt = bcrypt.genSaltSync(10);
     const hashAdmin = bcrypt.hashSync('Admin@123', salt);
     const hashManager = bcrypt.hashSync('Manager@123', salt);
@@ -276,12 +225,7 @@ export async function runMigration() {
       }
 
       const existingUser = await query.get('SELECT id FROM users WHERE employee_id = ? OR username = ?', [emp.id, username]);
-      if (existingUser) {
-        await query.run(
-          'UPDATE users SET username = ?, password = ?, role_id = ?, employee_id = ?, is_active = 1, updated_at = ? WHERE id = ?',
-          [username, passwordHash, roleId, emp.id, now, existingUser.id]
-        );
-      } else {
+      if (!existingUser) {
         await query.run(
           'INSERT INTO users (username, password, role_id, employee_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)',
           [username, passwordHash, roleId, emp.id, now, now]
@@ -337,31 +281,13 @@ export async function runMigration() {
         const totalDeductions = socialIns + unionFee + hrDeduct + advance + otherDeduct + discDeduct;
         const netSalary = Number(m8.netSalary) || Math.round(baseWorkSalary + respAmount + perfBonus + otSalary + otherBonus + mealPhone + otherAllow - totalDeductions + uniformRefund);
 
-        // Cập nhật lại thông tin tầng bậc vào hồ sơ nhân viên
-        await query.run(`
-          UPDATE employees SET
-            tier_salary = ?,
-            grade_salary = ?,
-            tier = ?,
-            grade = ?,
-            base_salary = ?
-          WHERE id = ?
-        `, [tierSalary, gradeSalary, m8.tierName || '', `Bậc ${gradeLevel}`, totalBase, emp.id]);
-
         await query.run(`
           INSERT INTO employee_monthly_kpis (
             employee_id, month, year,
             responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount,
             performance_bonus, discipline_deduction, note, created_at, updated_at
           ) VALUES (?, '08', 2026, ?, 0, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(employee_id, month, year) DO UPDATE SET
-            responsibility_bonus = excluded.responsibility_bonus,
-            responsibility_rate = excluded.responsibility_rate,
-            responsibility_amount = excluded.responsibility_amount,
-            performance_bonus = excluded.performance_bonus,
-            discipline_deduction = excluded.discipline_deduction,
-            note = excluded.note,
-            updated_at = excluded.updated_at
+          ON CONFLICT(employee_id, month, year) DO NOTHING
         `, [
           emp.id,
           respBonus,
@@ -386,33 +312,7 @@ export async function runMigration() {
             social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
             other_deductions, uniform_refund, net_salary, status, created_at, updated_at
           ) VALUES (?, '08', 2026, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 'Đã chốt', ?, ?)
-          ON CONFLICT(employee_id, month, year) DO UPDATE SET
-            tier_salary = excluded.tier_salary,
-            grade_salary = excluded.grade_salary,
-            work_days = excluded.work_days,
-            base_work_salary = excluded.base_work_salary,
-            ot_hours = excluded.ot_hours,
-            ot_salary = excluded.ot_salary,
-            responsibility_quota = excluded.responsibility_quota,
-            responsibility_deduction_rate = excluded.responsibility_deduction_rate,
-            responsibility_net = excluded.responsibility_net,
-            responsibility_kpi = excluded.responsibility_kpi,
-            performance_bonus = excluded.performance_bonus,
-            discipline_deduction = excluded.discipline_deduction,
-            performance_net = excluded.performance_net,
-            performance_kpi = excluded.performance_kpi,
-            other_bonus = excluded.other_bonus,
-            meal_phone_allowance = excluded.meal_phone_allowance,
-            other_allowance = excluded.other_allowance,
-            social_insurance = excluded.social_insurance,
-            union_fee = excluded.union_fee,
-            advance_payment = excluded.advance_payment,
-            hour_deduction = excluded.hour_deduction,
-            other_deductions = excluded.other_deductions,
-            uniform_refund = excluded.uniform_refund,
-            net_salary = excluded.net_salary,
-            status = 'Đã chốt',
-            updated_at = excluded.updated_at
+          ON CONFLICT(employee_id, month, year) DO NOTHING
         `, [
           emp.id,
           tierSalary,

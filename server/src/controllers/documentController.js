@@ -169,6 +169,29 @@ PHẦN 4: HƯỚNG DẪN THỜI GIAN LÀM VIỆC, NGHỈ PHÉP & PHÚC LỢI
    * Quy định làm việc đúng giờ, đồng phục, tác phong và quy trình chấm công trên hệ thống HRM.`
   },
   {
+    title: 'Sách: Tư Duy Phương Pháp Quản Lý Đúng',
+    category: 'Đào tạo & Hướng dẫn',
+    file_name: 'TƯ DUY PHƯƠNG PHÁP QUẢN LÝ ĐÚNG PTK.pdf',
+    doc_id: '',
+    google_drive_url: '',
+    preview_url: '',
+    file_url: '/uploads/documents/tu_duy_phuong_phap_quan_ly_dung.pdf',
+    file_size: '245.6 MB',
+    file_type: 'pdf',
+    effective_date: '2026-01-01',
+    applicable_to: 'Cấp Quản lý, Trưởng phòng & Toàn thể CBNV',
+    description: 'Cẩm nang đào tạo nâng cao tư duy lãnh đạo, năng lực quản trị và phương pháp làm việc chuẩn xác dành cho cán bộ quản lý và nhân sự công ty Việt Á.',
+    status: 'Đang hiệu lực',
+    created_by: 'Ban Giám Đốc',
+    content: `SÁCH TƯ DUY PHƯƠNG PHÁP QUẢN LÝ ĐÚNG
+Tác giả / Lưu hành nội bộ: Nệm Việt Á
+Nội dung cốt lõi:
+- Nâng cao tư duy quản trị doanh nghiệp và điều hành đội ngũ.
+- Phương pháp lập kế hoạch, kiểm soát công việc và đo lường hiệu suất (KPI).
+- Kỹ năng giải quyết xung đột, xây dựng văn hóa làm việc trách nhiệm và gương mẫu.
+- Cẩm nang thực chiến dành cho Trưởng phòng, Quản lý kho xưởng và nhân sự nòng cốt.`
+  },
+  {
     title: 'Mẫu Đề Xuất Tuyển Dụng',
     category: 'Biểu mẫu nhân sự',
     file_name: 'MẪU ĐỀ XUẤT TUYỂN DỤNG NHÂN SỰ.docx',
