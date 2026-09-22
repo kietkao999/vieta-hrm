@@ -373,11 +373,33 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS training (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         course_name TEXT NOT NULL,
+        provider TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        cost REAL DEFAULT 0,
+        status TEXT DEFAULT 'Lên kế hoạch',
+        notes TEXT,
         description TEXT,
         schedule TEXT,
-        created_at TEXT
+        created_at TEXT,
+        updated_at TEXT
       )
     `);
+
+    const trainingNewCols = [
+      'provider TEXT',
+      'start_date TEXT',
+      'end_date TEXT',
+      'cost REAL DEFAULT 0',
+      "status TEXT DEFAULT 'Lên kế hoạch'",
+      'notes TEXT',
+      'updated_at TEXT'
+    ];
+    for (const c of trainingNewCols) {
+      try {
+        await query.run(`ALTER TABLE training ADD COLUMN ${c}`);
+      } catch (e) {}
+    }
 
     // 12b. Training Participants
     await query.exec(`
