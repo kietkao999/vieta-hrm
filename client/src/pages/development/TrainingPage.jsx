@@ -25,7 +25,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+const getFullFileUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Nếu url là dạng /uploads/... thì dùng relative path để lấy đúng domain hiện tại (Railway hoặc localhost)
+  return url;
+};
 
 const ONBOARDING_MATERIALS = [
   {
@@ -205,7 +210,7 @@ const TrainingPage = () => {
   };
 
   const handleReadMaterial = (item) => {
-    const fullUrl = item.fileUrl.startsWith('http') ? item.fileUrl : `${API_BASE}${item.fileUrl}`;
+    const fullUrl = getFullFileUrl(item.fileUrl);
     setViewerModal({
       isOpen: true,
       title: item.title,
@@ -215,7 +220,7 @@ const TrainingPage = () => {
   };
 
   const handleDownloadMaterial = (item) => {
-    const fullUrl = item.fileUrl.startsWith('http') ? item.fileUrl : `${API_BASE}${item.fileUrl}`;
+    const fullUrl = getFullFileUrl(item.fileUrl);
     const link = document.createElement('a');
     link.href = fullUrl;
     link.download = item.title;
