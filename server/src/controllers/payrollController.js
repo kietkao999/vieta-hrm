@@ -46,13 +46,35 @@ export const getPayroll = async (req, res) => {
       params.push(department_id);
     }
 
-    // Phân quyền bảo mật lương tuyệt đối: Chỉ ADMIN mới được xem toàn bộ bảng lương
-    if (req.user.roleName !== 'ADMIN') {
+    // Phân quyền bảo mật lương 3 cấp độ chặt chẽ:
+    if (req.user.roleName === 'ADMIN' || req.user.roleName === 'HR') {
+      // CẤP 1 - ADMIN / HR: Xem toàn bộ công ty hoặc lọc theo phòng ban / nhân viên
+      if (employee_id) {
+        sql += ` AND p.employee_id = ?`;
+        params.push(employee_id);
+      }
+    } else if (req.user.roleName === 'MANAGER') {
+      // CẤP 2 - MANAGER: Xem được lương của chính mình VÀ các nhân viên trực thuộc phòng ban mình quản lý
+      // Tuyệt đối KHÔNG xem được lương của cấp trên (Admin/Ban Giám Đốc) hoặc phòng ban khác
+      const currentManager = await query.get('SELECT department_id FROM employees WHERE id = ?', [req.user.employeeId]);
+      const deptId = currentManager?.department_id;
+      
+      if (deptId) {
+        sql += ` AND e.department_id = ? AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+        params.push(deptId, req.user.employeeId);
+        
+        if (employee_id) {
+          sql += ` AND p.employee_id = ?`;
+          params.push(employee_id);
+        }
+      } else {
+        sql += ` AND p.employee_id = ?`;
+        params.push(req.user.employeeId);
+      }
+    } else {
+      // CẤP 3 - EMPLOYEE: Chỉ xem duy nhất phiếu lương của chính mình
       sql += ` AND p.employee_id = ?`;
       params.push(req.user.employeeId);
-    } else if (employee_id) {
-      sql += ` AND p.employee_id = ?`;
-      params.push(employee_id);
     }
 
     sql += ` ORDER BY p.year DESC, p.month DESC, e.fullname ASC`;

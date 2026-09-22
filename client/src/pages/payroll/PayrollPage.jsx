@@ -649,6 +649,8 @@ const PayrollPage = () => {
   };
 
   const isAdmin = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
+  const isManager = user?.roleName === 'MANAGER';
+  const [viewTab, setViewTab] = useState('department'); // 'department' | 'personal'
 
   const filteredPayrolls = payrolls.filter(p => {
     if (!searchTerm) return true;
@@ -660,9 +662,10 @@ const PayrollPage = () => {
     );
   });
 
-  // Giao diện Phiếu lương cá nhân dành cho Nhân viên & Quản lý (Cấp 2 & Cấp 3)
+  // Giao diện Phiếu lương cá nhân
   const renderPersonalPayrollView = () => {
-    const currentSlip = payrolls && payrolls.length > 0 ? payrolls[0] : null;
+    // Tìm phiếu lương của chính mình trong danh sách hoặc lấy bản ghi đầu tiên
+    const currentSlip = payrolls.find(p => p.employee_id === user?.employeeId || p.employee_code === user?.employeeCode || p.fullname === user?.fullname) || (payrolls && payrolls.length > 0 ? payrolls[0] : null);
 
     const totalBase = currentSlip ? (currentSlip.tier_salary || 0) + (currentSlip.grade_salary || 0) : 0;
     const wDays = currentSlip?.work_days ?? 26;
@@ -908,11 +911,17 @@ const PayrollPage = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 print:hidden">
         <div>
           <h2 className="text-xl font-bold text-slate-800">
-            {isAdmin ? 'Quản Lý Bảng Lương Toàn Công Ty' : 'Tra Cứu Phiếu Lương Cá Nhân'}
+            {isAdmin
+              ? 'Quản Lý Bảng Lương Toàn Công Ty'
+              : isManager
+              ? `Bảng Lương & Phiếu Lương - ${user?.departmentName || user?.department_name || 'Phòng Ban'}`
+              : 'Tra Cứu Phiếu Lương Cá Nhân'}
           </h2>
           <p className="text-xs text-slate-500">
             {isAdmin
               ? 'Quản lý bảng lương toàn công ty, tính toán tự động và duyệt chi trả'
+              : isManager
+              ? 'Theo dõi bảng lương các nhân viên trực thuộc phòng ban và tra cứu phiếu lương cá nhân'
               : 'Tra cứu chi tiết thu nhập, lương cơ sở, KPI và phụ cấp cá nhân theo từng tháng'}
           </p>
         </div>
@@ -930,6 +939,34 @@ const PayrollPage = () => {
         </div>
       </div>
 
+      {/* Manager Tab Navigation */}
+      {isManager && (
+        <div className="flex bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm print:hidden gap-1.5">
+          <button
+            onClick={() => setViewTab('department')}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-xs md:text-sm font-bold transition flex items-center justify-center space-x-2 ${
+              viewTab === 'department'
+                ? 'bg-brand-700 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Users size={16} />
+            <span>Bảng Lương Thành Viên Phòng Ban ({filteredPayrolls.length} nhân sự)</span>
+          </button>
+          <button
+            onClick={() => setViewTab('personal')}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-xs md:text-sm font-bold transition flex items-center justify-center space-x-2 ${
+              viewTab === 'personal'
+                ? 'bg-brand-700 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <DollarSign size={16} />
+            <span>Phiếu Lương Cá Nhân Của Tôi</span>
+          </button>
+        </div>
+      )}
+
       {/* Notifications */}
       {error && (
         <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 print:hidden">
@@ -942,8 +979,8 @@ const PayrollPage = () => {
         </div>
       )}
 
-      {/* Phân nhánh giao diện: Nếu là Employee/Manager thì hiện view Phiếu lương cá nhân chuyên nghiệp */}
-      {!isAdmin ? (
+      {/* Phân nhánh giao diện: Employee hoặc Manager chọn tab Cá nhân */}
+      {(!isAdmin && !isManager) || (isManager && viewTab === 'personal') ? (
         renderPersonalPayrollView()
       ) : (
         <>
