@@ -407,11 +407,42 @@ async function buildMasterDoc() {
 
           // PHẦN 3
           createSectionTitle("PHẦN III: HƯỚNG DẪN SỬ DỤNG VÀ VẬN HÀNH NGHIỆP VỤ CHO PHÒNG HCNS"),
-          createBulletPoint("1. Quản lý Hồ sơ nhân sự (/employees): ", "Thêm mới nhân viên, cập nhật mức lương ngạch bậc, theo dõi hợp đồng, in hợp đồng lao động chuẩn tự động."),
-          createBulletPoint("2. Chấm công & Duyệt đơn (/attendance): ", "Theo dõi bảng công 26 ngày chuẩn theo tháng, phê duyệt đơn xin nghỉ phép/đi muộn/làm thêm giờ của toàn công ty, chốt công tháng."),
-          createBulletPoint("3. Quản lý KPI (/kpi): ", "Chọn tháng/năm, thiết lập KPI trách nhiệm theo chức vụ, nhập % hoàn thành để hệ thống tự động tính thưởng trách nhiệm và thưởng hiệu suất."),
-          createBulletPoint("4. Tính & Xuất Bảng lương (/payroll): ", "Chọn Tháng/Năm -> Bấm 'Tính lương tự động' -> Kiểm tra tổng quỹ lương 11 phòng ban -> Bấm 'Xuất Bảng Lương Excel' -> Bấm 'Gửi phiếu lương'."),
-          createBulletPoint("5. Phúc lợi, Kỷ luật & Sáng kiến (/rewards, /innovations, /assets): ", "Ban hành khen thưởng/kỷ luật, tiếp nhận và thẩm định sáng kiến cải tiến, quản lý kho tài sản thiết bị và cấp phát."),
+          
+          createSubTitle("1. QUẢN LÝ HỒ SƠ NHÂN SỰ & TỰ ĐỘNG IN HỢP ĐỒNG LAO ĐỘNG (/employees, /contracts)", "0284C7"),
+          createBulletPoint("Hồ sơ nhân sự (/employees): ", "Theo dõi danh sách 57 nhân sự, lọc theo 11 phòng ban, cập nhật thông tin cá nhân, CCCD, ngày sinh, chức danh và mức lương ngạch bậc chuẩn."),
+          createBulletPoint("📄 Tự động in Hợp đồng lao động chuẩn (/contracts): ", "Vào menu 'Hợp đồng lao động' hoặc chọn nhân viên cụ thể -> Bấm 'In Hợp đồng'. Hệ thống tự động trích xuất đầy đủ thông tin: Họ tên, CMND/CCCD, địa chỉ, ngạch bậc lương, phụ cấp, người đại diện theo pháp luật và xuất ra file Word (.docx) hoặc in trực tiếp PDF chuẩn theo quy chế lao động công ty."),
+
+          createSubTitle("2. CHẤM CÔNG, QUẢN LÝ NGHỈ PHÉP & LÀM THÊM GIỜ (/attendance)", "0284C7"),
+          createBulletPoint("Bảng chấm công tổng hợp: ", "Theo dõi dữ liệu 26 ngày công chuẩn theo từng tháng, tự động tính số ngày làm việc thực tế, số ngày nghỉ phép năm, nghỉ không lương, giờ đi muộn/về sớm."),
+          createBulletPoint("Phê duyệt đơn từ trực tuyến: ", "Vào tab 'Đơn xin nghỉ phép / Đi muộn / OT' -> Quản lý hoặc HCNS bấm Duyệt (Approve) hoặc Từ chối (Reject) kèm lý do phản hồi cho nhân viên."),
+          createBulletPoint("Chốt công tháng: ", "Bấm nút 'Đồng bộ bảng công' trước khi tính lương để tự động chuyển số ngày công thực tế và giờ OT sang phân hệ Tính lương."),
+
+          createSubTitle("3. QUẢN LÝ KPI & ĐÁNH GIÁ THÁNG (/kpi)", "0284C7"),
+          createBulletPoint("Thiết lập hạn mức KPI: ", "Chọn tháng/năm cần đánh giá (ví dụ: Tháng 08/2026), thiết lập mức thưởng trách nhiệm định mức theo chức danh (1.000.000đ, 2.000.000đ,...)."),
+          createBulletPoint("Chấm điểm & Tự động tính tiền: ", "Trưởng phòng hoặc HCNS chấm điểm theo tỷ lệ % hoàn thành (100%, 80%, 50%,...) -> Hệ thống tự động tính tiền Thưởng trách nhiệm thực nhận và Thưởng hiệu suất (Performance Bonus)."),
+
+          createSubTitle("4. TÍNH TOÁN, DUYỆT & XUẤT BẢNG LƯƠNG (/payroll)", "0284C7"),
+          createBulletPoint("Bước 1 - Chọn kỳ lương: ", "Chọn Tháng và Năm cần lập bảng lương trên thanh công cụ."),
+          createBulletPoint("Bước 2 - Tính lương tự động: ", "Bấm 'Tính lương tự động' -> Hệ thống lấy 100% dữ liệu gốc: Lương ngạch bậc theo ngày công + Tiền OT (x1.5) + Tiền KPI + Phụ cấp ăn/điện thoại - BHXH (10.5%) - Công đoàn (1%) - Tạm ứng/Giảm trừ."),
+          createBulletPoint("Bước 3 - Xuất Báo cáo: ", "Bấm 'Xuất Bảng Lương Excel' để lưu trữ hoặc trình Ban Giám Đốc phê duyệt; Bấm 'Gửi phiếu lương' để nhân viên tự tra cứu trên tài khoản cá nhân."),
+
+          createSubTitle("5. 💡 HÒM THƯ & SÁNG KIẾN CẢI TIẾN SẢN XUẤT (/innovations)", "0284C7"),
+          createBulletPoint("Mục đích: ", "Khuyến khích công nhân viên tại các xưởng sản xuất, kho bãi và văn phòng đóng góp các ý tưởng cải tiến kỹ thuật, tiết kiệm nguyên vật liệu, tối ưu quy trình làm việc."),
+          createBulletPoint("Nhân viên gửi sáng kiến: ", "Nhân viên gửi ý tưởng kèm mô tả hiệu quả dự kiến (tiết kiệm chi phí, tăng năng suất, an toàn lao động), có thể đính kèm tài liệu/hình ảnh và chọn chế độ Gửi ẩn danh hoặc Công khai."),
+          createBulletPoint("Thẩm định & Duyệt thưởng: ", "Ban Giám Đốc và Phòng HCNS tiếp nhận đề xuất, đánh giá tính khả thi và duyệt mức Thưởng sáng kiến -> Số tiền thưởng tự động được cộng vào kỳ lương của nhân viên."),
+
+          createSubTitle("6. 📦 QUẢN LÝ TÀI SẢN & CÔNG CỤ DỤNG CỤ (CCDC) (/assets)", "0284C7"),
+          createBulletPoint("Quản lý danh mục tài sản: ", "Theo dõi danh mục máy móc xưởng nệm/gối, xe tải giao hàng kho Cần Thơ/Mỹ Tho, máy tính văn phòng, tình trạng sử dụng, thời gian khấu hao và giá trị còn lại."),
+          createBulletPoint("Theo dõi cấp phát: ", "Gán tài sản/công cụ cho từng nhân viên hoặc từng phòng ban phụ trách chịu trách nhiệm quản lý."),
+          createBulletPoint("Xử lý phiếu báo hỏng: ", "Nhân viên tạo phiếu báo hỏng tài sản trực tuyến khi gặp sự cố; Trưởng phòng và Bộ phận kỹ thuật tiếp nhận xử lý, cập nhật chi phí sửa chữa và thời gian hoàn thành."),
+
+          createSubTitle("7. 🏆 KHEN THƯỞNG & KỶ LUẬT ĐỒNG BỘ BẢNG LƯƠNG (/rewards)", "0284C7"),
+          createBulletPoint("Ban hành Khen thưởng: ", "Lập quyết định khen thưởng cá nhân/tập thể xuất sắc, khen thưởng đột xuất kèm số tiền thưởng -> Tự động cộng vào cột Thưởng khác trên Bảng lương."),
+          createBulletPoint("Ghi nhận Kỷ luật: ", "Ghi nhận các biên bản vi phạm nội quy, đi muộn, vi phạm an toàn lao động kèm số tiền phạt -> Tự động trừ vào cột Giảm trừ kỷ luật trên Bảng lương."),
+
+          createSubTitle("8. 🌳 SƠ ĐỒ TỔ CHỨC ĐỘNG & DANH BẠ CÔNG TY (/settings/departments-positions, /employees)", "0284C7"),
+          createBulletPoint("Trực quan hóa bộ máy: ", "Hiển thị cây phả hệ tổ chức toàn diện từ Ban Giám Đốc -> Khối Văn phòng, Kho Cần Thơ, Kho Mỹ Tho, Xưởng Nệm, Xưởng Gối, Phòng Kinh doanh, Phòng Marketing."),
+          createBulletPoint("Cơ cấu nhân sự: ", "Xem nhanh số lượng nhân sự, danh sách chức danh và nhân viên trực thuộc từng phòng ban theo thời gian thực."),
 
           // PHẦN 4
           createSectionTitle("PHẦN IV: DANH SÁCH CHI TIẾT 57 TÀI KHOẢN ĐĂNG NHẬP VÀ MẬT KHẨU"),

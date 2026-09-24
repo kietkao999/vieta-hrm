@@ -31,34 +31,45 @@
 
 ---
 
-## 📋 PHẦN III: HƯỚNG DẪN SỬ DỤNG DÀNH CHO PHÒNG HCNS
+## 📋 PHẦN III: HƯỚNG DẪN SỬ DỤNG VÀ VẬN HÀNH 8 PHÂN HỆ NGHIỆP VỤ CHO PHÒNG HCNS
 
-1. **Quản lý Hồ sơ nhân viên (`/employees`):**
-   * Xem danh sách 57 nhân sự, tìm kiếm theo phòng ban/tên/mã số.
-   * Thêm nhân viên mới: Nhấn `+ Thêm nhân viên`, điền thông tin cá nhân, CCCD, chức danh, mức lương ngạch bậc.
-   * In hợp đồng: Chọn nhân viên -> Nhấn `In Hợp đồng lao động` (file tự sinh chuẩn quy chế công ty).
+### 🔹 1. Quản lý Hồ sơ nhân sự & 📄 Tự động in Hợp đồng lao động chuẩn (`/employees`, `/contracts`)
+* **Hồ sơ nhân sự (`/employees`):** Xem danh sách 57 nhân sự, tìm kiếm theo phòng ban/tên/mã số, thêm nhân viên mới, phân ngạch bậc lương.
+* **Tự động in Hợp đồng lao động (`/contracts`):** Chọn nhân viên -> Nhấn nút **"In Hợp đồng lao động"**. Hệ thống tự động điền Họ tên, CCCD, địa chỉ, ngạch bậc lương, phụ cấp, chức danh, người đại diện công ty và xuất ra file Word (.docx) hoặc in trực tiếp PDF chuẩn mẫu quy chế công ty.
 
-2. **Chấm công & Duyệt đơn (`/attendance`):**
-   * Theo dõi bảng công 26 ngày chuẩn theo từng tháng.
-   * Vào tab *Đơn xin nghỉ phép / Đi muộn / OT* -> Nhấn **Duyệt (Approve)** hoặc **Từ chối (Reject)**.
-   * Nhấn nút **Đồng bộ bảng công** trước khi sang phân hệ tính lương.
+### 🔹 2. Chấm công, Quản lý Nghỉ phép & Làm thêm giờ (`/attendance`)
+* **Bảng chấm công tổng hợp:** Theo dõi dữ liệu 26 ngày công chuẩn theo từng tháng, tự động tính số ngày làm việc thực tế, số ngày nghỉ phép năm, nghỉ không lương, giờ đi muộn/về sớm.
+* **Phê duyệt đơn từ trực tuyến:** Vào tab *Đơn xin nghỉ phép / Đi muộn / OT* -> Quản lý hoặc HCNS nhấn **Duyệt (Approve)** hoặc **Từ chối (Reject)** kèm lý do phản hồi cho nhân viên.
+* **Chốt công tháng:** Nhấn nút **"Đồng bộ bảng công"** trước khi tính lương để chuyển số ngày công thực tế và giờ OT sang phân hệ Tính lương.
 
-3. **Quản lý KPI (`/kpi`):**
-   * Chọn tháng đánh giá (ví dụ: Tháng 08/2026).
-   * Thiết lập hạn mức KPI trách nhiệm theo chức vụ (1.000.000đ, 2.000.000đ,...).
-   * Nhập tỷ lệ hoàn thành (%) -> Hệ thống tự động tính thưởng trách nhiệm và thưởng hiệu suất.
+### 🔹 3. Quản lý KPI & Đánh giá tháng (`/kpi`)
+* Chọn tháng đánh giá (ví dụ: Tháng 08/2026).
+* Thiết lập hạn mức KPI trách nhiệm theo chức vụ (1.000.000đ, 2.000.000đ,...).
+* Nhập tỷ lệ hoàn thành (%) -> Hệ thống tự động tính thưởng trách nhiệm thực nhận và thưởng hiệu suất (Performance Bonus).
 
-4. **Tính & Xuất Bảng lương (`/payroll`):**
-   * Bước 1: Chọn Tháng và Năm cần tính lương.
-   * Bước 2: Nhấn **"Tính lương tự động"** (hệ thống tự lấy Lương ngạch bậc + Ngày công + Giờ OT x1.5 + KPI + Phụ cấp - BHXH 10.5% - Công đoàn 1% - Tạm ứng/Giảm trừ).
-   * Bước 3: Kiểm tra tổng quỹ lương theo từng phòng ban.
-   * Bước 4: Nhấn **"Xuất Bảng Lương Excel"** để lưu trữ hoặc trình Ban Giám Đốc.
-   * Bước 5: Nhấn **"Gửi phiếu lương"** để nhân viên tự tra cứu trên tài khoản cá nhân.
+### 🔹 4. Tính toán & Xuất Bảng lương (`/payroll`)
+1. **Bước 1:** Chọn Tháng và Năm cần lập bảng lương.
+2. **Bước 2:** Nhấn **"Tính lương tự động"** (hệ thống tự lấy Lương ngạch bậc theo ngày công + Tiền OT x1.5 + KPI + Phụ cấp - BHXH 10.5% - Công đoàn 1% - Tạm ứng/Giảm trừ).
+3. **Bước 3:** Kiểm tra tổng quỹ lương theo từng phòng ban tại bảng tổng hợp.
+4. **Bước 4:** Nhấn **"Xuất Bảng Lương Excel"** để lưu trữ hoặc trình Ban Giám Đốc phê duyệt.
+5. **Bước 5:** Nhấn **"Gửi phiếu lương"** để nhân viên tự tra cứu trên tài khoản cá nhân.
 
-5. **Phúc lợi, Khen thưởng, Kỷ luật & Tài sản:**
-   * Ban hành quyết định khen thưởng / kỷ luật tại `/rewards`.
-   * Thẩm định ý kiến tại `/innovations`.
-   * Quản lý cấp phát công cụ dụng cụ và xử lý báo hỏng tại `/assets`.
+### 🔹 5. 💡 Hòm thư & Sáng kiến cải tiến sản xuất (`/innovations`)
+* **Mục đích:** Khuyến khích công nhân viên tại các xưởng sản xuất nệm/gối, kho bãi và văn phòng đóng góp các ý tưởng cải tiến kỹ thuật, tiết kiệm nguyên vật liệu, nâng cao năng suất và an toàn lao động.
+* **Nhân viên gửi sáng kiến:** Gửi ý tưởng kèm mô tả hiệu quả dự kiến, đính kèm hình ảnh/tài liệu và chọn chế độ Gửi ẩn danh hoặc Công khai.
+* **Thẩm định & Duyệt thưởng:** Ban Giám Đốc và HCNS tiếp nhận đề xuất, đánh giá tính khả thi và duyệt mức **Thưởng sáng kiến** -> Tiền thưởng tự động được cộng vào kỳ lương của nhân viên.
+
+### 🔹 6. 📦 Quản lý Tài sản & Công cụ dụng cụ (CCDC) (`/assets`)
+* **Quản lý danh mục tài sản:** Theo dõi máy móc xưởng nệm/gối, xe tải giao hàng kho Cần Thơ/Mỹ Tho, máy tính văn phòng, tình trạng sử dụng, thời gian khấu hao và giá trị còn lại.
+* **Cấp phát & Báo hỏng:** Cấp phát tài sản cho nhân viên/phòng ban. Khi có sự cố hỏng hóc, nhân viên tạo **Phiếu báo hỏng** trực tuyến; bộ phận kỹ thuật tiếp nhận xử lý và cập nhật tiến độ sửa chữa/thay thế.
+
+### 🔹 7. 🏆 Khen thưởng & Kỷ luật (Đồng bộ Bảng lương) (`/rewards`)
+* **Khen thưởng:** Ban hành quyết định khen thưởng cá nhân/tập thể xuất sắc, khen thưởng đột xuất -> Tiền thưởng tự động cộng vào cột Thưởng khác trên Bảng lương.
+* **Kỷ luật:** Ghi nhận biên bản vi phạm nội quy, an toàn lao động kèm số tiền phạt -> Tiền phạt tự động trừ vào cột Giảm trừ kỷ luật trên Bảng lương.
+
+### 🔹 8. 🌳 Sơ đồ tổ chức động & Danh bạ công ty (`/settings/departments-positions`, `/employees`)
+* **Trực quan hóa bộ máy:** Hiển thị cây phả hệ tổ chức toàn diện từ Ban Giám Đốc -> Khối Văn phòng, Kho Cần Thơ, Kho Mỹ Tho, Xưởng Nệm, Xưởng Gối, Phòng Kinh doanh, Phòng Marketing.
+* **Cơ cấu nhân sự:** Tra cứu nhanh số lượng nhân sự, danh sách chức danh và nhân viên trực thuộc từng phòng ban theo thời gian thực.
 
 ---
 
