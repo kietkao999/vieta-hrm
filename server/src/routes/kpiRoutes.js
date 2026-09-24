@@ -12,6 +12,7 @@ import { authMiddleware, requireRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 router.use(authMiddleware);
+router.use(requireRoles(['ADMIN', 'HR', 'MANAGER']));
 
 router.get('/', getKpis);
 router.get('/months', getAvailableKpiMonths);

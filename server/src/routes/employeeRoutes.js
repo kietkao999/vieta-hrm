@@ -8,14 +8,14 @@ import { authMiddleware, requireRoles } from '../middleware/auth.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-// Danh sách đơn giản (dropdown)
-router.get('/simple', getAllEmployeesSimple);
+// Danh sách đơn giản (dropdown chọn quản lý)
+router.get('/simple', requireRoles(['ADMIN', 'HR', 'MANAGER']), getAllEmployeesSimple);
 
 // Xuất Excel
 router.get('/export-excel', requireRoles(['ADMIN', 'HR']), exportEmployeesExcel);
 
 // CRUD chính
-router.get('/', getEmployees);
+router.get('/', requireRoles(['ADMIN', 'HR', 'MANAGER']), getEmployees);
 router.get('/:id', getEmployeeById);
 router.post('/', requireRoles(['ADMIN', 'HR']), createEmployee);
 router.put('/:id', requireRoles(['ADMIN', 'HR']), updateEmployee);

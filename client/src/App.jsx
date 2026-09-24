@@ -81,7 +81,14 @@ function App() {
                 <Route path="policies" element={<Navigate to="/documents" replace />} />
 
                 {/* NHÂN SỰ Module */}
-                <Route path="employees" element={<EmployeePage />} />
+                <Route
+                  path="employees"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                      <EmployeePage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="leave" element={<Navigate to="/attendance?tab=leaves" replace />} />
                 <Route path="leave-requests" element={<Navigate to="/attendance?tab=leaves" replace />} />
@@ -97,7 +104,14 @@ function App() {
                 <Route path="seniority" element={<SeniorityPage />} />
 
                 {/* PHÁT TRIỂN Module */}
-                <Route path="kpi" element={<KpiPage />} />
+                <Route
+                  path="kpi"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'HR', 'MANAGER']}>
+                      <KpiPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="training" element={<TrainingPage />} />
                 <Route path="career" element={<CareerPage />} />
 

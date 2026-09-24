@@ -18,9 +18,12 @@
 
 - **CẤP 3 - EMPLOYEE (Nhân viên):**
   - Toàn bộ nhân viên còn lại trong công ty.
-  - *Mật khẩu mặc định:* `VietA@2026`
-  - *Quyền hạn:* Chỉ xem được thông tin hồ sơ của chính mình, tra cứu phiếu lương cá nhân, chấm công, KPI của bản thân và xem Sơ đồ tổ chức & Danh bạ công ty.
-  - ⚠️ **Bảo mật Lương:** **Ẩn toàn bộ mức lương của tất cả người khác.**
+  - *Mật khẩu khởi tạo:* Riêng biệt theo mã nhân viên: `VietA#Emp@[MãNV]*7W`
+  - *Quyền hạn:* Chỉ xem được thông tin hồ sơ cá nhân của chính mình (Profile), điểm danh chấm công hàng ngày & gửi đơn từ cá nhân, tra cứu phiếu lương của bản thân, xem Sơ đồ tổ chức, Tài sản được cấp & gửi Sáng kiến.
+  - ⚠️ **Bảo mật & Giới hạn nghiêm ngặt:**
+    * 🔒 **TUYỆT ĐỐI KHÔNG XEM ĐƯỢC KPI** (cả KPI của bản thân và toàn bộ nhân sự khác - ẩn hoàn toàn menu KPI).
+    * 🔒 **TUYỆT ĐỐI KHÔNG XEM ĐƯỢC DANH SÁCH NHÂN VIÊN TRONG CÔNG TY** (ẩn hoàn toàn menu Hồ sơ nhân viên).
+    * 🔒 **ẨN 100% MỨC LƯƠNG CỦA TẤT CẢ NGƯỜI KHÁC** (chỉ thấy duy nhất phiếu lương của mình).
 
 ### 2. Tính toán & Báo cáo Lương:
 - Sử dụng 100% dữ liệu thực tế từ Database (`payrolls`, `employees`, `employee_monthly_kpis`, `departments`).

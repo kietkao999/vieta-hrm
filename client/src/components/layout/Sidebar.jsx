@@ -63,9 +63,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     {
       id: 'nhansu',
       title: 'NHÂN SỰ',
-      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
+      roles: ['ADMIN', 'MANAGER'],
       items: [
-        { name: 'Hồ sơ nhân viên', path: '/employees', icon: Users, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Hồ sơ nhân viên', path: '/employees', icon: Users, roles: ['ADMIN', 'MANAGER'] },
         { name: 'Hợp đồng lao động', path: '/contracts', icon: FileText, roles: ['ADMIN', 'MANAGER'] }
       ]
     },
@@ -75,7 +75,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
       items: [
         { name: 'Chấm công & Nghỉ phép', path: '/attendance', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-        { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'MANAGER'] },
         { name: 'Bảng lương', path: '/payroll', icon: DollarSign, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },

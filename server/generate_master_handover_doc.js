@@ -217,7 +217,7 @@ async function buildMasterDoc() {
     [
       "CẤP 3 - EMPLOYEE\n(Nhân viên)",
       "• Toàn bộ 46 nhân sự còn lại trong công ty",
-      "✓ Xem thông tin hồ sơ của chính mình\n✓ Xem lịch sử chấm công & ngày phép cá nhân\n✓ Xem chỉ tiêu KPI & kết quả đánh giá của mình\n✓ XEM DUY NHẤT PHIẾU LƯƠNG CÁ NHÂN\n✓ Xem Sơ đồ tổ chức & Danh bạ công ty\n✓ Xem Văn bản, quy định & đào tạo nội bộ\n🔒 ẨN 100% MỨC LƯƠNG CỦA TẤT CẢ NGƯỜI KHÁC",
+      "✓ Xem thông tin hồ sơ của chính mình (Profile)\n✓ Xem lịch sử chấm công & ngày phép cá nhân\n✓ XEM DUY NHẤT PHIẾU LƯƠNG CÁ NHÂN\n✓ Xem Sơ đồ tổ chức\n✓ Xem Văn bản, quy định & tài sản được cấp\n🔒 TUYỆT ĐỐI KHÔNG xem KPI (của mình & người khác)\n🔒 KHÔNG xem danh sách nhân viên trong công ty\n🔒 ẨN 100% MỨC LƯƠNG CỦA TẤT CẢ NGƯỜI KHÁC",
       "✓ Thực hiện điểm danh chấm công hàng ngày\n✓ Gửi đơn xin nghỉ phép, đi muộn, làm thêm giờ\n✓ Gửi ý kiến đề xuất tại Hòm thư & Sáng kiến\n✓ Báo hỏng công cụ dụng cụ / tài sản được giao\n✓ Tự đổi mật khẩu tài khoản cá nhân"
     ]
   ];
