@@ -731,7 +731,7 @@ export const initDatabase = async () => {
       const adminCodes = ['VietA 002', 'VietA 032', 'VietA 043'];
       const managerCodes = [
         'VietA 003', 'VietA 015', 'VietA 031', 'VietA 035', 
-        'VietA 036', 'VietA 046', 'VietA 050', 'VietA 056'
+        'VietA 036', 'VietA 046', 'VietA 050'
       ];
 
       for (const emp of employees) {

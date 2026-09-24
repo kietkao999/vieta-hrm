@@ -11,7 +11,7 @@
   - *Quyền hạn:* Toàn quyền quản trị toàn bộ hệ thống, nhân sự, xem và tính bảng lương toàn công ty, KPI, hợp đồng, khen thưởng/kỷ luật, cấu hình và phân quyền.
 
 - **CẤP 2 - MANAGER (Trưởng phòng / Quản lý kho & xưởng):**
-  - Quản lý các phòng ban/kho/xưởng: Nguyễn Thị Thu Tâm (Kho Cần Thơ), Dương Thị Tuyết Hường (Kho Mỹ Tho), Trần Minh Lý (Xưởng nệm), Phạm Tấn Hưng (Kinh doanh), Nguyễn Quốc Hùng (Kế toán), Lê Huy Hoàng (R&D), Nguyễn Thái Cần (Xưởng gối), Trần Thị Bảo Châu (Xưởng gối).
+  - Quản lý các phòng ban/kho/xưởng: Nguyễn Thị Thu Tâm (Kho Cần Thơ), Dương Thị Tuyết Hường (Kho Mỹ Tho), Trần Minh Lý (Xưởng nệm), Phạm Tấn Hưng (Kinh doanh), Nguyễn Quốc Hùng (Kế toán), Lê Huy Hoàng (R&D), Nguyễn Thái Cần (Xưởng gối).
   - *Mật khẩu mặc định:* `Manager@123`
   - *Quyền hạn:* Xem được thông tin phòng ban của mình, quản lý và theo dõi danh sách nhân viên trực thuộc, chấm công, KPI phòng ban.
   - ⚠️ **Bảo mật Lương:** **Xem được phiếu lương của chính mình và danh sách bảng lương của các nhân sự trực thuộc phòng ban/kho/xưởng mình quản lý (có tab chuyển đổi giữa Lương phòng ban và Lương cá nhân). Tuyệt đối KHÔNG xem được lương của Ban Lãnh Đạo (Cấp 1 - ADMIN) và nhân sự thuộc các phòng ban khác.**

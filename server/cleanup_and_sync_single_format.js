@@ -56,8 +56,7 @@ async function main() {
     'VietA 035', // Huy Hoàng - R&D
     'VietA 036', // Tấn Hưng - Kinh doanh
     'VietA 046', // Thái Cần - Thổi gối
-    'VietA 050', // Minh Lý - Xưởng nệm
-    'VietA 056'  // Bảo Châu - Xưởng gối
+    'VietA 050'  // Minh Lý - Xưởng nệm
   ];
 
   const results = [];

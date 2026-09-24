@@ -135,7 +135,6 @@
 | 5 | VietA 036 | **vieta036** | **Phạm Tấn Hưng** | Phòng kinh doanh | Trưởng phòng kinh doanh | `VietA#Mgr@036$9Q` |
 | 6 | VietA 046 | **vieta046** | **Nguyễn Thái Cần** | Xưởng sản xuất gối | Trưởng nhóm thổi gối | `VietA#Mgr@046$9Q` |
 | 7 | VietA 050 | **vieta050** | **Trần Minh Lý** | Xưởng sản xuất nệm | Quản lý xưởng | `VietA#Mgr@050$9Q` |
-| 8 | VietA 056 | **vieta056** | **Trần Thị Bảo Châu** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Mgr@056$9Q` |
 
 #### 3. CẤP 3 - EMPLOYEE (46 TÀI KHOẢN NHÂN VIÊN)
 | STT | Mã NV | Tên đăng nhập | Họ và Tên | Phòng ban / Đơn vị | Chức vụ | Mật khẩu bảo mật |
@@ -173,19 +172,20 @@
 | 31 | VietA 053 | **vieta053** | **Trịnh Dương Minh Nhựt** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@053*7W` |
 | 32 | VietA 054 | **vieta054** | **Võ Hoàng Tín** | Xưởng sản xuất nệm | Nhân viên may viền | `VietA#Emp@054*7W` |
 | 33 | VietA 055 | **vieta055** | **Phan Quốc Khôi** | Xưởng sản xuất nệm | Tài xế xưởng sản xuất | `VietA#Emp@055*7W` |
-| 34 | VietA 058 | **vieta058** | **Nguyễn Thị Kim Hòa** | Xưởng sản xuất nệm | Nhân viên may tay | `VietA#Emp@058*7W` |
-| 35 | VietA 060 | **vieta060** | **Trần Thị Kim Quyên** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@060*7W` |
-| 36 | VietA 061 | **vieta061** | **Lê Thanh Hồng** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@061*7W` |
-| 37 | VietA 063 | **vieta063** | **Lê Ngọc Tuấn** | Xưởng sản xuất nệm | Nhân viên vô vali | `VietA#Emp@063*7W` |
-| 38 | VietA 066 | **vieta066** | **Nguyễn Thị Thùy Trang** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Emp@066*7W` |
-| 39 | VietA 069 | **vieta069** | **Trương Hồng Quân** | Kho Mỹ Tho | Tài xế Mỹ Tho | `VietA#Emp@069*7W` |
-| 40 | VietA 070 | **vieta070** | **Nguyễn Thanh Hải** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@070*7W` |
-| 41 | VietA 071 | **vieta071** | **Nguyễn Dương Tiển** | Xưởng sản xuất nệm | Nhân viên vô áo | `VietA#Emp@071*7W` |
-| 42 | VietA 074 | **vieta074** | **Nguyễn Thị Ngọc Huệ** | Xưởng sản xuất nệm | Nhân viên cắt vải | `VietA#Emp@074*7W` |
-| 43 | VietA 078 | **vieta078** | **Cổ Hoàn Lâm** | Khối văn phòng | Nhân viên phòng tổ chức | `VietA#Emp@078*7W` |
-| 44 | VietA 080 | **vieta080** | **Nguyễn Minh Tấn Phát** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@080*7W` |
-| 45 | VietA 081 | **vieta081** | **Trần Gia Khải** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@081*7W` |
-| 46 | VietA 082 | **vieta082** | **Nguyễn Huỳnh Trung Tín** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@082*7W` |
+| 34 | VietA 056 | **vieta056** | **Trần Thị Bảo Châu** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Emp@056*7W` |
+| 35 | VietA 058 | **vieta058** | **Nguyễn Thị Kim Hòa** | Xưởng sản xuất nệm | Nhân viên may tay | `VietA#Emp@058*7W` |
+| 36 | VietA 060 | **vieta060** | **Trần Thị Kim Quyên** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@060*7W` |
+| 37 | VietA 061 | **vieta061** | **Lê Thanh Hồng** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@061*7W` |
+| 38 | VietA 063 | **vieta063** | **Lê Ngọc Tuấn** | Xưởng sản xuất nệm | Nhân viên vô vali | `VietA#Emp@063*7W` |
+| 39 | VietA 066 | **vieta066** | **Nguyễn Thị Thùy Trang** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Emp@066*7W` |
+| 40 | VietA 069 | **vieta069** | **Trương Hồng Quân** | Kho Mỹ Tho | Tài xế Mỹ Tho | `VietA#Emp@069*7W` |
+| 41 | VietA 070 | **vieta070** | **Nguyễn Thanh Hải** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@070*7W` |
+| 42 | VietA 071 | **vieta071** | **Nguyễn Dương Tiển** | Xưởng sản xuất nệm | Nhân viên vô áo | `VietA#Emp@071*7W` |
+| 43 | VietA 074 | **vieta074** | **Nguyễn Thị Ngọc Huệ** | Xưởng sản xuất nệm | Nhân viên cắt vải | `VietA#Emp@074*7W` |
+| 44 | VietA 078 | **vieta078** | **Cổ Hoàn Lâm** | Khối văn phòng | Nhân viên phòng tổ chức | `VietA#Emp@078*7W` |
+| 45 | VietA 080 | **vieta080** | **Nguyễn Minh Tấn Phát** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@080*7W` |
+| 46 | VietA 081 | **vieta081** | **Trần Gia Khải** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@081*7W` |
+| 47 | VietA 082 | **vieta082** | **Nguyễn Huỳnh Trung Tín** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@082*7W` |
 
 #### 4. BẢNG TỔNG HỢP TOÀN BỘ 57 NHÂN SỰ CÔNG TY
 | STT | Mã NV | Tên đăng nhập | Họ và Tên | Phòng ban / Đơn vị | Chức vụ | Mật khẩu bảo mật |
@@ -200,40 +200,40 @@
 | 8 | VietA 036 | **vieta036** | **Phạm Tấn Hưng** | Phòng kinh doanh | Trưởng phòng kinh doanh | `VietA#Mgr@036$9Q` |
 | 9 | VietA 046 | **vieta046** | **Nguyễn Thái Cần** | Xưởng sản xuất gối | Trưởng nhóm thổi gối | `VietA#Mgr@046$9Q` |
 | 10 | VietA 050 | **vieta050** | **Trần Minh Lý** | Xưởng sản xuất nệm | Quản lý xưởng | `VietA#Mgr@050$9Q` |
-| 11 | VietA 056 | **vieta056** | **Trần Thị Bảo Châu** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Mgr@056$9Q` |
-| 12 | VietA 004 | **vieta004** | **Nguyễn Thị Thúy Vy** | Khối văn phòng | Kế toán thu mua | `VietA#Emp@004*7W` |
-| 13 | VietA 006 | **vieta006** | **Phạm Thanh Phong** | Kho Cần Thơ | Kế toán kho Cần Thơ | `VietA#Emp@006*7W` |
-| 14 | VietA 007 | **vieta007** | **Trần Thanh Hoài** | Kho Cần Thơ | Tài xế Cần Thơ | `VietA#Emp@007*7W` |
-| 15 | VietA 009 | **vieta009** | **Huỳnh Ngọc Dư** | Kho Cần Thơ | Nhân viên kho Cần Thơ | `VietA#Emp@009*7W` |
-| 16 | VietA 010 | **vieta010** | **Nguyễn Hải Duy** | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | `VietA#Emp@010*7W` |
-| 17 | VietA 011 | **vieta011** | **Lý Minh Trung** | Kho Cần Thơ | Nhân viên kho Cần Thơ | `VietA#Emp@011*7W` |
-| 18 | VietA 012 | **vieta012** | **Võ Huỳnh Đông Nghi** | Xưởng sản xuất nệm | Phó quản lý xưởng | `VietA#Emp@012*7W` |
-| 19 | VietA 013 | **vieta013** | **Hồ Minh Thuận** | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | `VietA#Emp@013*7W` |
-| 20 | VietA 016 | **vieta016** | **Nguyễn Thị Huỳnh Như** | Kho Mỹ Tho | Phó quản lý kho Mỹ Tho | `VietA#Emp@016*7W` |
-| 21 | VietA 017 | **vieta017** | **Trần Lương Ngọc Khánh** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@017*7W` |
-| 22 | VietA 018 | **vieta018** | **Tạ Thị Ngọc Trâm** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@018*7W` |
-| 23 | VietA 019 | **vieta019** | **Đoàn Hoài Linh** | Kho Mỹ Tho | Đội trưởng đội tài xế | `VietA#Emp@019*7W` |
-| 24 | VietA 020 | **vieta020** | **Đặng Hoàng Tuấn** | Kho Mỹ Tho | Tài xế Mỹ Tho | `VietA#Emp@020*7W` |
-| 25 | VietA 022 | **vieta022** | **Nguyễn Tuấn Kiệt** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@022*7W` |
-| 26 | VietA 023 | **vieta023** | **Nguyễn Hoàng Quân** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@023*7W` |
-| 27 | VietA 024 | **vieta024** | **Nguyễn Hữu Tài** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@024*7W` |
-| 28 | VietA 026 | **vieta026** | **Phạm Minh Phúc** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@026*7W` |
-| 29 | VietA 027 | **vieta027** | **Phạm Ngọc Hiển** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@027*7W` |
-| 30 | VietA 028 | **vieta028** | **Trần Hữu Lộc** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@028*7W` |
-| 31 | VietA 029 | **vieta029** | **Nguyễn Thị Thanh Tú** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@029*7W` |
-| 32 | VietA 033 | **vieta033** | **Nguyễn Quốc Huy** | Khối văn phòng | Trợ lý Giám đốc | `VietA#Emp@033*7W` |
-| 33 | VietA 034 | **vieta034** | **Lê Thị Mỹ Phúc** | Khối văn phòng | Kế toán viên | `VietA#Emp@034*7W` |
-| 34 | VietA 037 | **vieta037** | **Nguyễn Thị Kim Hoàng** | Phòng kinh doanh | Kế toán kinh doanh | `VietA#Emp@037*7W` |
-| 35 | VietA 038 | **vieta038** | **Phạm Thị Xuân Khoa** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@038*7W` |
-| 36 | VietA 040 | **vieta040** | **Võ Thanh Sơn** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@040*7W` |
-| 37 | VietA 041 | **vieta041** | **Phạm Phước Lành** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@041*7W` |
-| 38 | VietA 042 | **vieta042** | **Ngô Thanh Tín** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@042*7W` |
-| 39 | VietA 047 | **vieta047** | **Nguyễn Thành Lợi** | Xưởng sản xuất gối | Nhân viên thổi gối | `VietA#Emp@047*7W` |
-| 40 | VietA 049 | **vieta049** | **Nguyễn Thị Ngọc** | Xưởng sản xuất gối | Nhân viên may gối | `VietA#Emp@049*7W` |
-| 41 | VietA 052 | **vieta052** | **Nguyễn Minh Văn** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@052*7W` |
-| 42 | VietA 053 | **vieta053** | **Trịnh Dương Minh Nhựt** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@053*7W` |
-| 43 | VietA 054 | **vieta054** | **Võ Hoàng Tín** | Xưởng sản xuất nệm | Nhân viên may viền | `VietA#Emp@054*7W` |
-| 44 | VietA 055 | **vieta055** | **Phan Quốc Khôi** | Xưởng sản xuất nệm | Tài xế xưởng sản xuất | `VietA#Emp@055*7W` |
+| 11 | VietA 004 | **vieta004** | **Nguyễn Thị Thúy Vy** | Khối văn phòng | Kế toán thu mua | `VietA#Emp@004*7W` |
+| 12 | VietA 006 | **vieta006** | **Phạm Thanh Phong** | Kho Cần Thơ | Kế toán kho Cần Thơ | `VietA#Emp@006*7W` |
+| 13 | VietA 007 | **vieta007** | **Trần Thanh Hoài** | Kho Cần Thơ | Tài xế Cần Thơ | `VietA#Emp@007*7W` |
+| 14 | VietA 009 | **vieta009** | **Huỳnh Ngọc Dư** | Kho Cần Thơ | Nhân viên kho Cần Thơ | `VietA#Emp@009*7W` |
+| 15 | VietA 010 | **vieta010** | **Nguyễn Hải Duy** | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | `VietA#Emp@010*7W` |
+| 16 | VietA 011 | **vieta011** | **Lý Minh Trung** | Kho Cần Thơ | Nhân viên kho Cần Thơ | `VietA#Emp@011*7W` |
+| 17 | VietA 012 | **vieta012** | **Võ Huỳnh Đông Nghi** | Xưởng sản xuất nệm | Phó quản lý xưởng | `VietA#Emp@012*7W` |
+| 18 | VietA 013 | **vieta013** | **Hồ Minh Thuận** | Kho Cần Thơ | Nhân viên giao hàng Cần Thơ | `VietA#Emp@013*7W` |
+| 19 | VietA 016 | **vieta016** | **Nguyễn Thị Huỳnh Như** | Kho Mỹ Tho | Phó quản lý kho Mỹ Tho | `VietA#Emp@016*7W` |
+| 20 | VietA 017 | **vieta017** | **Trần Lương Ngọc Khánh** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@017*7W` |
+| 21 | VietA 018 | **vieta018** | **Tạ Thị Ngọc Trâm** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@018*7W` |
+| 22 | VietA 019 | **vieta019** | **Đoàn Hoài Linh** | Kho Mỹ Tho | Đội trưởng đội tài xế | `VietA#Emp@019*7W` |
+| 23 | VietA 020 | **vieta020** | **Đặng Hoàng Tuấn** | Kho Mỹ Tho | Tài xế Mỹ Tho | `VietA#Emp@020*7W` |
+| 24 | VietA 022 | **vieta022** | **Nguyễn Tuấn Kiệt** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@022*7W` |
+| 25 | VietA 023 | **vieta023** | **Nguyễn Hoàng Quân** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@023*7W` |
+| 26 | VietA 024 | **vieta024** | **Nguyễn Hữu Tài** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@024*7W` |
+| 27 | VietA 026 | **vieta026** | **Phạm Minh Phúc** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@026*7W` |
+| 28 | VietA 027 | **vieta027** | **Phạm Ngọc Hiển** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@027*7W` |
+| 29 | VietA 028 | **vieta028** | **Trần Hữu Lộc** | Kho Mỹ Tho | Nhân viên kho Mỹ Tho | `VietA#Emp@028*7W` |
+| 30 | VietA 029 | **vieta029** | **Nguyễn Thị Thanh Tú** | Kho Mỹ Tho | Kế toán kho Mỹ Tho | `VietA#Emp@029*7W` |
+| 31 | VietA 033 | **vieta033** | **Nguyễn Quốc Huy** | Khối văn phòng | Trợ lý Giám đốc | `VietA#Emp@033*7W` |
+| 32 | VietA 034 | **vieta034** | **Lê Thị Mỹ Phúc** | Khối văn phòng | Kế toán viên | `VietA#Emp@034*7W` |
+| 33 | VietA 037 | **vieta037** | **Nguyễn Thị Kim Hoàng** | Phòng kinh doanh | Kế toán kinh doanh | `VietA#Emp@037*7W` |
+| 34 | VietA 038 | **vieta038** | **Phạm Thị Xuân Khoa** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@038*7W` |
+| 35 | VietA 040 | **vieta040** | **Võ Thanh Sơn** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@040*7W` |
+| 36 | VietA 041 | **vieta041** | **Phạm Phước Lành** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@041*7W` |
+| 37 | VietA 042 | **vieta042** | **Ngô Thanh Tín** | Phòng kinh doanh | Nhân viên kinh doanh | `VietA#Emp@042*7W` |
+| 38 | VietA 047 | **vieta047** | **Nguyễn Thành Lợi** | Xưởng sản xuất gối | Nhân viên thổi gối | `VietA#Emp@047*7W` |
+| 39 | VietA 049 | **vieta049** | **Nguyễn Thị Ngọc** | Xưởng sản xuất gối | Nhân viên may gối | `VietA#Emp@049*7W` |
+| 40 | VietA 052 | **vieta052** | **Nguyễn Minh Văn** | Kho Mỹ Tho | Nhân viên giao hàng Mỹ Tho | `VietA#Emp@052*7W` |
+| 41 | VietA 053 | **vieta053** | **Trịnh Dương Minh Nhựt** | Xưởng sản xuất nệm | Nhân viên phun keo | `VietA#Emp@053*7W` |
+| 42 | VietA 054 | **vieta054** | **Võ Hoàng Tín** | Xưởng sản xuất nệm | Nhân viên may viền | `VietA#Emp@054*7W` |
+| 43 | VietA 055 | **vieta055** | **Phan Quốc Khôi** | Xưởng sản xuất nệm | Tài xế xưởng sản xuất | `VietA#Emp@055*7W` |
+| 44 | VietA 056 | **vieta056** | **Trần Thị Bảo Châu** | Xưởng sản xuất nệm | Kế toán xưởng sản xuất | `VietA#Emp@056*7W` |
 | 45 | VietA 058 | **vieta058** | **Nguyễn Thị Kim Hòa** | Xưởng sản xuất nệm | Nhân viên may tay | `VietA#Emp@058*7W` |
 | 46 | VietA 060 | **vieta060** | **Trần Thị Kim Quyên** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@060*7W` |
 | 47 | VietA 061 | **vieta061** | **Lê Thanh Hồng** | Xưởng sản xuất nệm | Nhân viên may một kim | `VietA#Emp@061*7W` |
