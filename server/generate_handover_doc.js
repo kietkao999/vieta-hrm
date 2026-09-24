@@ -574,12 +574,24 @@ async function generateHandoverDocument() {
   const outputPath2 = path.resolve(__dirname, 'uploads/documents/tai_lieu_ban_giao_va_huong_dan_su_dung_hrm_viet_a.docx');
 
   const buffer = await Packer.toBuffer(doc);
-  fs.writeFileSync(outputPath1, buffer);
-  console.log(`Đã lưu thành công file Word bàn giao tại: ${outputPath1}`);
+  try {
+    fs.writeFileSync(outputPath1, buffer);
+    console.log(`Đã lưu thành công file Word bàn giao tại: ${outputPath1}`);
+  } catch (err) {
+    if (err.code === 'EBUSY') {
+      console.warn(`File ${outputPath1} đang mở trong Word, bỏ qua ghi đè trực tiếp.`);
+    } else {
+      throw err;
+    }
+  }
 
   if (fs.existsSync(path.dirname(outputPath2))) {
-    fs.writeFileSync(outputPath2, buffer);
-    console.log(`Đã lưu bản sao lưu tại: ${outputPath2}`);
+    try {
+      fs.writeFileSync(outputPath2, buffer);
+      console.log(`Đã lưu bản sao lưu tại: ${outputPath2}`);
+    } catch (err) {
+      console.warn('Lỗi ghi file sao lưu:', err.message);
+    }
   }
 }
 

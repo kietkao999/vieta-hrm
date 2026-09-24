@@ -759,20 +759,8 @@ export const initDatabase = async () => {
         }
       }
 
-      // Cập nhật các alias tiện ích
-      const uAdmin = await query.get("SELECT id FROM employees WHERE code LIKE '%032%'");
-      if (uAdmin) {
-        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'admin'", [bcrypt.hashSync('VietA#Admin@Root!9X9', salt), uAdmin.id]);
-        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'hr_manager'", [bcrypt.hashSync('VietA#HR@Admin!8K8', salt), uAdmin.id]);
-      }
-      const uDept = await query.get("SELECT id FROM employees WHERE code LIKE '%036%'");
-      if (uDept) {
-        await query.run("UPDATE users SET password = ?, role_id = 3, employee_id = ? WHERE username = 'dept_manager'", [bcrypt.hashSync('VietA#Manager@Dept!7M7', salt), uDept.id]);
-      }
-      const uEmp = await query.get("SELECT id FROM employees WHERE code LIKE '%002%'");
-      if (uEmp) {
-        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'employee1'", [bcrypt.hashSync('VietA#Admin@002!8X', salt), uEmp.id]);
-      }
+      // Xóa bỏ hoàn toàn các tài khoản alias rườm rà (chỉ giữ 1 cách đăng nhập duy nhất theo mã nhân viên)
+      await query.run("DELETE FROM users WHERE username IN ('admin', 'hr_manager', 'dept_manager', 'employee1')");
     } catch (syncErr) {
       console.error('Lỗi đồng bộ users lúc init:', syncErr);
     }
