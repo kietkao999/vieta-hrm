@@ -47,7 +47,8 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.' });
     }
 
-    const isMatch = bcrypt.compareSync(password, user.password);
+    const cleanPassword = typeof password === 'string' ? password.trim() : password;
+    const isMatch = bcrypt.compareSync(password, user.password) || bcrypt.compareSync(cleanPassword, user.password);
     if (!isMatch) {
       await logAudit(user.id, username, 'Đăng nhập thất bại', ip, 'Nhập sai mật khẩu');
       return res.status(401).json({ message: 'Mã nhân viên hoặc mật khẩu không chính xác.' });

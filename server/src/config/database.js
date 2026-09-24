@@ -722,6 +722,60 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_leave_emp ON leave_requests(employee_id);
       CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_logs(created_at);
     `);
+
+    // Đồng bộ chuẩn hóa tài khoản & bảo mật mật khẩu tự động khi khởi động
+    try {
+      const salt = bcrypt.genSaltSync(10);
+      const employees = await query.all('SELECT id, code, fullname FROM employees');
+      
+      const adminCodes = ['VietA 002', 'VietA 032', 'VietA 043'];
+      const managerCodes = [
+        'VietA 003', 'VietA 015', 'VietA 031', 'VietA 035', 
+        'VietA 036', 'VietA 046', 'VietA 050', 'VietA 056'
+      ];
+
+      for (const emp of employees) {
+        const cleanCode = emp.code.trim();
+        const numStr = (cleanCode || '').replace(/\D/g, '').padStart(3, '0');
+        const username = cleanCode.toLowerCase().replace(/\s+/g, '');
+        
+        let roleId = 4; // EMPLOYEE
+        let plainPass = `VietA#Emp@${numStr}*7W`;
+
+        if (adminCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
+          roleId = 1;
+          plainPass = `VietA#Admin@${numStr}!8X`;
+        } else if (managerCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
+          roleId = 3;
+          plainPass = `VietA#Mgr@${numStr}$9Q`;
+        }
+
+        const passHash = bcrypt.hashSync(plainPass, salt);
+        const existing = await query.get('SELECT id FROM users WHERE employee_id = ? OR username = ?', [emp.id, username]);
+        if (existing) {
+          await query.run('UPDATE users SET username = ?, password = ?, role_id = ?, employee_id = ?, is_active = 1 WHERE id = ?', [username, passHash, roleId, emp.id, existing.id]);
+        } else {
+          await query.run('INSERT INTO users (username, password, role_id, employee_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)', [username, passHash, roleId, emp.id, new Date().toISOString(), new Date().toISOString()]);
+        }
+      }
+
+      // Cập nhật các alias tiện ích
+      const uAdmin = await query.get("SELECT id FROM employees WHERE code LIKE '%032%'");
+      if (uAdmin) {
+        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'admin'", [bcrypt.hashSync('VietA#Admin@Root!9X9', salt), uAdmin.id]);
+        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'hr_manager'", [bcrypt.hashSync('VietA#HR@Admin!8K8', salt), uAdmin.id]);
+      }
+      const uDept = await query.get("SELECT id FROM employees WHERE code LIKE '%036%'");
+      if (uDept) {
+        await query.run("UPDATE users SET password = ?, role_id = 3, employee_id = ? WHERE username = 'dept_manager'", [bcrypt.hashSync('VietA#Manager@Dept!7M7', salt), uDept.id]);
+      }
+      const uEmp = await query.get("SELECT id FROM employees WHERE code LIKE '%002%'");
+      if (uEmp) {
+        await query.run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'employee1'", [bcrypt.hashSync('VietA#Admin@002!8X', salt), uEmp.id]);
+      }
+    } catch (syncErr) {
+      console.error('Lỗi đồng bộ users lúc init:', syncErr);
+    }
   } catch (error) {
     console.error('Lỗi khởi tạo cơ sở dữ liệu:', error);
     throw error;
