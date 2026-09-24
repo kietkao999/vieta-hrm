@@ -34,9 +34,9 @@ async function syncUsers() {
   console.log('=== BẮT ĐẦU ĐỒNG BỘ TÀI KHOẢN ĐĂNG NHẬP THEO MÃ NHÂN VIÊN & PHÂN QUYỀN ===\n');
 
   const salt = bcrypt.genSaltSync(10);
-  const hashAdmin = bcrypt.hashSync('Admin@123', salt);
-  const hashManager = bcrypt.hashSync('Manager@123', salt);
-  const hashEmployee = bcrypt.hashSync('VietA@2026', salt);
+  const hashAdmin = bcrypt.hashSync('VietA#Admin@Root!9X9', salt);
+  const hashHR = bcrypt.hashSync('VietA#HR@Admin!8K8', salt);
+  const hashManager = bcrypt.hashSync('VietA#Manager@Dept!7M7', salt);
 
   const adminCodes = ['VietA 002', 'VietA 032', 'VietA 043'];
   const managerCodes = [
@@ -58,22 +58,25 @@ async function syncUsers() {
 
   for (const emp of employees) {
     const cleanCode = emp.code.trim();
+    const numStr = cleanCode.replace(/\D/g, '').padStart(3, '0');
     // Tạo username chuẩn hóa: vieta002, vieta032,...
     const username = cleanCode.toLowerCase().replace(/\s+/g, '');
 
     let roleId = 4; // EMPLOYEE
-    let passwordHash = hashEmployee;
+    let plainPass = `VietA#Emp@${numStr}*7W`;
     let roleLabel = 'EMPLOYEE';
 
     if (adminCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
       roleId = 1; // ADMIN
-      passwordHash = hashAdmin;
+      plainPass = `VietA#Admin@${numStr}!8X`;
       roleLabel = 'ADMIN';
     } else if (managerCodes.some(c => c.toLowerCase().replace(/\s+/g, '') === username)) {
       roleId = 3; // MANAGER
-      passwordHash = hashManager;
+      plainPass = `VietA#Mgr@${numStr}$9Q`;
       roleLabel = 'MANAGER';
     }
+
+    const passwordHash = bcrypt.hashSync(plainPass, salt);
 
     // Kiểm tra xem đã có user cho employee_id này chưa hoặc theo username
     const existingUser = await get('SELECT id FROM users WHERE employee_id = ? OR username = ?', [emp.id, username]);
@@ -83,13 +86,13 @@ async function syncUsers() {
         'UPDATE users SET username = ?, password = ?, role_id = ?, employee_id = ?, is_active = 1, updated_at = ? WHERE id = ?',
         [username, passwordHash, roleId, emp.id, now, existingUser.id]
       );
-      console.log(`[Cập nhật] [${roleLabel}] Mã NV: ${cleanCode} -> Username: ${username} | Họ tên: ${emp.fullname}`);
+      console.log(`[Cập nhật] [${roleLabel}] Mã NV: ${cleanCode} -> Username: ${username} | Pass: ${plainPass} | Họ tên: ${emp.fullname}`);
     } else {
       await run(
         'INSERT INTO users (username, password, role_id, employee_id, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)',
         [username, passwordHash, roleId, emp.id, now, now]
       );
-      console.log(`[Tạo mới] [${roleLabel}] Mã NV: ${cleanCode} -> Username: ${username} | Họ tên: ${emp.fullname}`);
+      console.log(`[Tạo mới] [${roleLabel}] Mã NV: ${cleanCode} -> Username: ${username} | Pass: ${plainPass} | Họ tên: ${emp.fullname}`);
     }
   }
 
@@ -97,7 +100,7 @@ async function syncUsers() {
   const uAdmin = await get("SELECT id FROM employees WHERE code LIKE '%032%'");
   if (uAdmin) {
     await run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'admin'", [hashAdmin, uAdmin.id]);
-    await run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'hr_manager'", [hashAdmin, uAdmin.id]);
+    await run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'hr_manager'", [hashHR, uAdmin.id]);
   }
   const uDept = await get("SELECT id FROM employees WHERE code LIKE '%036%'");
   if (uDept) {
@@ -105,7 +108,7 @@ async function syncUsers() {
   }
   const uEmp = await get("SELECT id FROM employees WHERE code LIKE '%002%'");
   if (uEmp) {
-    await run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'employee1'", [hashAdmin, uEmp.id]);
+    await run("UPDATE users SET password = ?, role_id = 1, employee_id = ? WHERE username = 'employee1'", [bcrypt.hashSync('VietA#Admin@002!8X', salt), uEmp.id]);
   }
 
   console.log('\n=== ĐỒNG BỘ HOÀN TẤT THÀNH CÔNG! ===');
