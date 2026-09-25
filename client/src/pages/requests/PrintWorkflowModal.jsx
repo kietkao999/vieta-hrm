@@ -19,7 +19,17 @@ const getAbsoluteUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
-  return `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  let origin = window.location.origin;
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) {
+    try {
+      const u = new URL(import.meta.env.VITE_API_URL);
+      origin = u.origin;
+    } catch {
+      origin = window.location.origin;
+    }
+  }
+  return `${origin}${cleanUrl}`;
 };
 
 const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => {
@@ -111,16 +121,16 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   const showPage3 = printMode === 'COMBO_3_PAGES' || printMode === 'PAYMENT_ONLY';
 
   // =========================================================================
-  // 1. IN TRỰC TIẾP QUA IFRAME CHUYÊN DỤNG (ĐẢM BẢO 100% ĐỊNH DẠNG TIMES NEW ROMAN & KHÔNG LỖI CỘT)
+  // 1. IN TRỰC TIẾP QUA IFRAME CHUYÊN DỤNG (ĐỒNG BỘ 100% ĐỊNH DẠNG VỚI XEM TRƯỚC & TỰ ĐỘNG LOAD ẢNH)
   // =========================================================================
-  const handleDirectPrint = () => {
+  const handleDirectPrint = async () => {
     const printableArea = document.getElementById('printable-workflow-area');
     if (!printableArea) {
       window.print();
       return;
     }
 
-    // Xóa iframe cũ nếu có để tránh lưu cache hoặc trạng thái kích thước 0
+    // Xóa iframe cũ nếu có
     const oldIframe = document.getElementById('print-dedicated-iframe');
     if (oldIframe) {
       oldIframe.remove();
@@ -153,15 +163,16 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               box-sizing: border-box;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
             body {
-              font-family: 'Times New Roman', Times, serif;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Times New Roman', sans-serif;
               font-size: 11pt;
-              color: #000;
+              color: #0f172a;
               background: #fff;
               margin: 0;
               padding: 0;
-              line-height: 1.3;
+              line-height: 1.35;
             }
             .a4-page {
               page-break-after: always;
@@ -171,6 +182,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               box-sizing: border-box;
               width: 100%;
               margin: 0 auto;
+              padding: 0 0 10mm 0;
             }
             .a4-page:last-child {
               page-break-after: auto;
@@ -182,8 +194,8 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               table-layout: fixed !important;
             }
             .data-table th, .data-table td {
-              border: 1px solid #333 !important;
-              padding: 4px 6px !important;
+              border: 1px solid #475569 !important;
+              padding: 5px 7px !important;
               font-size: 10pt !important;
             }
             .data-table th {
@@ -200,7 +212,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             }
             .layout-table td {
               border: none !important;
-              padding: 2px 4px !important;
+              padding: 2.5px 4px !important;
               vertical-align: top !important;
               text-align: left;
             }
@@ -208,7 +220,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               width: 100% !important;
               border-collapse: collapse !important;
               border: none !important;
-              margin-top: 20px !important;
+              margin-top: 18px !important;
               table-layout: fixed !important;
             }
             .sign-table td {
@@ -221,21 +233,24 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             .text-right { text-align: right !important; }
             .text-left { text-align: left !important; }
             .font-bold { font-weight: bold !important; }
-            .font-semibold { font-weight: bold !important; }
+            .font-semibold { font-weight: 600 !important; }
             .italic { font-style: italic !important; }
             .uppercase { text-transform: uppercase !important; }
             .title-main {
               font-size: 16pt !important;
-              font-weight: bold !important;
+              font-weight: 800 !important;
               text-transform: uppercase !important;
               color: #174378 !important;
               text-align: center !important;
-              margin: 8px 0 2px 0 !important;
+              margin: 10px 0 2px 0 !important;
+              letter-spacing: 0.5px;
             }
             .section-box {
-              border: 1px solid #333 !important;
+              border: 1px solid #cbd5e1 !important;
+              border-radius: 6px !important;
               margin-bottom: 10px !important;
               width: 100% !important;
+              overflow: hidden !important;
             }
             .section-header {
               background-color: #174378 !important;
@@ -243,36 +258,53 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               font-weight: bold !important;
               text-align: center !important;
               padding: 4px 6px !important;
-              font-size: 10.5pt !important;
+              font-size: 10pt !important;
               text-transform: uppercase !important;
+              letter-spacing: 0.5px;
             }
             .section-body {
-              padding: 6px 8px !important;
+              padding: 8px 10px !important;
+              background-color: #fff !important;
               text-align: left !important;
             }
             .stamp-box {
               display: inline-block !important;
-              border: 1px solid #059669 !important;
+              border: 1px solid #10b981 !important;
               background-color: #ecfdf5 !important;
               color: #065f46 !important;
-              padding: 2px 6px !important;
+              padding: 2px 8px !important;
               border-radius: 4px !important;
               font-size: 8.5pt !important;
               font-weight: bold !important;
-              margin: 4px 0 !important;
+              margin: 3px 0 !important;
             }
             .stamp-box-bod {
               display: inline-block !important;
-              border: 1px solid #1e40af !important;
+              border: 1px solid #2563eb !important;
               background-color: #eff6ff !important;
               color: #1e3a8a !important;
-              padding: 2px 6px !important;
+              padding: 2px 8px !important;
               border-radius: 4px !important;
               font-size: 8.5pt !important;
               font-weight: bold !important;
-              margin: 4px 0 !important;
+              margin: 3px 0 !important;
             }
-            img { max-width: 100%; height: auto; }
+            .image-preview-card {
+              border: 1px solid #cbd5e1 !important;
+              background: #f8fafc !important;
+              padding: 6px !important;
+              border-radius: 6px !important;
+              text-align: center !important;
+            }
+            .image-preview-card img {
+              max-height: 180px !important;
+              max-width: 100% !important;
+              height: auto !important;
+              margin: 0 auto !important;
+              display: block !important;
+              object-fit: contain !important;
+              border-radius: 4px !important;
+            }
           </style>
         </head>
         <body>
@@ -282,10 +314,23 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     `);
     doc.close();
 
+    // Chờ tất cả ảnh nạp xong 100% trước khi mở cửa sổ In
+    const images = Array.from(doc.images);
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 2000); // Giới hạn tối đa 2s
+        });
+      })
+    );
+
     setTimeout(() => {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
-    }, 350);
+    }, 250);
   };
 
   // =========================================================================
