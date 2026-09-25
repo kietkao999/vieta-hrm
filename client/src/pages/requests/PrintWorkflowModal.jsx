@@ -156,32 +156,34 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           <style>
             @page {
               size: A4 portrait;
-              margin: 10mm 12mm 10mm 12mm;
+              margin: 8mm 10mm 8mm 10mm;
             }
             * {
-              box-sizing: border-box;
+              box-sizing: border-box !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
               color-adjust: exact !important;
             }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #fff !important;
+            }
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-              font-size: 10.5pt;
+              font-size: 10pt;
               color: #0f172a;
-              background: #fff;
-              margin: 0;
-              padding: 0;
-              line-height: 1.35;
+              line-height: 1.3;
             }
             .page-container {
               page-break-after: always !important;
               break-after: page !important;
               box-sizing: border-box !important;
               width: 100% !important;
-              max-height: 268mm !important;
+              min-height: auto !important;
+              height: auto !important;
               padding: 0 !important;
-              margin: 0 0 10mm 0 !important;
-              overflow: hidden !important;
+              margin: 0 !important;
             }
             .page-container:last-child {
               page-break-after: auto !important;
@@ -533,15 +535,14 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage1 && (
             <div
-              className="page-container p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
+              className="page-container p-6 sm:p-8 pt-4 sm:pt-6 bg-white"
               style={{
-                minHeight: '297mm',
                 pageBreakAfter: (showPage2 || showPage3) ? 'always' : 'auto',
                 breakAfter: (showPage2 || showPage3) ? 'page' : 'auto'
               }}
             >
               {/* Header Trên cùng */}
-              <div className="flex justify-between items-start pt-2 pb-1">
+              <div className="flex justify-between items-start pt-1 pb-1">
                 <div>
                   <p className="font-bold text-sm tracking-tight text-slate-950">{nfc('CÔNG TY TNHH TM SX VIỆT Á')}</p>
                   <p className="text-xs text-slate-700 mt-0.5">{nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</p>
@@ -553,20 +554,20 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Tiêu đề Biểu Mẫu */}
-              <div className="text-center my-4">
-                <h1 className="text-xl font-bold uppercase tracking-wide text-[#174378]">
+              <div className="text-center my-3">
+                <h1 className="text-lg sm:text-xl font-bold uppercase tracking-wide text-[#174378]">
                   {nfc('GIẤY ĐỀ NGHỊ MUA DỊCH VỤ')}
                 </h1>
-                <p className="italic text-xs text-slate-700 mt-1">
+                <p className="italic text-xs text-slate-700 mt-0.5">
                   {nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
                 </p>
-                <p className="italic text-xs text-slate-800 mt-1">
+                <p className="italic text-xs text-slate-800 mt-0.5">
                   {nfc(`Kính gửi: Ban Giám Đốc – ${effectivePurchase?.approver_department || mainReq.approver_department || mainReq.department || 'Phòng ban liên quan'}`)}
                 </p>
               </div>
 
               {/* Thông tin chung */}
-              <div className="space-y-2 mb-3 text-xs">
+              <div className="space-y-1.5 mb-2.5 text-xs">
                 <div className="flex justify-between">
                   <p className="w-1/2">
                     <span>{nfc('Họ và tên người đề nghị: ')}</span>
@@ -601,50 +602,50 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Bảng chi tiết dịch vụ */}
-              <div className="mb-3">
+              <div className="mb-2.5">
                 <table className="w-full border-collapse border border-slate-400 text-xs">
                   <thead>
                     <tr className="bg-[#174378] text-white font-bold text-center">
-                      <th className="border border-slate-400 p-2 w-10">{nfc('STT')}</th>
-                      <th className="border border-slate-400 p-2 text-left">{nfc('Tên dịch vụ / Nội dung công việc')}</th>
-                      <th className="border border-slate-400 p-2 text-left w-36">{nfc('Đơn vị cung cấp (NCC)')}</th>
-                      <th className="border border-slate-400 p-2 w-28">{nfc('Thời gian thực hiện')}</th>
-                      <th className="border border-slate-400 p-2 text-right w-32">{nfc('Chi phí dự kiến (VNĐ)')}</th>
-                      <th className="border border-slate-400 p-2 text-left w-28">{nfc('Mục đích sử dụng')}</th>
-                      <th className="border border-slate-400 p-2 text-left w-24">{nfc('Ghi chú')}</th>
+                      <th className="border border-slate-400 p-1.5 w-10">{nfc('STT')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left">{nfc('Tên dịch vụ / Nội dung công việc')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left w-36">{nfc('Đơn vị cung cấp (NCC)')}</th>
+                      <th className="border border-slate-400 p-1.5 w-28">{nfc('Thời gian thực hiện')}</th>
+                      <th className="border border-slate-400 p-1.5 text-right w-32">{nfc('Chi phí dự kiến (VNĐ)')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left w-28">{nfc('Mục đích sử dụng')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left w-24">{nfc('Ghi chú')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {purchaseTableRows.map((it, idx) => (
-                      <tr key={idx} className="h-7 text-xs">
-                        <td className="border border-slate-400 p-1.5 text-center">{idx + 1}</td>
-                        <td className="border border-slate-400 p-1.5 font-medium">{it ? nfc(it.service_name) : ''}</td>
-                        <td className="border border-slate-400 p-1.5">{it ? nfc(it.supplier_name || '---') : ''}</td>
-                        <td className="border border-slate-400 p-1.5 text-center">{it ? formatDate(it.due_date) : ''}</td>
-                        <td className="border border-slate-400 p-1.5 text-right font-mono font-semibold">
+                      <tr key={idx} className="h-6 text-xs">
+                        <td className="border border-slate-400 p-1 text-center">{idx + 1}</td>
+                        <td className="border border-slate-400 p-1 font-medium">{it ? nfc(it.service_name) : ''}</td>
+                        <td className="border border-slate-400 p-1">{it ? nfc(it.supplier_name || '---') : ''}</td>
+                        <td className="border border-slate-400 p-1 text-center">{it ? formatDate(it.due_date) : ''}</td>
+                        <td className="border border-slate-400 p-1 text-right font-mono font-semibold">
                           {it && it.amount ? formatMoney(it.amount) : ''}
                         </td>
-                        <td className="border border-slate-400 p-1.5 italic text-slate-700">{it ? nfc(effectivePurchase?.purpose || mainReq.purpose || '') : ''}</td>
-                        <td className="border border-slate-400 p-1.5 italic text-slate-600">{it ? nfc(it.note || '') : ''}</td>
+                        <td className="border border-slate-400 p-1 italic text-slate-700">{it ? nfc(effectivePurchase?.purpose || mainReq.purpose || '') : ''}</td>
+                        <td className="border border-slate-400 p-1 italic text-slate-600">{it ? nfc(it.note || '') : ''}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="font-bold text-xs">
-                      <td colSpan="4" className="border border-slate-400 p-2 text-left uppercase">
+                      <td colSpan="4" className="border border-slate-400 p-1.5 text-left uppercase">
                         {nfc('TỔNG CHI PHÍ DỰ KIẾN')}
                       </td>
-                      <td className="border border-slate-400 p-2 text-right font-mono text-sm text-brand-950 font-black">
+                      <td className="border border-slate-400 p-1.5 text-right font-mono text-xs text-brand-950 font-black">
                         {formatMoney(effectivePurchase?.total_estimated_amount || mainReq.total_estimated_amount || mainReq.total_amount)} đ
                       </td>
-                      <td colSpan="2" className="border border-slate-400 p-2"></td>
+                      <td colSpan="2" className="border border-slate-400 p-1.5"></td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
 
               {/* Hồ sơ đính kèm & Ghi chú thêm */}
-              <div className="space-y-1.5 mb-6 text-xs">
+              <div className="space-y-1 mb-4 text-xs">
                 <div className="flex items-center space-x-6">
                   <span className="w-28 text-slate-700">{nfc('Hồ sơ đính kèm:')}</span>
                   <span className="inline-flex items-center space-x-1">
@@ -666,22 +667,22 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* 4 Chữ Ký Chuẩn Dùng Chung */}
-              <div className="mt-8 pt-2">
+              <div className="mt-4 pt-1">
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="h-14"></div>
+                    <div className="h-10"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('TRƯỞNG BỘ PHẬN')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="min-h-[48px] flex items-center justify-center">
+                    <div className="min-h-[40px] flex items-center justify-center">
                       {effectivePurchase?.hod_approved_by || mainReq.hod_approved_by ? (
                         <div className="inline-block p-1 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -691,17 +692,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.hod_approved_at || mainReq.hod_approved_at)}</p>
                         </div>
                       ) : (
-                        <div className="h-12"></div>
+                        <div className="h-10"></div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('BỘ PHẬN KẾ TOÁN / THU MUA')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="min-h-[48px] flex items-center justify-center">
+                    <div className="min-h-[40px] flex items-center justify-center">
                       {effectivePurchase?.acc_approved_by || mainReq.acc_approved_by ? (
                         <div className="inline-block p-1 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -711,17 +712,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.acc_approved_at || mainReq.acc_approved_at)}</p>
                         </div>
                       ) : (
-                        <div className="h-12"></div>
+                        <div className="h-10"></div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[11px] text-brand-900">{nfc('BAN GIÁM ĐỐC')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký tên & đóng dấu)')}</p>
                     </div>
-                    <div className="min-h-[48px] flex items-center justify-center">
+                    <div className="min-h-[40px] flex items-center justify-center">
                       {effectivePurchase?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'APPROVED' ? (
                         <div className="inline-block p-1 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -731,7 +732,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at)}</p>
                         </div>
                       ) : (
-                        <div className="h-12"></div>
+                        <div className="h-10"></div>
                       )}
                     </div>
                   </div>
@@ -745,15 +746,14 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage2 && (
             <div
-              className="page-container p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
+              className="page-container p-6 sm:p-8 pt-4 sm:pt-6 bg-white"
               style={{
-                minHeight: '297mm',
                 pageBreakAfter: showPage3 ? 'always' : 'auto',
                 breakAfter: showPage3 ? 'page' : 'auto'
               }}
             >
               {/* Header Trên cùng */}
-              <div className="flex justify-between items-start pt-2 pb-1">
+              <div className="flex justify-between items-start pt-1 pb-1">
                 <div>
                   <p className="font-bold text-sm tracking-tight text-slate-950">{nfc('CÔNG TY TNHH TM SX VIỆT Á')}</p>
                   <p className="text-xs text-slate-700 mt-0.5">{nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</p>
@@ -765,20 +765,20 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Tiêu đề Biểu Mẫu */}
-              <div className="text-center my-4">
-                <h1 className="text-xl font-bold uppercase tracking-wide text-[#174378]">
+              <div className="text-center my-3">
+                <h1 className="text-lg sm:text-xl font-bold uppercase tracking-wide text-[#174378]">
                   {nfc('BẢNG TỔNG HỢP HÓA ĐƠN & CHỨNG TỪ GỐC')}
                 </h1>
-                <p className="italic text-xs text-slate-700 mt-1">
+                <p className="italic text-xs text-slate-700 mt-0.5">
                   {nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
                 </p>
-                <p className="italic text-xs font-semibold text-slate-800 mt-1">
+                <p className="italic text-xs font-semibold text-slate-800 mt-0.5">
                   {nfc('Kèm theo hồ sơ đề xuất & quyết toán chi phí công ty')}
                 </p>
               </div>
 
               {/* Thông tin hồ sơ */}
-              <div className="space-y-2 mb-4 text-xs">
+              <div className="space-y-1.5 mb-3 text-xs">
                 <div className="flex justify-between">
                   <p className="w-1/2">
                     <span>{nfc('Người lập hồ sơ: ')}</span>
@@ -796,33 +796,33 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Bảng kê danh sách chứng từ */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <table className="w-full border-collapse border border-slate-400 text-xs">
                   <thead>
                     <tr className="bg-[#174378] text-white font-bold text-center">
-                      <th className="border border-slate-400 p-2 w-10">{nfc('STT')}</th>
-                      <th className="border border-slate-400 p-2 text-left w-48">{nfc('Phân loại chứng từ')}</th>
-                      <th className="border border-slate-400 p-2 text-left">{nfc('Tên file / Số hóa đơn chứng từ')}</th>
-                      <th className="border border-slate-400 p-2 w-28">{nfc('Dung lượng')}</th>
-                      <th className="border border-slate-400 p-2 w-32">{nfc('Ngày tải lên')}</th>
+                      <th className="border border-slate-400 p-1.5 w-10">{nfc('STT')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left w-48">{nfc('Phân loại chứng từ')}</th>
+                      <th className="border border-slate-400 p-1.5 text-left">{nfc('Tên file / Số hóa đơn chứng từ')}</th>
+                      <th className="border border-slate-400 p-1.5 w-28">{nfc('Dung lượng')}</th>
+                      <th className="border border-slate-400 p-1.5 w-32">{nfc('Ngày tải lên')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allAttachments.length > 0 ? (
                       allAttachments.map((att, idx) => (
-                        <tr key={idx} className="h-7">
-                          <td className="border border-slate-400 p-1.5 text-center">{idx + 1}</td>
-                          <td className="border border-slate-400 p-1.5 font-semibold text-slate-900">
+                        <tr key={idx} className="h-6">
+                          <td className="border border-slate-400 p-1 text-center">{idx + 1}</td>
+                          <td className="border border-slate-400 p-1 font-semibold text-slate-900">
                             {nfc(FILE_TYPE_MAP[att.file_type] || att.file_type)}
                           </td>
-                          <td className="border border-slate-400 p-1.5 font-medium">{nfc(att.file_name)}</td>
-                          <td className="border border-slate-400 p-1.5 text-center font-mono text-slate-600">{att.file_size || '---'}</td>
-                          <td className="border border-slate-400 p-1.5 text-center text-slate-600">{formatDate(att.uploaded_at)}</td>
+                          <td className="border border-slate-400 p-1 font-medium">{nfc(att.file_name)}</td>
+                          <td className="border border-slate-400 p-1 text-center font-mono text-slate-600">{att.file_size || '---'}</td>
+                          <td className="border border-slate-400 p-1 text-center text-slate-600">{formatDate(att.uploaded_at)}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="border border-slate-400 p-4 text-center italic text-slate-400">
+                        <td colSpan="5" className="border border-slate-400 p-3 text-center italic text-slate-400">
                           {nfc('Chứng từ gốc đính kèm bản cứng theo phiếu')}
                         </td>
                       </tr>
@@ -832,26 +832,26 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Khung hiển thị ảnh hóa đơn / chứng từ thực tế */}
-              <div className="mb-6 p-3 border border-slate-300 rounded bg-slate-50">
-                <p className="font-bold text-xs uppercase text-slate-800 mb-2">
+              <div className="mb-4 p-2.5 border border-slate-300 rounded bg-slate-50">
+                <p className="font-bold text-xs uppercase text-slate-800 mb-1.5">
                   {nfc('Hình ảnh hóa đơn / Nghiệm thu thực tế kèm theo:')}
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   {allAttachments
                     .filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || ''))
                     .slice(0, 2)
                     .map((imgAtt, idx) => (
-                      <div key={idx} className="border border-slate-300 bg-white p-2 rounded text-center">
+                      <div key={idx} className="border border-slate-300 bg-white p-1.5 rounded text-center">
                         <img
                           src={getAbsoluteUrl(imgAtt.file_url)}
                           alt={imgAtt.file_name}
-                          className="max-h-48 mx-auto object-contain rounded"
+                          className="max-h-40 mx-auto object-contain rounded"
                         />
                         <p className="text-[10px] text-slate-600 mt-1 truncate font-medium">{nfc(imgAtt.file_name)}</p>
                       </div>
                     ))}
                   {allAttachments.filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || '')).length === 0 && (
-                    <div className="col-span-2 p-6 border border-dashed border-slate-300 rounded text-center text-slate-400 italic text-xs">
+                    <div className="col-span-2 p-4 border border-dashed border-slate-300 rounded text-center text-slate-400 italic text-xs">
                       {nfc('Đã đính kèm đầy đủ bản cứng Hóa đơn GTGT & Chứng từ đối soát gốc')}
                     </div>
                   )}
@@ -859,22 +859,22 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* 2 Chữ Ký Trang 2 */}
-              <div className="mt-8 pt-4">
+              <div className="mt-4 pt-2">
                 <div className="grid grid-cols-2 gap-12 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('NGƯỜI LẬP HỒ SƠ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="h-14"></div>
+                    <div className="h-10"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="h-14"></div>
+                    <div className="h-10"></div>
                   </div>
                 </div>
               </div>
@@ -886,13 +886,14 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage3 && (
             <div
-              className="page-container p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
+              className="page-container p-6 sm:p-8 pt-4 sm:pt-6 bg-white"
               style={{
-                minHeight: '297mm'
+                pageBreakAfter: 'auto',
+                breakAfter: 'auto'
               }}
             >
               {/* Header Trên cùng */}
-              <div className="flex justify-between items-start pt-2 pb-1">
+              <div className="flex justify-between items-start pt-1 pb-1">
                 <div>
                   <p className="font-bold text-sm tracking-tight text-slate-950">{nfc('CÔNG TY TNHH TM SX VIỆT Á')}</p>
                   <p className="text-xs text-slate-700 mt-0.5">{nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</p>
@@ -904,20 +905,20 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* Tiêu đề Biểu Mẫu */}
-              <div className="text-center my-4">
-                <h1 className="text-xl font-bold uppercase tracking-wide text-[#174378]">
+              <div className="text-center my-3">
+                <h1 className="text-lg sm:text-xl font-bold uppercase tracking-wide text-[#174378]">
                   {nfc('GIẤY ĐỀ NGHỊ THANH TOÁN')}
                 </h1>
-                <p className="italic text-xs text-slate-700 mt-1">
+                <p className="italic text-xs text-slate-700 mt-0.5">
                   {nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
                 </p>
-                <p className="italic text-xs font-semibold text-slate-800 mt-1">
+                <p className="italic text-xs font-semibold text-slate-800 mt-0.5">
                   {nfc('Kính gửi: BAN GIÁM ĐỐC – PHÒNG KẾ TOÁN')}
                 </p>
               </div>
 
               {/* Thông tin người đề nghị & Nội dung */}
-              <div className="space-y-2.5 mb-3 text-xs">
+              <div className="space-y-2 mb-2.5 text-xs">
                 <div className="flex justify-between">
                   <p className="w-1/2">
                     <span>{nfc('Họ và tên người đề nghị: ')}</span>
@@ -964,11 +965,11 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* BANNER 1: THÔNG TIN TÀI KHOẢN THỤ HƯỞNG */}
-              <div className="mb-3 border border-slate-300 rounded overflow-hidden">
+              <div className="mb-2.5 border border-slate-300 rounded overflow-hidden">
                 <div className="bg-[#174378] text-white font-bold text-center py-1.5 px-3 text-xs uppercase tracking-wide">
                   {nfc('THÔNG TIN TÀI KHOẢN THỤ HƯỞNG (NẾU CHUYỂN KHOẢN)')}
                 </div>
-                <div className="p-3 bg-white space-y-2 text-xs">
+                <div className="p-2.5 bg-white space-y-1.5 text-xs">
                   <p>
                     <span className="text-slate-700">{nfc('Tên người/Đơn vị thụ hưởng: ')}</span>
                     <span className="font-bold uppercase text-slate-900 ml-1">{nfc(effectivePayment?.bank_account_holder || mainReq.bank_account_holder || '---')}</span>
@@ -987,11 +988,11 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* BANNER 2: CHỨNG TỪ GỐC ĐÍNH KÈM */}
-              <div className="mb-6 border border-slate-300 rounded overflow-hidden">
+              <div className="mb-4 border border-slate-300 rounded overflow-hidden">
                 <div className="bg-[#174378] text-white font-bold text-center py-1.5 px-3 text-xs uppercase tracking-wide">
                   {nfc('CHỨNG TỪ GỐC ĐÍNH KÈM')}
                 </div>
-                <div className="p-3 bg-white space-y-2 text-xs">
+                <div className="p-2.5 bg-white space-y-1.5 text-xs">
                   <div className="flex items-center space-x-5">
                     <span className="text-slate-700 w-32">{nfc('Chứng từ kèm theo:')}</span>
                     <span className="inline-flex items-center space-x-1">
@@ -1022,24 +1023,24 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               </div>
 
               {/* 3 Chữ Ký Chuẩn Dùng Chung */}
-              <div className="mt-8 pt-4">
+              <div className="mt-4 pt-2">
                 <div className="grid grid-cols-3 gap-4 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="h-14"></div>
+                    <div className="h-10"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('KẾ TOÁN TRƯỞNG')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="min-h-[48px] flex items-center justify-center">
+                    <div className="min-h-[40px] flex items-center justify-center">
                       {effectivePayment?.acc_approved_by || mainReq.acc_approved_by ? (
-                        <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
+                        <div className="inline-block p-1 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
                             <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
                             <span>{nfc('ĐÃ KIỂM TRA')}</span>
@@ -1047,19 +1048,19 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(effectivePayment?.acc_approved_at || mainReq.acc_approved_at)}</p>
                         </div>
                       ) : (
-                        <div className="h-12"></div>
+                        <div className="h-10"></div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[110px]">
+                  <div className="flex flex-col justify-between min-h-[90px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-brand-900">{nfc('BAN GIÁM ĐỐC')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký tên & đóng dấu)')}</p>
                     </div>
-                    <div className="min-h-[48px] flex items-center justify-center">
+                    <div className="min-h-[40px] flex items-center justify-center">
                       {effectivePayment?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'PAID' ? (
-                        <div className="inline-block p-1.5 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
+                        <div className="inline-block p-1 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
                           <div className="flex items-center justify-center space-x-1 font-bold">
                             <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
                             <span>{nfc('ĐÃ PHÊ DUYỆT CHI')}</span>
@@ -1067,7 +1068,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(effectivePayment?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at)}</p>
                         </div>
                       ) : (
-                        <div className="h-12"></div>
+                        <div className="h-10"></div>
                       )}
                     </div>
                   </div>
