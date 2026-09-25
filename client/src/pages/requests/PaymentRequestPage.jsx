@@ -702,7 +702,16 @@ const PaymentRequestPage = () => {
           setIsCreateOpen(false);
           setSourcePurchaseForPayment(null);
         }}
-        onSuccess={() => fetchData()}
+        onSuccess={(createdData, submittedMode) => {
+          fetchData();
+          const targetTab = submittedMode === 'PURCHASE' ? 'PURCHASE' : 'PAYMENT';
+          setActiveMainTab(targetTab);
+          if (createdData) {
+            setTimeout(() => {
+              handleOpenPrint(createdData, submittedMode);
+            }, 100);
+          }
+        }}
         initialMode={createInitialMode}
         sourcePurchaseRequest={sourcePurchaseForPayment}
       />
