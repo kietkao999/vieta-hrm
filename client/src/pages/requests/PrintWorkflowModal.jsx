@@ -678,12 +678,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
 
                   <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[11px] text-slate-900">
-                        {nfc('TRƯỞNG BỘ PHẬN')}
-                        {mainReq.approver_department && mainReq.approver_department !== mainReq.department && (
-                          <span className="block text-[9px] font-normal lowercase italic text-slate-600">({nfc(mainReq.approver_department)})</span>
-                        )}
-                      </p>
+                      <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('TRƯỞNG BỘ PHẬN')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
                     <div className="min-h-[48px] flex items-center justify-center">
