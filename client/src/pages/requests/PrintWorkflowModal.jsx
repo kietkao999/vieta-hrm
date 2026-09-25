@@ -156,7 +156,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           <style>
             @page {
               size: A4 portrait;
-              margin: 8mm 10mm 8mm 10mm;
+              margin: 10mm 12mm 10mm 12mm;
             }
             * {
               box-sizing: border-box;
@@ -166,7 +166,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             }
             body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-              font-size: 11pt;
+              font-size: 10.5pt;
               color: #0f172a;
               background: #fff;
               margin: 0;
@@ -174,20 +174,21 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               line-height: 1.35;
             }
             .page-container {
-              page-break-after: always;
-              break-after: page;
-              min-height: 275mm;
-              position: relative;
-              box-sizing: border-box;
-              width: 100%;
-              margin: 0 auto;
-              padding: 6mm 4mm;
+              page-break-after: always !important;
+              break-after: page !important;
+              box-sizing: border-box !important;
+              width: 100% !important;
+              max-height: 268mm !important;
+              padding: 0 !important;
+              margin: 0 0 10mm 0 !important;
+              overflow: hidden !important;
             }
             .page-container:last-child {
-              page-break-after: auto;
-              break-after: auto;
+              page-break-after: auto !important;
+              break-after: auto !important;
             }
             .flex { display: flex !important; }
+            .flex-col { flex-direction: column !important; }
             .justify-between { justify-content: space-between !important; }
             .items-center { align-items: center !important; }
             .items-start { align-items: flex-start !important; }
@@ -199,29 +200,68 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             .font-bold { font-weight: bold !important; }
             .font-semibold { font-weight: 600 !important; }
             .font-medium { font-weight: 500 !important; }
+            .font-mono { font-family: monospace !important; }
             .italic { font-style: italic !important; }
             .uppercase { text-transform: uppercase !important; }
             
-            /* Dàn hàng ngang cho chữ ký */
+            /* Dàn hàng ngang cho chữ ký & khối dọc chuẩn */
             .grid { display: flex !important; width: 100% !important; }
-            .grid-cols-4 > div { flex: 1 !important; width: 25% !important; padding: 0 4px !important; text-align: center !important; }
-            .grid-cols-3 > div { flex: 1 !important; width: 33.33% !important; padding: 0 6px !important; text-align: center !important; }
-            .grid-cols-2 > div { flex: 1 !important; width: 50% !important; padding: 0 8px !important; text-align: center !important; }
+            .grid-cols-4 > div {
+              width: 25% !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              min-height: 110px !important;
+              text-align: center !important;
+              padding: 0 4px !important;
+            }
+            .grid-cols-3 > div {
+              width: 33.33% !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              min-height: 110px !important;
+              text-align: center !important;
+              padding: 0 6px !important;
+            }
+            .grid-cols-2 > div {
+              width: 50% !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              min-height: 110px !important;
+              text-align: center !important;
+              padding: 0 8px !important;
+            }
             .gap-2 { gap: 8px !important; }
             .gap-3 { gap: 12px !important; }
             .gap-4 { gap: 16px !important; }
             .gap-12 { gap: 48px !important; }
 
+            .space-y-1 > * + * { margin-top: 3px !important; }
+            .space-y-1\\.5 > * + * { margin-top: 4px !important; }
+            .space-y-2 > * + * { margin-top: 6px !important; }
+            .space-y-2\\.5 > * + * { margin-top: 8px !important; }
+            .space-x-1 > * + * { margin-left: 4px !important; }
+            .space-x-2 > * + * { margin-left: 8px !important; }
+            .space-x-4 > * + * { margin-left: 14px !important; }
+            .space-x-5 > * + * { margin-left: 18px !important; }
+            .space-x-6 > * + * { margin-left: 20px !important; }
+            .space-x-12 > * + * { margin-left: 36px !important; }
+
             /* Bảng biểu chuẩn */
             table {
               width: 100% !important;
               border-collapse: collapse !important;
-              margin-bottom: 8px !important;
+              margin-bottom: 6px !important;
             }
             th, td {
               border: 1px solid #475569 !important;
-              padding: 5px 7px !important;
-              font-size: 10pt !important;
+              padding: 4px 6px !important;
+              font-size: 9.5pt !important;
             }
             th {
               background-color: #174378 !important;
@@ -257,7 +297,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
 
             /* Hình ảnh */
             img {
-              max-height: 180px !important;
+              max-height: 160px !important;
               max-width: 100% !important;
               object-fit: contain !important;
               margin: 0 auto !important;
