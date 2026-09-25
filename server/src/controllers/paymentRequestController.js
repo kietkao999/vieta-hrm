@@ -41,6 +41,8 @@ export const createPurchaseRequest = async (req, res) => {
   try {
     const {
       department,
+      approver_department,
+      target_approver_id,
       purpose,
       priority = 'BINHTHUONG',
       items = [],
@@ -56,6 +58,7 @@ export const createPurchaseRequest = async (req, res) => {
     }
 
     const dept = (department && department.trim()) || req.user.departmentName || 'Chung';
+    const approverDept = (approver_department && approver_department.trim()) || dept;
     const totalEstimated = items.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
 
     if (totalEstimated <= 0) {
@@ -67,14 +70,16 @@ export const createPurchaseRequest = async (req, res) => {
 
     const insertResult = await query.run(
       `INSERT INTO purchase_requests (
-        code, user_id, employee_id, department, purpose, priority,
-        total_estimated_amount, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING_HOD', ?, ?)`,
+        code, user_id, employee_id, department, approver_department, target_approver_id,
+        purpose, priority, total_estimated_amount, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_HOD', ?, ?)`,
       [
         code,
         req.user.userId,
         req.user.employeeId || null,
         dept,
+        approverDept,
+        target_approver_id || null,
         purpose.trim(),
         priority,
         totalEstimated,
@@ -128,7 +133,7 @@ export const createPurchaseRequest = async (req, res) => {
       req.user.username,
       'Tạo Giấy đề nghị mua dịch vụ (Mẫu 01/ĐN-DV)',
       ip,
-      `Mã phiếu: ${code} - Dự toán: ${totalEstimated.toLocaleString('vi-VN')} VNĐ`
+      `Mã phiếu: ${code} - Gửi duyệt: ${approverDept} - Dự toán: ${totalEstimated.toLocaleString('vi-VN')} VNĐ`
     );
 
     const created = await getPurchaseRequestDetail(purchaseId);
@@ -166,11 +171,11 @@ export const getPurchaseRequests = async (req, res) => {
       params.push(userId);
     } else if (userRole === 'MANAGER' && tab !== 'all') {
       if (tab === 'to_approve') {
-        whereConditions.push("(pr.status = 'PENDING_HOD' AND (pr.department = ? OR pr.department = ''))");
-        params.push(userDept);
+        whereConditions.push("(pr.status = 'PENDING_HOD' AND (pr.approver_department = ? OR (pr.approver_department IS NULL AND pr.department = ?) OR pr.target_approver_id = ?))");
+        params.push(userDept, userDept, userId);
       } else {
-        whereConditions.push('(pr.user_id = ? OR pr.department = ?)');
-        params.push(userId, userDept);
+        whereConditions.push('(pr.user_id = ? OR pr.department = ? OR pr.approver_department = ? OR pr.target_approver_id = ?)');
+        params.push(userId, userDept, userDept, userId);
       }
     }
 
@@ -180,8 +185,8 @@ export const getPurchaseRequests = async (req, res) => {
     }
 
     if (department && department !== 'ALL') {
-      whereConditions.push('pr.department = ?');
-      params.push(department);
+      whereConditions.push('(pr.department = ? OR pr.approver_department = ?)');
+      params.push(department, department);
     }
 
     if (priority && priority !== 'ALL') {
@@ -272,8 +277,16 @@ export const approvePurchaseRequest = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phiếu đề nghị mua dịch vụ.' });
     }
 
-    if (userRole !== 'ADMIN' && (userRole !== 'MANAGER' || request.department !== userDept)) {
-      return res.status(403).json({ message: 'Chỉ Trưởng phòng ban quản lý hoặc Ban Giám Đốc mới có quyền duyệt chủ trương mua dịch vụ.' });
+    // Kiểm tra quyền duyệt: Admin hoặc Trưởng phòng nhận duyệt hoặc Trưởng phòng ban người tạo
+    const targetDept = request.approver_department || request.department;
+    const isAuthorized =
+      userRole === 'ADMIN' ||
+      (userRole === 'MANAGER' && (userDept === targetDept || userDept === request.department || userId === request.target_approver_id));
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        message: `Chỉ Trưởng phòng ban được chỉ định duyệt (${targetDept}) hoặc Ban Giám Đốc mới có quyền duyệt phiếu này.`
+      });
     }
 
     const nowIso = new Date().toISOString();
@@ -393,6 +406,8 @@ export const createPaymentRequest = async (req, res) => {
     const {
       purchase_request_id = null,
       department,
+      approver_department,
+      target_approver_id,
       payment_content,
       total_amount,
       payment_method = 'CHUYEN_KHOAN',
@@ -416,6 +431,7 @@ export const createPaymentRequest = async (req, res) => {
     }
 
     const dept = (department && department.trim()) || req.user.departmentName || 'Chung';
+    const approverDept = (approver_department && approver_department.trim()) || dept;
     const code = await generateCode('PAYMENT');
     const amountInWords = numberToVietnameseWords(amountNum);
     const nowIso = new Date().toISOString();
@@ -423,16 +439,18 @@ export const createPaymentRequest = async (req, res) => {
     const insertResult = await query.run(
       `INSERT INTO payment_requests (
         code, purchase_request_id, user_id, employee_id, department,
-        payment_content, total_amount, amount_in_words, payment_method,
-        bank_name, bank_account_number, bank_account_holder, status,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_HOD', ?, ?)`,
+        approver_department, target_approver_id, payment_content, total_amount,
+        amount_in_words, payment_method, bank_name, bank_account_number,
+        bank_account_holder, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_HOD', ?, ?)`,
       [
         code,
         purchase_request_id || null,
         req.user.userId,
         req.user.employeeId || null,
         dept,
+        approverDept,
+        target_approver_id || null,
         payment_content.trim(),
         amountNum,
         amountInWords,
@@ -472,7 +490,7 @@ export const createPaymentRequest = async (req, res) => {
       req.user.username,
       'Tạo Giấy đề nghị thanh toán (Mẫu 02/ĐNTT-VA)',
       ip,
-      `Mã phiếu: ${code} - Số tiền: ${amountNum.toLocaleString('vi-VN')} VNĐ`
+      `Mã phiếu: ${code} - Gửi duyệt: ${approverDept} - Số tiền: ${amountNum.toLocaleString('vi-VN')} VNĐ`
     );
 
     const created = await getPaymentRequestDetail(paymentId);
@@ -509,11 +527,11 @@ export const getPaymentRequests = async (req, res) => {
       params.push(userId);
     } else if (userRole === 'MANAGER' && tab !== 'all') {
       if (tab === 'to_approve') {
-        whereConditions.push("(pay.status = 'PENDING_HOD' AND (pay.department = ? OR pay.department = ''))");
-        params.push(userDept);
+        whereConditions.push("(pay.status = 'PENDING_HOD' AND (pay.approver_department = ? OR (pay.approver_department IS NULL AND pay.department = ?) OR pay.target_approver_id = ?))");
+        params.push(userDept, userDept, userId);
       } else {
-        whereConditions.push('(pay.user_id = ? OR pay.department = ?)');
-        params.push(userId, userDept);
+        whereConditions.push('(pay.user_id = ? OR pay.department = ? OR pay.approver_department = ? OR pay.target_approver_id = ?)');
+        params.push(userId, userDept, userDept, userId);
       }
     }
 
@@ -523,8 +541,8 @@ export const getPaymentRequests = async (req, res) => {
     }
 
     if (department && department !== 'ALL') {
-      whereConditions.push('pay.department = ?');
-      params.push(department);
+      whereConditions.push('(pay.department = ? OR pay.approver_department = ?)');
+      params.push(department, department);
     }
 
     if (search && search.trim()) {
@@ -628,21 +646,27 @@ export const approvePaymentRequest = async (req, res) => {
     let updateFields = [];
     let updateParams = [];
 
-    if (isPayment || request.status === 'PENDING_BOD' && userRole === 'ADMIN' && req.body.directPay) {
+    const targetDept = request.approver_department || request.department;
+
+    if (isPayment || (request.status === 'PENDING_BOD' && userRole === 'ADMIN' && req.body.directPay)) {
       nextStatus = 'PAID';
       updateFields.push('status = ?', 'paid_by = ?', 'paid_at = ?', 'payment_proof = ?', 'updated_at = ?');
       updateParams.push(nextStatus, userId, nowIso, paymentProof || '', nowIso);
     } else if (request.status === 'PENDING_HOD') {
       // Cần Trưởng phòng hoặc ADMIN
-      if (userRole !== 'ADMIN' && (userRole !== 'MANAGER' || request.department !== userDept)) {
-        return res.status(403).json({ message: 'Chỉ Trưởng phòng ban hoặc Ban Quản trị mới có quyền duyệt cấp 1.' });
+      const isAuthorized =
+        userRole === 'ADMIN' ||
+        (userRole === 'MANAGER' && (userDept === targetDept || userDept === request.department || userId === request.target_approver_id));
+
+      if (!isAuthorized) {
+        return res.status(403).json({ message: `Chỉ Trưởng phòng ban được chỉ định duyệt (${targetDept}) hoặc Ban Giám Đốc mới có quyền duyệt cấp 1.` });
       }
       nextStatus = 'PENDING_ACC';
       updateFields.push('status = ?', 'hod_approved_by = ?', 'hod_approved_at = ?', 'hod_comment = ?', 'updated_at = ?');
       updateParams.push(nextStatus, userId, nowIso, comment.trim(), nowIso);
     } else if (request.status === 'PENDING_ACC') {
       // Cần Kế toán hoặc ADMIN
-      if (!['ADMIN', 'HR'].includes(userRole) && userDept !== 'Khối văn phòng') {
+      if (!['ADMIN', 'HR'].includes(userRole) && userDept !== 'Khối văn phòng' && userDept !== 'Phòng Kế toán') {
         return res.status(403).json({ message: 'Chỉ Phòng Kế toán hoặc Ban Quản trị mới có quyền thẩm định tài chính cấp 2.' });
       }
       nextStatus = 'PENDING_BOD';
@@ -782,9 +806,9 @@ export const getFullStats = async (req, res) => {
       payFilter = 'WHERE user_id = ?';
       params = [userId];
     } else if (userRole === 'MANAGER') {
-      pFilter = 'WHERE (user_id = ? OR department = ?)';
-      payFilter = 'WHERE (user_id = ? OR department = ?)';
-      params = [userId, userDept];
+      pFilter = 'WHERE (user_id = ? OR department = ? OR approver_department = ? OR target_approver_id = ?)';
+      payFilter = 'WHERE (user_id = ? OR department = ? OR approver_department = ? OR target_approver_id = ?)';
+      params = [userId, userDept, userDept, userId];
     }
 
     const purchaseStats = await query.get(

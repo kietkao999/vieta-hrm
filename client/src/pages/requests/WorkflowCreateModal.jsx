@@ -37,6 +37,20 @@ const BANK_SUGGESTIONS = [
   'Agribank'
 ];
 
+export const APPROVER_DEPARTMENTS = [
+  { id: 'Phòng Hành chính Nhân sự', label: '👔 Phòng Hành chính Nhân sự (Trưởng phòng: Huỳnh Thị Trúc Xinh)' },
+  { id: 'Phòng Kế toán', label: '💰 Phòng Kế toán - Tài chính (Trưởng phòng: Nguyễn Quốc Hùng)' },
+  { id: 'Khối văn phòng', label: '🏢 Khối Văn phòng (Ban Điều Hành)' },
+  { id: 'Phòng kinh doanh', label: '🏬 Phòng Kinh doanh (Trưởng phòng: Phạm Tấn Hưng)' },
+  { id: 'Phòng Marketing', label: '📢 Phòng Marketing' },
+  { id: 'Xưởng sản xuất nệm', label: '🏭 Xưởng sản xuất nệm (Quản lý: Trần Minh Lý)' },
+  { id: 'Xưởng sản xuất gối', label: '🏭 Xưởng sản xuất gối (Quản lý: Nguyễn Thái Cần)' },
+  { id: 'Kho Cần Thơ', label: '📦 Kho Cần Thơ (Quản lý: Nguyễn Thị Thu Tâm)' },
+  { id: 'Kho Mỹ Tho', label: '📦 Kho Mỹ Tho (Quản lý: Dương Thị Tuyết Hường)' },
+  { id: 'Phòng R&D', label: '🔬 Phòng R&D (Trưởng phòng: Lê Huy Hoàng)' },
+  { id: 'Ban giám đốc', label: '👑 Ban Giám Đốc (Phó Giám đốc: Võ Minh Cường)' }
+];
+
 const WorkflowCreateModal = ({
   isOpen,
   onClose,
@@ -52,6 +66,7 @@ const WorkflowCreateModal = ({
 
   // Common fields
   const [department, setDepartment] = useState(user?.departmentName || 'Khối văn phòng');
+  const [approverDepartment, setApproverDepartment] = useState(user?.departmentName || 'Khối văn phòng');
   const [priority, setPriority] = useState('BINHTHUONG');
 
   // Fields for PHẦN 1: Mua dịch vụ
@@ -168,6 +183,7 @@ const WorkflowCreateModal = ({
 
         const payload = {
           department,
+          approver_department: approverDepartment,
           purpose: purpose.trim(),
           priority,
           items: validItems,
@@ -202,6 +218,7 @@ const WorkflowCreateModal = ({
         const payload = {
           purchase_request_id: sourcePurchaseRequest ? sourcePurchaseRequest.id : null,
           department,
+          approver_department: approverDepartment,
           payment_content: paymentContent.trim(),
           total_amount: finalPaymentAmount,
           payment_method: paymentMethod,
@@ -328,21 +345,11 @@ const WorkflowCreateModal = ({
           {mode === 'PURCHASE' && activeStepTab === 1 && (
             <div className="space-y-4">
               {/* Thông tin chung */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div>
                   <label className="block text-slate-500 font-medium mb-1">Người đề nghị:</label>
                   <p className="font-bold text-slate-800 text-sm">{user?.fullname || user?.username}</p>
-                  <span className="text-[11px] text-slate-500 font-mono">Mã NV: {user?.employeeCode || 'N/A'}</span>
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 font-medium mb-1">Phòng ban / Bộ phận:</label>
-                  <input
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                  />
+                  <span className="text-[11px] text-slate-500 font-mono">Mã NV: {user?.employeeCode || 'N/A'} • Bộ phận: {department}</span>
                 </div>
 
                 <div>
@@ -365,6 +372,28 @@ const WorkflowCreateModal = ({
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="md:col-span-2 border-t border-slate-200 pt-3">
+                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                    <span>Gửi về Trưởng phòng ban tiếp nhận duyệt:</span>
+                    <span className="text-[10px] text-brand-600 font-normal">Có thể chuyển tiếp cho Trưởng bộ phận khác duyệt</span>
+                  </label>
+                  <select
+                    value={approverDepartment}
+                    onChange={(e) => setApproverDepartment(e.target.value)}
+                    className="w-full bg-white border border-brand-300 rounded-lg px-3 py-2 text-xs text-brand-950 font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none shadow-xs"
+                  >
+                    <option value={department}>★ Trưởng bộ phận của tôi ({department})</option>
+                    {APPROVER_DEPARTMENTS.filter(d => d.id !== department).map((d) => (
+                      <option key={d.id} value={d.id}>{d.label}</option>
+                    ))}
+                  </select>
+                  {approverDepartment !== department && (
+                    <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-2">
+                      ℹ️ Phiếu này sẽ được gửi trực tiếp đến <strong>{approverDepartment}</strong> để Trưởng phòng tiếp nhận thẩm tra và phê duyệt.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -542,6 +571,39 @@ const WorkflowCreateModal = ({
           {/* ========================================================================= */}
           {mode === 'PAYMENT' && activeStepTab === 3 && (
             <div className="space-y-4">
+              {/* Thông tin người đề nghị & Phòng ban duyệt */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <label className="block text-slate-500 font-medium mb-1">Người đề nghị thanh toán:</label>
+                  <p className="font-bold text-slate-800 text-sm">{user?.fullname || user?.username}</p>
+                  <span className="text-[11px] text-slate-500 font-mono">Mã NV: {user?.employeeCode || 'N/A'} • Bộ phận: {department}</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1 flex items-center justify-between">
+                    <span>Gửi về Trưởng phòng ban tiếp nhận duyệt:</span>
+                  </label>
+                  <select
+                    value={approverDepartment}
+                    onChange={(e) => setApproverDepartment(e.target.value)}
+                    className="w-full bg-white border border-brand-300 rounded-lg px-3 py-2 text-xs text-brand-950 font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none shadow-xs"
+                  >
+                    <option value={department}>★ Trưởng bộ phận của tôi ({department})</option>
+                    {APPROVER_DEPARTMENTS.filter(d => d.id !== department).map((d) => (
+                      <option key={d.id} value={d.id}>{d.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {approverDepartment !== department && (
+                  <div className="md:col-span-2">
+                    <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                      ℹ️ Phiếu thanh toán này sẽ được gửi trực tiếp đến <strong>{approverDepartment}</strong> để Trưởng phòng tiếp nhận kiểm tra và ký duyệt cấp 1.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Nội dung thanh toán */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">

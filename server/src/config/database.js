@@ -644,6 +644,8 @@ export const initDatabase = async () => {
         user_id INTEGER NOT NULL,
         employee_id INTEGER,
         department TEXT NOT NULL,
+        approver_department TEXT,
+        target_approver_id INTEGER,
         purpose TEXT NOT NULL,
         priority TEXT DEFAULT 'BINHTHUONG',
         total_estimated_amount REAL DEFAULT 0,
@@ -657,7 +659,8 @@ export const initDatabase = async () => {
         created_at TEXT,
         updated_at TEXT,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL,
+        FOREIGN KEY (target_approver_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -684,6 +687,8 @@ export const initDatabase = async () => {
         user_id INTEGER NOT NULL,
         employee_id INTEGER,
         department TEXT NOT NULL,
+        approver_department TEXT,
+        target_approver_id INTEGER,
         payment_content TEXT NOT NULL,
         total_amount REAL DEFAULT 0,
         amount_in_words TEXT,
@@ -711,7 +716,8 @@ export const initDatabase = async () => {
         updated_at TEXT,
         FOREIGN KEY (purchase_request_id) REFERENCES purchase_requests(id) ON DELETE SET NULL,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL,
+        FOREIGN KEY (target_approver_id) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
@@ -730,6 +736,12 @@ export const initDatabase = async () => {
         FOREIGN KEY (purchase_request_id) REFERENCES purchase_requests(id) ON DELETE CASCADE
       )
     `);
+
+    // Migration for approver_department & target_approver_id if existing tables
+    try { await query.run('ALTER TABLE purchase_requests ADD COLUMN approver_department TEXT'); } catch (e) {}
+    try { await query.run('ALTER TABLE purchase_requests ADD COLUMN target_approver_id INTEGER'); } catch (e) {}
+    try { await query.run('ALTER TABLE payment_requests ADD COLUMN approver_department TEXT'); } catch (e) {}
+    try { await query.run('ALTER TABLE payment_requests ADD COLUMN target_approver_id INTEGER'); } catch (e) {}
 
     console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ (bao gồm quy trình 3 phần: Mua dịch vụ, Chứng từ & Thanh toán).');
 

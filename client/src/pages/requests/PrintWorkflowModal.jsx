@@ -135,7 +135,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             <br />
             <span className="ml-14">Phòng Tài chính - Kế toán</span>
             <br />
-            <span className="ml-14">Trưởng bộ phận {request.department}</span>
+            <span className="ml-14">Trưởng bộ phận tiếp nhận duyệt ({request.approver_department || request.department})</span>
           </div>
 
           {/* Thông tin người đề nghị */}
@@ -302,7 +302,12 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               {/* 2. Trưởng bộ phận */}
               <div className="flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold uppercase font-sans text-[11px]">TRƯỞNG BỘ PHẬN</p>
+                  <p className="font-bold uppercase font-sans text-[11px]">
+                    TRƯỞNG BỘ PHẬN
+                    {request.approver_department && request.approver_department !== request.department && (
+                      <span className="block text-[9px] font-normal lowercase italic text-slate-600">({request.approver_department})</span>
+                    )}
+                  </p>
                   <p className="italic text-[10px] text-slate-500">(Ký, duyệt)</p>
                 </div>
                 <div className="my-auto py-2">

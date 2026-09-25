@@ -464,6 +464,11 @@ const PaymentRequestPage = () => {
                       <td className="p-3.5">
                         <div className="font-semibold text-slate-800">{req.creator_name || req.creator_username}</div>
                         <div className="text-[11px] text-slate-500">{req.department}</div>
+                        {req.approver_department && req.approver_department !== req.department && (
+                          <div className="text-[10px] text-brand-700 bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded mt-1 inline-block font-semibold">
+                            ➜ Gửi duyệt: {req.approver_department}
+                          </div>
+                        )}
                       </td>
 
                       <td className="p-3.5">
@@ -604,6 +609,11 @@ const PaymentRequestPage = () => {
                       <td className="p-3.5">
                         <div className="font-semibold text-slate-800">{req.creator_name || req.creator_username}</div>
                         <div className="text-[11px] text-slate-500">{req.department}</div>
+                        {req.approver_department && req.approver_department !== req.department && (
+                          <div className="text-[10px] text-brand-700 bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded mt-1 inline-block font-semibold">
+                            ➜ Gửi duyệt: {req.approver_department}
+                          </div>
+                        )}
                       </td>
 
                       <td className="p-3.5">

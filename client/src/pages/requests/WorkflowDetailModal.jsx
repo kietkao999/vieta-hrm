@@ -68,7 +68,10 @@ const WorkflowDetailModal = ({
   // Xác định quyền duyệt
   const canApproveHOD =
     request.status === 'PENDING_HOD' &&
-    (user?.roleName === 'ADMIN' || (user?.roleName === 'MANAGER' && user?.departmentName === request.department));
+    (user?.roleName === 'ADMIN' ||
+      (user?.roleName === 'MANAGER' &&
+        ((request.approver_department && user?.departmentName === request.approver_department) ||
+          user?.departmentName === request.department)));
 
   const canApproveAccountant =
     !isPurchase &&
@@ -228,10 +231,16 @@ const WorkflowDetailModal = ({
           {(activeTab === 'PURCHASE_INFO' || activeTab === 'PAYMENT_INFO') && (
             <div className="space-y-4">
               {/* Thông tin đầu phiếu */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div>
                   <span className="text-slate-500 font-medium">Bộ phận đề xuất:</span>
                   <p className="font-bold text-slate-800 text-sm mt-0.5">{request.department}</p>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium">Bộ phận tiếp nhận duyệt:</span>
+                  <p className="font-bold text-brand-900 text-sm mt-0.5">
+                    {request.approver_department || request.department}
+                  </p>
                 </div>
                 <div>
                   <span className="text-slate-500 font-medium">Mức độ ưu tiên:</span>
@@ -249,7 +258,7 @@ const WorkflowDetailModal = ({
                   </div>
                 </div>
 
-                <div className="md:col-span-3 border-t border-slate-200 pt-3">
+                <div className="md:col-span-4 border-t border-slate-200 pt-3">
                   <span className="text-slate-500 font-medium">Lý do / Nội dung chi tiết:</span>
                   <p className="font-medium text-slate-900 mt-1 bg-white p-3 rounded-lg border border-slate-200 leading-relaxed">
                     {isPurchase ? request.purpose : request.payment_content}
