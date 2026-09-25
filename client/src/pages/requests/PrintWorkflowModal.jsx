@@ -668,18 +668,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               {/* 4 Chữ Ký Chuẩn Dùng Chung */}
               <div className="mt-8 pt-2">
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[11px]">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
+                      <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-2"></div>
-                    <p className="font-mono text-slate-400 text-[11px]">.........................</p>
+                    <div className="h-14"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[11px]">
+                      <p className="font-bold uppercase text-[11px] text-slate-900">
                         {nfc('TRƯỞNG BỘ PHẬN')}
                         {mainReq.approver_department && mainReq.approver_department !== mainReq.department && (
                           <span className="block text-[9px] font-normal lowercase italic text-slate-600">({nfc(mainReq.approver_department)})</span>
@@ -687,7 +686,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                       </p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-1">
+                    <div className="min-h-[48px] flex items-center justify-center">
                       {effectivePurchase?.hod_approved_by || mainReq.hod_approved_by ? (
                         <div className="inline-block p-1 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -697,18 +696,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.hod_approved_at || mainReq.hod_approved_at)}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-300 italic text-[10px]">{nfc('(Chưa ký)')}</span>
+                        <div className="h-12"></div>
                       )}
                     </div>
-                    <p className="font-mono text-slate-400 text-[11px]">.........................</p>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[11px]">{nfc('BỘ PHẬN KẾ TOÁN / THU MUA')}</p>
+                      <p className="font-bold uppercase text-[11px] text-slate-900">{nfc('BỘ PHẬN KẾ TOÁN / THU MUA')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-1">
+                    <div className="min-h-[48px] flex items-center justify-center">
                       {effectivePurchase?.acc_approved_by || mainReq.acc_approved_by ? (
                         <div className="inline-block p-1 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -718,18 +716,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.acc_approved_at || mainReq.acc_approved_at)}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-300 italic text-[10px]">{nfc('(Chưa ký)')}</span>
+                        <div className="h-12"></div>
                       )}
                     </div>
-                    <p className="font-mono text-slate-400 text-[11px]">.........................</p>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
                       <p className="font-bold uppercase text-[11px] text-brand-900">{nfc('BAN GIÁM ĐỐC')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký tên & đóng dấu)')}</p>
                     </div>
-                    <div className="my-auto py-1">
+                    <div className="min-h-[48px] flex items-center justify-center">
                       {effectivePurchase?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'APPROVED' ? (
                         <div className="inline-block p-1 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -739,10 +736,9 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600">{formatDateTime(effectivePurchase?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at)}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-300 italic text-[10px]">{nfc('(Chờ phê duyệt)')}</span>
+                        <div className="h-12"></div>
                       )}
                     </div>
-                    <p className="font-mono text-slate-400 text-[11px]">.........................</p>
                   </div>
                 </div>
               </div>
@@ -870,22 +866,20 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               {/* 2 Chữ Ký Trang 2 */}
               <div className="mt-8 pt-4">
                 <div className="grid grid-cols-2 gap-12 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[12px]">{nfc('NGƯỜI LẬP HỒ SƠ')}</p>
+                      <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('NGƯỜI LẬP HỒ SƠ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-2"></div>
-                    <p className="font-mono text-slate-400 text-[12px]">.........................</p>
+                    <div className="h-14"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[120px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[12px]">{nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</p>
+                      <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-2"></div>
-                    <p className="font-mono text-slate-400 text-[12px]">.........................</p>
+                    <div className="h-14"></div>
                   </div>
                 </div>
               </div>
@@ -1035,21 +1029,20 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               {/* 3 Chữ Ký Chuẩn Dùng Chung */}
               <div className="mt-8 pt-4">
                 <div className="grid grid-cols-3 gap-4 text-center text-xs">
-                  <div className="flex flex-col justify-between min-h-[130px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[12px]">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
+                      <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-2"></div>
-                    <p className="font-mono text-slate-400 text-[12px]">.........................</p>
+                    <div className="h-14"></div>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[130px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
-                      <p className="font-bold uppercase text-[12px]">{nfc('KẾ TOÁN TRƯỞNG')}</p>
+                      <p className="font-bold uppercase text-[12px] text-slate-900">{nfc('KẾ TOÁN TRƯỞNG')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký & ghi rõ họ tên)')}</p>
                     </div>
-                    <div className="my-auto py-2">
+                    <div className="min-h-[48px] flex items-center justify-center">
                       {effectivePayment?.acc_approved_by || mainReq.acc_approved_by ? (
                         <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -1059,18 +1052,17 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(effectivePayment?.acc_approved_at || mainReq.acc_approved_at)}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-300 italic text-[10px]">{nfc('(Chưa ký)')}</span>
+                        <div className="h-12"></div>
                       )}
                     </div>
-                    <p className="font-mono text-slate-400 text-[12px]">.........................</p>
                   </div>
 
-                  <div className="flex flex-col justify-between min-h-[130px]">
+                  <div className="flex flex-col justify-between min-h-[110px]">
                     <div>
                       <p className="font-bold uppercase text-[12px] text-brand-900">{nfc('BAN GIÁM ĐỐC')}</p>
                       <p className="italic text-[10px] text-slate-500">{nfc('(Ký tên & đóng dấu)')}</p>
                     </div>
-                    <div className="my-auto py-2">
+                    <div className="min-h-[48px] flex items-center justify-center">
                       {effectivePayment?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'PAID' ? (
                         <div className="inline-block p-1.5 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
                           <div className="flex items-center justify-center space-x-1 font-bold">
@@ -1080,10 +1072,9 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                           <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(effectivePayment?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at)}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-300 italic text-[10px]">{nfc('(Chờ phê duyệt)')}</span>
+                        <div className="h-12"></div>
                       )}
                     </div>
-                    <p className="font-mono text-slate-400 text-[12px]">.........................</p>
                   </div>
                 </div>
               </div>
