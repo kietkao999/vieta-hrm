@@ -34,6 +34,41 @@ const getAttachmentUrl = (attOrUrl) => {
   return `${origin}${cleanUrl}`;
 };
 
+const convertImageToBase64 = async (url) => {
+  if (!url) return '';
+  if (url.startsWith('data:image/')) return url;
+  try {
+    const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) throw new Error('Fetch failed');
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result || url);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width || 800;
+          canvas.height = img.naturalHeight || img.height || 600;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        } catch {
+          resolve(url);
+        }
+      };
+      img.onerror = () => resolve(url);
+      img.src = url;
+    });
+  }
+};
+
 const isImageAttachment = (att) => {
   if (!att) return false;
   const url = att.file_url || att.url || att.path || att.file_path || '';
@@ -352,7 +387,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   // =========================================================================
   // 2. TẢI FILE WORD (.DOC) CHUẨN ĐỊNH DẠNG 100% NHƯ XEM TRƯỚC VÀ IN
   // =========================================================================
-  const handleDownloadWord = () => {
+  const handleDownloadWord = async () => {
     const fileName = `${mainReq.code}_${printMode}.doc`;
 
     const getApprovalHtml = (approved, label, dateTime) => {
@@ -366,6 +401,19 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
       }
       return `<div style="height: 45pt;"></div>`;
     };
+
+    // Chuẩn bị ảnh Base64 nhúng trực tiếp vào Word (tránh lỗi bảo mật Protected View của Word không tải ảnh URL ngoài)
+    const rawImageAttachments = allAttachments.filter(isImageAttachment);
+    const imageAttachments = await Promise.all(
+      rawImageAttachments.map(async (att) => {
+        const url = getAttachmentUrl(att);
+        const base64Url = await convertImageToBase64(url);
+        return {
+          ...att,
+          displaySrc: base64Url || url
+        };
+      })
+    );
 
     // --- HTML TRANG 1 (MẪU 01) ---
     const page1Word = `
@@ -499,7 +547,6 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     `;
 
     // --- HTML TRANG 2 (BẢNG KÊ CHỨNG TỪ) ---
-    const imageAttachments = allAttachments.filter(isImageAttachment);
     const page2Word = `
       <div class="word-page">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 4pt; border: none;">
@@ -580,13 +627,13 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               <tr>
                 ${imageAttachments.length === 1 ? `
                   <td style="width: 100%; text-align: center; vertical-align: middle; padding: 4pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                    <img src="${getAttachmentUrl(imageAttachments[0])}" alt="${imageAttachments[0].file_name || 'Ảnh'}" width="480" height="270" style="width: 480px; height: 270px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                    <img src="${imageAttachments[0].displaySrc}" alt="${imageAttachments[0].file_name || 'Ảnh'}" width="480" height="270" style="width: 480px; height: 270px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
                     <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imageAttachments[0].file_name || 'Ảnh đính kèm')}</span>
                   </td>
                 ` : `
                   ${imageAttachments.slice(0, 2).map((imgAtt) => `
                     <td style="width: 50%; text-align: center; vertical-align: middle; padding: 2pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                      <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" width="235" height="140" style="width: 235px; height: 140px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                      <img src="${imgAtt.displaySrc}" alt="${imgAtt.file_name || 'Ảnh'}" width="235" height="140" style="width: 235px; height: 140px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
                       <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
                     </td>
                   `).join('')}
