@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Printer, CheckCircle, ShieldCheck, Layers, FileText, Receipt, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { X, Printer, CheckCircle, ShieldCheck, Layers, FileText, Receipt, DollarSign, Download, FileDown } from 'lucide-react';
 import api from '../../services/api';
 import { numberToVietnameseWords } from '../../utils/numberToVietnameseWords';
 
@@ -102,17 +102,191 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   const showPage2 = printMode === 'COMBO_3_PAGES' || printMode === 'ATTACHMENTS_ONLY';
   const showPage3 = printMode === 'COMBO_3_PAGES' || printMode === 'PAYMENT_ONLY';
 
+  // =========================================================================
+  // 1. IN TRỰC TIẾP QUA IFRAME CHUYÊN DỤNG (KHẮC PHỤC TRIỆT ĐỂ LỖI TRANG TRẮNG)
+  // =========================================================================
+  const handleDirectPrint = () => {
+    const printableArea = document.getElementById('printable-workflow-area');
+    if (!printableArea) {
+      window.print();
+      return;
+    }
+
+    let iframe = document.getElementById('print-dedicated-iframe');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-dedicated-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+    }
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${nfc(mainReq.code)} - Biểu Mẫu A4 Việt Á</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 8mm 10mm 8mm 10mm;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            body {
+              font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+              font-size: 11pt;
+              color: #000;
+              background: #fff;
+              margin: 0;
+              padding: 0;
+              line-height: 1.35;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid #475569;
+              padding: 5px 7px;
+            }
+            th {
+              background-color: #174378 !important;
+              color: #ffffff !important;
+              font-weight: bold;
+              text-align: center;
+            }
+            .page-break {
+              page-break-after: always;
+              break-after: page;
+            }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-left { text-align: left; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .italic { font-style: italic; }
+            .uppercase { text-transform: uppercase; }
+            img { max-width: 100%; height: auto; }
+          </style>
+        </head>
+        <body>
+          ${printableArea.innerHTML}
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 250);
+  };
+
+  // =========================================================================
+  // 2. TẢI FILE WORD (.DOC) ĐỊNH DẠNG CHUẨN MICROSOFT WORD
+  // =========================================================================
+  const handleDownloadWord = () => {
+    const printableArea = document.getElementById('printable-workflow-area');
+    if (!printableArea) return;
+
+    const fileName = `${mainReq.code}_${printMode}.doc`;
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>${fileName}</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page {
+              size: 21cm 29.7cm;
+              margin: 1.5cm 1.5cm 1.5cm 1.5cm;
+              mso-page-orientation: portrait;
+            }
+            body {
+              font-family: 'Times New Roman', 'Segoe UI', Arial;
+              font-size: 11pt;
+              color: #000000;
+              line-height: 1.35;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 10pt;
+            }
+            th, td {
+              border: 1px solid #333333;
+              padding: 5pt 7pt;
+              font-size: 10pt;
+            }
+            th {
+              background-color: #174378;
+              color: #ffffff;
+              text-align: center;
+              font-weight: bold;
+            }
+            .page-break {
+              page-break-before: always;
+              mso-break-type: page-break;
+            }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: bold; }
+            .italic { font-style: italic; }
+            .uppercase { text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          ${printableArea.innerHTML}
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', htmlContent], {
+      type: 'application/msword;charset=utf-8'
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="print-modal-overlay fixed inset-0 z-70 flex items-start justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
-      <div className="print-modal-card relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden my-2 sm:my-4 print:my-0 print:shadow-none print:w-full print:max-w-none print:rounded-none">
+    <div className="fixed inset-0 z-70 flex items-start justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto no-print">
+      <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden my-2 sm:my-4">
         
-        {/* Header Toolbar Cố định trên cùng modal */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-3.5 bg-slate-800 text-white no-print sticky top-0 z-30 shadow-md gap-3">
+        {/* Header Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-3.5 bg-slate-800 text-white sticky top-0 z-30 shadow-md gap-3">
           <div className="flex items-center space-x-2">
             <Printer className="w-5 h-5 text-brand-400 flex-shrink-0" />
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-sm">Xem Trước & In Hồ Sơ Chuẩn A4</h3>
+                <h3 className="font-bold text-sm">Xem Trước, In & Tải File Word A4</h3>
                 <span className="text-xs bg-brand-900 text-brand-200 border border-brand-700 px-2 py-0.5 rounded font-mono font-bold">
                   {mainReq.code}
                 </span>
@@ -124,13 +298,25 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Nút Tải Word */}
             <button
-              onClick={() => window.print()}
+              onClick={handleDownloadWord}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors cursor-pointer"
+              title="Tải biểu mẫu về máy tính dưới dạng file Word .doc để mở và chỉnh sửa"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Tải File Word (.doc)</span>
+            </button>
+
+            {/* Nút In Trực Tiếp */}
+            <button
+              onClick={handleDirectPrint}
               className="flex items-center space-x-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>In Ngay (Ctrl + P)</span>
             </button>
+
             <button
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700 transition-colors"
@@ -141,7 +327,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
         </div>
 
         {/* Thanh Chọn Chế Độ In (Tabs) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 p-2 bg-slate-100 border-b border-slate-200 gap-1.5 text-xs no-print">
+        <div className="grid grid-cols-2 sm:grid-cols-4 p-2 bg-slate-100 border-b border-slate-200 gap-1.5 text-xs">
           <button
             type="button"
             onClick={() => setPrintMode('COMBO_3_PAGES')}
@@ -197,8 +383,9 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
 
         {/* Khung Chứa Các Trang In A4 Chuẩn */}
         <div
+          id="printable-workflow-area"
           ref={printRef}
-          className="print-container bg-white text-slate-900 text-[13px] print:text-[11pt] leading-normal"
+          className="bg-white text-slate-900 text-[13px] leading-normal"
           style={{
             fontFamily: "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif"
           }}
@@ -208,7 +395,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage1 && (
             <div
-              className="p-8 sm:p-10 pt-6 sm:pt-8 print:p-6 print:pt-4 bg-white"
+              className="p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
               style={{
                 minHeight: '297mm',
                 pageBreakAfter: (showPage2 || showPage3) ? 'always' : 'auto',
@@ -429,7 +616,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage2 && (
             <div
-              className="p-8 sm:p-10 pt-6 sm:pt-8 print:p-6 print:pt-4 bg-white"
+              className="p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
               style={{
                 minHeight: '297mm',
                 pageBreakAfter: showPage3 ? 'always' : 'auto',
@@ -572,7 +759,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* ========================================================================= */}
           {showPage3 && (
             <div
-              className="p-8 sm:p-10 pt-6 sm:pt-8 print:p-6 print:pt-4 bg-white"
+              className="p-8 sm:p-10 pt-6 sm:pt-8 bg-white"
               style={{
                 minHeight: '297mm'
               }}
