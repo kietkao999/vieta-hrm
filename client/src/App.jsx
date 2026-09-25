@@ -38,6 +38,7 @@ const InnovationPage = lazy(() => import('./pages/innovations/InnovationPage'));
 const ReportPage = lazy(() => import('./pages/reports/ReportPage'));
 const DocumentPage = lazy(() => import('./pages/documents/DocumentPage'));
 const AssetManagementPage = lazy(() => import('./pages/assets/AssetManagementPage'));
+const PaymentRequestPage = lazy(() => import('./pages/requests/PaymentRequestPage'));
 
 // Component Loading mượt mà siêu nhẹ
 const PageLoader = () => (
@@ -101,6 +102,8 @@ function App() {
                   }
                 />
                 <Route path="payroll" element={<PayrollPage />} />
+                <Route path="requests" element={<PaymentRequestPage />} />
+                <Route path="payment-requests" element={<Navigate to="/requests" replace />} />
                 <Route path="seniority" element={<SeniorityPage />} />
 
                 {/* PHÁT TRIỂN Module */}

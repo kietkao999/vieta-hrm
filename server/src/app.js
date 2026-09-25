@@ -22,6 +22,7 @@ import seniorityRoutes from './routes/seniorityRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import assetRoutes from './routes/assetRoutes.js';
+import paymentRequestRoutes from './routes/paymentRequestRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,6 +68,7 @@ app.use('/api/seniority', seniorityRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/requests', paymentRequestRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

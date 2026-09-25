@@ -636,7 +636,102 @@ export const initDatabase = async () => {
       } catch (e) {}
     }
 
-    console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ (bao gồm quản lý tài sản & thiết bị).');
+    // 23. Purchase Requests (Phần 1: Giấy đề nghị mua dịch vụ - Mẫu 01/ĐN-DV)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS purchase_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        user_id INTEGER NOT NULL,
+        employee_id INTEGER,
+        department TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        priority TEXT DEFAULT 'BINHTHUONG',
+        total_estimated_amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'PENDING_HOD',
+        hod_approved_by INTEGER,
+        hod_approved_at TEXT,
+        hod_comment TEXT,
+        rejection_reason TEXT,
+        rejected_by INTEGER,
+        rejected_at TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+      )
+    `);
+
+    // 24. Purchase Request Items (Hạng mục chi tiết Phần 1)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS purchase_request_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        request_id INTEGER NOT NULL,
+        service_name TEXT NOT NULL,
+        supplier_name TEXT,
+        due_date TEXT,
+        amount REAL DEFAULT 0,
+        note TEXT,
+        FOREIGN KEY (request_id) REFERENCES purchase_requests(id) ON DELETE CASCADE
+      )
+    `);
+
+    // 25. Payment Requests (Phần 3: Giấy đề nghị thanh toán - Mẫu 02/ĐNTT-VA)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS payment_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        purchase_request_id INTEGER,
+        user_id INTEGER NOT NULL,
+        employee_id INTEGER,
+        department TEXT NOT NULL,
+        payment_content TEXT NOT NULL,
+        total_amount REAL DEFAULT 0,
+        amount_in_words TEXT,
+        payment_method TEXT DEFAULT 'CHUYEN_KHOAN',
+        bank_name TEXT,
+        bank_account_number TEXT,
+        bank_account_holder TEXT,
+        status TEXT DEFAULT 'PENDING_HOD',
+        hod_approved_by INTEGER,
+        hod_approved_at TEXT,
+        hod_comment TEXT,
+        acc_approved_by INTEGER,
+        acc_approved_at TEXT,
+        acc_comment TEXT,
+        bod_approved_by INTEGER,
+        bod_approved_at TEXT,
+        bod_comment TEXT,
+        paid_by INTEGER,
+        paid_at TEXT,
+        payment_proof TEXT,
+        rejection_reason TEXT,
+        rejected_by INTEGER,
+        rejected_at TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (purchase_request_id) REFERENCES purchase_requests(id) ON DELETE SET NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+      )
+    `);
+
+    // 26. Request Attachments (Phần 2: Hóa đơn & Chứng từ gốc đính kèm)
+    await query.exec(`
+      CREATE TABLE IF NOT EXISTS request_attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_request_id INTEGER,
+        purchase_request_id INTEGER,
+        file_type TEXT NOT NULL DEFAULT 'HOA_DON_GTGT',
+        file_name TEXT NOT NULL,
+        file_url TEXT NOT NULL,
+        file_size TEXT,
+        uploaded_at TEXT,
+        FOREIGN KEY (payment_request_id) REFERENCES payment_requests(id) ON DELETE CASCADE,
+        FOREIGN KEY (purchase_request_id) REFERENCES purchase_requests(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('Đã tạo tất cả bảng cơ sở dữ liệu quan hệ (bao gồm quy trình 3 phần: Mua dịch vụ, Chứng từ & Thanh toán).');
 
     // Tự động nạp dữ liệu cơ bản nếu bảng roles trống
     const roleCount = await query.get('SELECT COUNT(*) as total FROM roles');
@@ -721,6 +816,14 @@ export const initDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_contracts_emp ON contracts(employee_id);
       CREATE INDEX IF NOT EXISTS idx_leave_emp ON leave_requests(employee_id);
       CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_logs(created_at);
+      CREATE INDEX IF NOT EXISTS idx_purchase_req_user ON purchase_requests(user_id);
+      CREATE INDEX IF NOT EXISTS idx_purchase_req_status ON purchase_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_purchase_items_req ON purchase_request_items(request_id);
+      CREATE INDEX IF NOT EXISTS idx_payment_req_user ON payment_requests(user_id);
+      CREATE INDEX IF NOT EXISTS idx_payment_req_status ON payment_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_payment_req_pur_id ON payment_requests(purchase_request_id);
+      CREATE INDEX IF NOT EXISTS idx_req_attach_pay ON request_attachments(payment_request_id);
+      CREATE INDEX IF NOT EXISTS idx_req_attach_pur ON request_attachments(purchase_request_id);
     `);
 
     // Đồng bộ chuẩn hóa tài khoản & bảo mật mật khẩu tự động khi khởi động

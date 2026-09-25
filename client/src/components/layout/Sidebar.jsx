@@ -24,7 +24,8 @@ import {
   Database,
   Lightbulb,
   Package,
-  Network
+  Network,
+  Receipt
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
@@ -76,7 +77,8 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       items: [
         { name: 'Chấm công & Nghỉ phép', path: '/attendance', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
         { name: 'Quản lý KPI', path: '/kpi', icon: TrendingUp, roles: ['ADMIN', 'MANAGER'] },
-        { name: 'Bảng lương', path: '/payroll', icon: DollarSign, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
+        { name: 'Bảng lương', path: '/payroll', icon: DollarSign, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+        { name: 'Đề xuất & Phê duyệt', path: '/requests', icon: Receipt, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] }
       ]
     },
     {
