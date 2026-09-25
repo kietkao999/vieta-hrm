@@ -120,18 +120,21 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
       return;
     }
 
-    let iframe = document.getElementById('print-dedicated-iframe');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'print-dedicated-iframe';
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      document.body.appendChild(iframe);
+    // Xóa iframe cũ nếu có để tránh lưu cache hoặc trạng thái kích thước 0
+    const oldIframe = document.getElementById('print-dedicated-iframe');
+    if (oldIframe) {
+      oldIframe.remove();
     }
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'print-dedicated-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '-99999px';
+    iframe.style.left = '-99999px';
+    iframe.style.width = '800px';
+    iframe.style.height = '1130px';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow.document;
     doc.open();
@@ -163,103 +166,111 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             .a4-page {
               page-break-after: always;
               break-after: page;
-              min-height: 275mm;
+              min-height: 270mm;
               position: relative;
               box-sizing: border-box;
+              width: 100%;
+              margin: 0 auto;
             }
             .a4-page:last-child {
               page-break-after: auto;
               break-after: auto;
             }
             table {
-              width: 100%;
-              border-collapse: collapse;
+              width: 100% !important;
+              border-collapse: collapse !important;
+              table-layout: fixed !important;
             }
             .data-table th, .data-table td {
-              border: 1px solid #333;
-              padding: 4px 6px;
-              font-size: 10.5pt;
+              border: 1px solid #333 !important;
+              padding: 4px 6px !important;
+              font-size: 10pt !important;
             }
             .data-table th {
               background-color: #174378 !important;
               color: #ffffff !important;
-              font-weight: bold;
-              text-align: center;
+              font-weight: bold !important;
+              text-align: center !important;
             }
             .layout-table {
-              width: 100%;
-              border-collapse: collapse;
-              border: none;
+              width: 100% !important;
+              border-collapse: collapse !important;
+              border: none !important;
+              margin-bottom: 6px !important;
             }
             .layout-table td {
-              border: none;
-              padding: 2px 4px;
-              vertical-align: top;
+              border: none !important;
+              padding: 2px 4px !important;
+              vertical-align: top !important;
+              text-align: left;
             }
             .sign-table {
-              width: 100%;
-              border-collapse: collapse;
-              border: none;
-              margin-top: 15px;
+              width: 100% !important;
+              border-collapse: collapse !important;
+              border: none !important;
+              margin-top: 20px !important;
+              table-layout: fixed !important;
             }
             .sign-table td {
-              border: none;
-              text-align: center;
-              vertical-align: top;
-              padding: 0 4px;
+              border: none !important;
+              text-align: center !important;
+              vertical-align: top !important;
+              padding: 0 4px !important;
             }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .text-left { text-align: left; }
-            .font-bold { font-weight: bold; }
-            .font-semibold { font-weight: bold; }
-            .italic { font-style: italic; }
-            .uppercase { text-transform: uppercase; }
+            .text-center { text-align: center !important; }
+            .text-right { text-align: right !important; }
+            .text-left { text-align: left !important; }
+            .font-bold { font-weight: bold !important; }
+            .font-semibold { font-weight: bold !important; }
+            .italic { font-style: italic !important; }
+            .uppercase { text-transform: uppercase !important; }
             .title-main {
-              font-size: 16pt;
-              font-weight: bold;
-              text-transform: uppercase;
-              color: #174378;
-              text-align: center;
-              margin: 10px 0 3px 0;
+              font-size: 16pt !important;
+              font-weight: bold !important;
+              text-transform: uppercase !important;
+              color: #174378 !important;
+              text-align: center !important;
+              margin: 8px 0 2px 0 !important;
             }
             .section-box {
-              border: 1px solid #333;
-              margin-bottom: 10px;
+              border: 1px solid #333 !important;
+              margin-bottom: 10px !important;
+              width: 100% !important;
             }
             .section-header {
               background-color: #174378 !important;
               color: #fff !important;
-              font-weight: bold;
-              text-align: center;
-              padding: 3px 6px;
-              font-size: 10.5pt;
-              text-transform: uppercase;
+              font-weight: bold !important;
+              text-align: center !important;
+              padding: 4px 6px !important;
+              font-size: 10.5pt !important;
+              text-transform: uppercase !important;
             }
             .section-body {
-              padding: 6px 8px;
+              padding: 6px 8px !important;
+              text-align: left !important;
             }
             .stamp-box {
-              display: inline-block;
-              border: 1px solid #059669;
+              display: inline-block !important;
+              border: 1px solid #059669 !important;
               background-color: #ecfdf5 !important;
               color: #065f46 !important;
-              padding: 2px 6px;
-              border-radius: 4px;
-              font-size: 8.5pt;
-              font-weight: bold;
-              margin: 4px 0;
+              padding: 2px 6px !important;
+              border-radius: 4px !important;
+              font-size: 8.5pt !important;
+              font-weight: bold !important;
+              margin: 4px 0 !important;
             }
             .stamp-box-bod {
-              display: inline-block;
-              border: 1px solid #1e40af;
+              display: inline-block !important;
+              border: 1px solid #1e40af !important;
               background-color: #eff6ff !important;
               color: #1e3a8a !important;
-              padding: 2px 6px;
-              border-radius: 4px;
-              font-size: 8.5pt;
-              font-weight: bold;
-              margin: 4px 0;
+              padding: 2px 6px !important;
+              border-radius: 4px !important;
+              font-size: 8.5pt !important;
+              font-weight: bold !important;
+              margin: 4px 0 !important;
             }
             img { max-width: 100%; height: auto; }
           </style>
@@ -274,7 +285,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     setTimeout(() => {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
-    }, 250);
+    }, 350);
   };
 
   // =========================================================================
