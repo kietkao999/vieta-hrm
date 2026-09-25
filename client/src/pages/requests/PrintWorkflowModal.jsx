@@ -334,13 +334,408 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   };
 
   // =========================================================================
-  // 2. TẢI FILE WORD (.DOC)
+  // 2. TẢI FILE WORD (.DOC) CHUẨN ĐỊNH DẠNG 100% NHƯ XEM TRƯỚC VÀ IN
   // =========================================================================
   const handleDownloadWord = () => {
-    const printableArea = document.getElementById('printable-workflow-area');
-    if (!printableArea) return;
-
     const fileName = `${mainReq.code}_${printMode}.doc`;
+
+    const getApprovalHtml = (approved, label, dateTime) => {
+      if (approved) {
+        return `
+          <div style="display: inline-block; padding: 4pt 8pt; background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 4px; color: #065f46; font-size: 9pt; text-align: center;">
+            <b style="color: #059669;">✔ ${label}</b><br/>
+            <span style="font-size: 8pt; color: #475569;">${dateTime || ''}</span>
+          </div>
+        `;
+      }
+      return `<div style="height: 45pt;"></div>`;
+    };
+
+    // --- HTML TRANG 1 (MẪU 01) ---
+    const page1Word = `
+      <div class="word-page">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none;">
+          <tr>
+            <td style="width: 60%; vertical-align: top; border: none; text-align: left; padding: 0;">
+              <b style="font-size: 11pt; color: #0f172a;">${nfc('CÔNG TY TNHH TM SX VIỆT Á')}</b><br/>
+              <span style="font-size: 9pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
+            </td>
+            <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9.5pt; color: #334155;">
+              <span>${nfc('Mẫu số: 01/ĐN-DV')}</span><br/>
+              <span>${nfc(`Số phiếu: ${effectivePurchase ? effectivePurchase.code : mainReq.code}`)}</span>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin: 12pt 0 10pt 0;">
+          <h2 style="font-size: 15pt; font-weight: bold; color: #174378; margin: 0; text-transform: uppercase;">
+            ${nfc('GIẤY ĐỀ NGHỊ MUA DỊCH VỤ')}
+          </h2>
+          <div style="font-style: italic; font-size: 9.5pt; color: #475569; margin-top: 3pt;">
+            ${nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
+          </div>
+          <div style="font-style: italic; font-size: 9.5pt; color: #1e293b; margin-top: 2pt;">
+            ${nfc(`Kính gửi: Ban Giám Đốc – ${effectivePurchase?.approver_department || mainReq.approver_department || mainReq.department || 'Phòng ban liên quan'}`)}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none; font-size: 10pt;">
+          <tr>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Họ và tên người đề nghị: ')}<b>${nfc(effectivePurchase?.creator_name || mainReq.creator_name || mainReq.creator_username)}</b>
+            </td>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Bộ phận / Phòng ban: ')}<b>${nfc(effectivePurchase?.department || mainReq.department)}</b>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Lý do đề nghị: ')}<i style="color: #334155;">${nfc(effectivePurchase?.purpose || mainReq.purpose || mainReq.payment_content)}</i>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Mức độ ưu tiên: ')}
+              &nbsp;&nbsp;[${mainReq.priority === 'KHANCAP' ? ' ✔ ' : ' &nbsp; '}] ${nfc('Khẩn cấp')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${mainReq.priority === 'BINHTHUONG' || !mainReq.priority ? ' ✔ ' : ' &nbsp; '}] ${nfc('Bình thường')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${mainReq.priority === 'DUPHONG' ? ' ✔ ' : ' &nbsp; '}] ${nfc('Dự phòng')}
+            </td>
+          </tr>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: 1px solid #475569;">
+          <thead>
+            <tr style="background-color: #174378; color: #ffffff;">
+              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; width: 30pt; text-align: center;">${nfc('STT')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left;">${nfc('Tên dịch vụ / Nội dung công việc')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left; width: 110pt;">${nfc('Đơn vị cung cấp (NCC)')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; text-align: center; width: 75pt;">${nfc('Thời gian')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: right; width: 95pt;">${nfc('Chi phí dự kiến')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left; width: 80pt;">${nfc('Mục đích')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left; width: 65pt;">${nfc('Ghi chú')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${purchaseTableRows.map((it, idx) => `
+              <tr style="height: 20pt; font-size: 9.5pt;">
+                <td style="border: 1px solid #475569; padding: 3pt; text-align: center;">${idx + 1}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt; font-weight: 500;">${it ? nfc(it.service_name) : ''}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt;">${it ? nfc(it.supplier_name || '---') : ''}</td>
+                <td style="border: 1px solid #475569; padding: 3pt; text-align: center;">${it ? formatDate(it.due_date) : ''}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt; text-align: right; font-weight: bold;">${it && it.amount ? formatMoney(it.amount) : ''}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt; font-style: italic; color: #475569;">${it ? nfc(effectivePurchase?.purpose || mainReq.purpose || '') : ''}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt; font-style: italic; color: #475569;">${it ? nfc(it.note || '') : ''}</td>
+              </tr>
+            `).join('')}
+            <tr style="font-weight: bold; font-size: 10pt; background-color: #f8fafc;">
+              <td colspan="4" style="border: 1px solid #475569; padding: 5pt; text-align: left; text-transform: uppercase;">
+                ${nfc('TỔNG CHI PHÍ DỰ KIẾN')}
+              </td>
+              <td style="border: 1px solid #475569; padding: 5pt; text-align: right; color: #0f172a; font-weight: 900;">
+                ${formatMoney(effectivePurchase?.total_estimated_amount || mainReq.total_estimated_amount || mainReq.total_amount)} đ
+              </td>
+              <td colspan="2" style="border: 1px solid #475569; padding: 5pt;"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12pt; border: none; font-size: 9.5pt;">
+          <tr>
+            <td style="border: none; padding: 3pt 0;">
+              <span style="color: #475569;">${nfc('Hồ sơ đính kèm: ')}</span>
+              &nbsp;&nbsp;[${hasBaoGia ? ' ✔ ' : ' &nbsp; '}] ${nfc(`Có báo giá kèm theo (${allAttachments.length || '01'} bản)`)}
+              &nbsp;&nbsp;&nbsp;&nbsp;[!${hasBaoGia ? ' ✔ ' : ' &nbsp; '}] ${nfc('Chưa có báo giá')}
+            </td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3pt 0;">
+              <span style="color: #475569;">${nfc('Ghi chú thêm: ')}</span>
+              <i style="color: #1e293b;">${mainReq.hod_comment ? nfc(mainReq.hod_comment) : nfc('Đã so sánh giá với các đơn vị cung cấp theo quy trình')}</i>
+            </td>
+          </tr>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt; border: none; text-align: center;">
+          <tr>
+            <td style="width: 25%; vertical-align: top; border: none; padding: 0 4pt;">
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #0f172a;">${nfc('NGƯỜI ĐỀ NGHỊ')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 45pt;"></div>
+            </td>
+            <td style="width: 25%; vertical-align: top; border: none; padding: 0 4pt;">
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #0f172a;">${nfc('TRƯỞNG BỘ PHẬN')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              ${getApprovalHtml(effectivePurchase?.hod_approved_by || mainReq.hod_approved_by, nfc('ĐÃ DUYỆT'), formatDateTime(effectivePurchase?.hod_approved_at || mainReq.hod_approved_at))}
+            </td>
+            <td style="width: 25%; vertical-align: top; border: none; padding: 0 4pt;">
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #0f172a;">${nfc('BỘ PHẬN KẾ TOÁN / THU MUA')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              ${getApprovalHtml(effectivePurchase?.acc_approved_by || mainReq.acc_approved_by, nfc('ĐÃ DUYỆT'), formatDateTime(effectivePurchase?.acc_approved_at || mainReq.acc_approved_at))}
+            </td>
+            <td style="width: 25%; vertical-align: top; border: none; padding: 0 4pt;">
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #174378;">${nfc('BAN GIÁM ĐỐC')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký tên & đóng dấu)')}</i><br/><br/>
+              ${getApprovalHtml(effectivePurchase?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'APPROVED', nfc('ĐÃ PHÊ DUYỆT'), formatDateTime(effectivePurchase?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at))}
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    // --- HTML TRANG 2 (BẢNG KÊ CHỨNG TỪ) ---
+    const imageAttachments = allAttachments.filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || ''));
+    const page2Word = `
+      <div class="word-page">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none;">
+          <tr>
+            <td style="width: 60%; vertical-align: top; border: none; text-align: left; padding: 0;">
+              <b style="font-size: 11pt; color: #0f172a;">${nfc('CÔNG TY TNHH TM SX VIỆT Á')}</b><br/>
+              <span style="font-size: 9pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
+            </td>
+            <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9.5pt; color: #334155;">
+              <span>${nfc('PHẦN 2 / QUY TRÌNH 3 BƯỚC')}</span><br/>
+              <span>${nfc(`Hồ sơ số: ${mainReq.code}`)}</span>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin: 12pt 0 10pt 0;">
+          <h2 style="font-size: 15pt; font-weight: bold; color: #174378; margin: 0; text-transform: uppercase;">
+            ${nfc('BẢNG TỔNG HỢP HÓA ĐƠN & CHỨNG TỪ GỐC')}
+          </h2>
+          <div style="font-style: italic; font-size: 9.5pt; color: #475569; margin-top: 3pt;">
+            ${nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
+          </div>
+          <div style="font-style: italic; font-size: 9.5pt; color: #1e293b; margin-top: 2pt; font-weight: bold;">
+            ${nfc('Kèm theo hồ sơ đề xuất & quyết toán chi phí công ty')}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none; font-size: 10pt;">
+          <tr>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Người lập hồ sơ: ')}<b>${nfc(mainReq.creator_name || mainReq.creator_username)}</b>
+            </td>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Bộ phận / Phòng ban: ')}<b>${nfc(mainReq.department)}</b>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Nội dung công việc / Dịch vụ: ')}<i style="color: #334155;">${nfc(mainReq.purpose || mainReq.payment_content)}</i>
+            </td>
+          </tr>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10pt; border: 1px solid #475569;">
+          <thead>
+            <tr style="background-color: #174378; color: #ffffff;">
+              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; width: 35pt; text-align: center;">${nfc('STT')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left; width: 140pt;">${nfc('Phân loại chứng từ')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left;">${nfc('Tên file / Số hóa đơn chứng từ')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; text-align: center; width: 75pt;">${nfc('Dung lượng')}</th>
+              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; text-align: center; width: 85pt;">${nfc('Ngày tải lên')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allAttachments.length > 0 ? allAttachments.map((att, idx) => `
+              <tr style="height: 20pt; font-size: 9.5pt;">
+                <td style="border: 1px solid #475569; padding: 3pt; text-align: center;">${idx + 1}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt; font-weight: bold; color: #0f172a;">${nfc(FILE_TYPE_MAP[att.file_type] || att.file_type)}</td>
+                <td style="border: 1px solid #475569; padding: 3pt 5pt;">${nfc(att.file_name)}</td>
+                <td style="border: 1px solid #475569; padding: 3pt; text-align: center; color: #475569;">${att.file_size || '---'}</td>
+                <td style="border: 1px solid #475569; padding: 3pt; text-align: center; color: #475569;">${formatDate(att.uploaded_at)}</td>
+              </tr>
+            `).join('') : `
+              <tr>
+                <td colspan="5" style="border: 1px solid #475569; padding: 8pt; text-align: center; font-style: italic; color: #64748b;">
+                  ${nfc('Chứng từ gốc đính kèm bản cứng theo phiếu')}
+                </td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+
+        <div style="margin-bottom: 12pt; border: 1px solid #cbd5e1; background-color: #f8fafc; padding: 8pt; border-radius: 4px;">
+          <b style="font-size: 9.5pt; text-transform: uppercase; color: #1e293b; display: block; margin-bottom: 6pt;">
+            ${nfc('Hình ảnh hóa đơn / Nghiệm thu thực tế kèm theo:')}
+          </b>
+          ${imageAttachments.length > 0 ? `
+            <table style="width: 100%; border-collapse: collapse; border: none;">
+              <tr>
+                ${imageAttachments.slice(0, 2).map((imgAtt) => `
+                  <td style="width: 50%; text-align: center; vertical-align: top; padding: 4pt; border: 1px solid #e2e8f0; background-color: #ffffff;">
+                    <img src="${getAbsoluteUrl(imgAtt.file_url)}" alt="${imgAtt.file_name}" style="max-height: 150pt; max-width: 200pt; margin: 0 auto; display: block;" /><br/>
+                    <span style="font-size: 8.5pt; color: #475569;">${nfc(imgAtt.file_name)}</span>
+                  </td>
+                `).join('')}
+              </tr>
+            </table>
+          ` : `
+            <div style="padding: 12pt; text-align: center; color: #64748b; font-style: italic; font-size: 9.5pt; border: 1px dashed #cbd5e1; background-color: #ffffff;">
+              ${nfc('Đã đính kèm đầy đủ bản cứng Hóa đơn GTGT & Chứng từ đối soát gốc')}
+            </div>
+          `}
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt; border: none; text-align: center;">
+          <tr>
+            <td style="width: 50%; vertical-align: top; border: none; padding: 0 10pt;">
+              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('NGƯỜI LẬP HỒ SƠ')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 45pt;"></div>
+            </td>
+            <td style="width: 50%; vertical-align: top; border: none; padding: 0 10pt;">
+              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 45pt;"></div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    // --- HTML TRANG 3 (MẪU 02 - THANH TOÁN) ---
+    const page3Word = `
+      <div class="word-page">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none;">
+          <tr>
+            <td style="width: 60%; vertical-align: top; border: none; text-align: left; padding: 0;">
+              <b style="font-size: 11pt; color: #0f172a;">${nfc('CÔNG TY TNHH TM SX VIỆT Á')}</b><br/>
+              <span style="font-size: 9pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
+            </td>
+            <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9.5pt; color: #334155;">
+              <span>${nfc('Mẫu số: 02/ĐNTT-VA')}</span><br/>
+              <span>${nfc(`Số phiếu: ${effectivePayment ? effectivePayment.code : mainReq.code}`)}</span>
+            </td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin: 12pt 0 10pt 0;">
+          <h2 style="font-size: 15pt; font-weight: bold; color: #174378; margin: 0; text-transform: uppercase;">
+            ${nfc('GIẤY ĐỀ NGHỊ THANH TOÁN')}
+          </h2>
+          <div style="font-style: italic; font-size: 9.5pt; color: #475569; margin-top: 3pt;">
+            ${nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
+          </div>
+          <div style="font-style: italic; font-size: 9.5pt; color: #1e293b; margin-top: 2pt; font-weight: bold;">
+            ${nfc('Kính gửi: BAN GIÁM ĐỐC – PHÒNG KẾ TOÁN')}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none; font-size: 10pt;">
+          <tr>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Họ và tên người đề nghị: ')}<b>${nfc(effectivePayment?.creator_name || mainReq.creator_name || mainReq.creator_username)}</b>
+            </td>
+            <td style="width: 50%; border: none; padding: 3pt 0;">
+              ${nfc('Bộ phận / Phòng ban: ')}<b>${nfc(effectivePayment?.department || mainReq.department)}</b>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Nội dung thanh toán: ')}<i style="color: #334155;">${nfc(effectivePayment?.payment_content || mainReq.payment_content || mainReq.purpose)}</i>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Số tiền đề nghị (bằng số): ')}<b style="font-size: 11pt; color: #0f172a;">${formatMoney(effectivePayment?.total_amount || mainReq.total_amount || mainReq.total_estimated_amount)} Đồng</b>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Số tiền viết bằng chữ: ')}<i style="font-weight: bold; color: #1e293b;">${nfc(effectivePayment?.amount_in_words || numberToVietnameseWords(effectivePayment?.total_amount || mainReq.total_amount || mainReq.total_estimated_amount))}</i>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border: none; padding: 3pt 0;">
+              ${nfc('Hình thức thanh toán: ')}
+              &nbsp;&nbsp;[${(effectivePayment?.payment_method || mainReq.payment_method) === 'TIEN_MAT' ? ' ✔ ' : ' &nbsp; '}] ${nfc('Tiền mặt')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${(effectivePayment?.payment_method || mainReq.payment_method) !== 'TIEN_MAT' ? ' ✔ ' : ' &nbsp; '}] ${nfc('Chuyển khoản')}
+            </td>
+          </tr>
+        </table>
+
+        <!-- BANNER 1: THÔNG TIN TÀI KHOẢN -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: 1px solid #cbd5e1;">
+          <tr style="background-color: #174378; color: #ffffff;">
+            <th colspan="2" style="padding: 5pt; text-align: center; font-size: 9.5pt; text-transform: uppercase;">
+              ${nfc('THÔNG TIN TÀI KHOẢN THỤ HƯỞNG (NẾU CHUYỂN KHOẢN)')}
+            </th>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding: 4pt 6pt; font-size: 9.5pt; border: none;">
+              <span style="color: #475569;">${nfc('Tên người/Đơn vị thụ hưởng: ')}</span>
+              <b style="color: #0f172a; text-transform: uppercase;">${nfc(effectivePayment?.bank_account_holder || mainReq.bank_account_holder || '---')}</b>
+            </td>
+          </tr>
+          <tr>
+            <td style="width: 50%; padding: 4pt 6pt; font-size: 9.5pt; border: none;">
+              <span style="color: #475569;">${nfc('Số tài khoản: ')}</span>
+              <b style="color: #0f172a; font-size: 10.5pt;">${effectivePayment?.bank_account_number || mainReq.bank_account_number || '---'}</b>
+            </td>
+            <td style="width: 50%; padding: 4pt 6pt; font-size: 9.5pt; border: none;">
+              <span style="color: #475569;">${nfc('Ngân hàng: ')}</span>
+              <b style="color: #0f172a;">${nfc(effectivePayment?.bank_name || mainReq.bank_name || '---')}</b>
+            </td>
+          </tr>
+        </table>
+
+        <!-- BANNER 2: CHỨNG TỪ GỐC -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12pt; border: 1px solid #cbd5e1;">
+          <tr style="background-color: #174378; color: #ffffff;">
+            <th style="padding: 5pt; text-align: center; font-size: 9.5pt; text-transform: uppercase;">
+              ${nfc('CHỨNG TỪ GỐC ĐÍNH KÈM')}
+            </th>
+          </tr>
+          <tr>
+            <td style="padding: 4pt 6pt; font-size: 9.5pt; border: none;">
+              <span style="color: #475569;">${nfc('Chứng từ kèm theo: ')}</span>
+              &nbsp;&nbsp;[${hasBaoGia ? ' ✔ ' : ' &nbsp; '}] ${nfc('Báo giá / Đơn hàng')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${hasHoaDon ? ' ✔ ' : ' &nbsp; '}] ${nfc('Hóa đơn / Phiếu thu')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${hasNghiemThu ? ' ✔ ' : ' &nbsp; '}] ${nfc('Biên bản nghiệm thu')}
+              &nbsp;&nbsp;&nbsp;&nbsp;[${hasKhac ? ' ✔ ' : ' &nbsp; '}] ${nfc('Khác')}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 4pt 6pt; font-size: 9.5pt; border: none;">
+              <span style="color: #475569;">${nfc('Ghi chú thêm: ')}</span>
+              <i style="color: #1e293b;">${mainReq.acc_comment || mainReq.hod_comment ? nfc(mainReq.acc_comment || mainReq.hod_comment) : nfc('Đã nghiệm thu và kiểm tra đầy đủ chứng từ gốc hợp lệ')}</i>
+            </td>
+          </tr>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt; border: none; text-align: center;">
+          <tr>
+            <td style="width: 33.33%; vertical-align: top; border: none; padding: 0 6pt;">
+              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('NGƯỜI ĐỀ NGHỊ')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 45pt;"></div>
+            </td>
+            <td style="width: 33.33%; vertical-align: top; border: none; padding: 0 6pt;">
+              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('KẾ TOÁN TRƯỞNG')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              ${getApprovalHtml(effectivePayment?.acc_approved_by || mainReq.acc_approved_by, nfc('ĐÃ KIỂM TRA'), formatDateTime(effectivePayment?.acc_approved_at || mainReq.acc_approved_at))}
+            </td>
+            <td style="width: 33.33%; vertical-align: top; border: none; padding: 0 6pt;">
+              <b style="font-size: 10pt; text-transform: uppercase; color: #174378;">${nfc('BAN GIÁM ĐỐC')}</b><br/>
+              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký tên & đóng dấu)')}</i><br/><br/>
+              ${getApprovalHtml(effectivePayment?.bod_approved_by || mainReq.bod_approved_by || mainReq.status === 'PAID', nfc('ĐÃ PHÊ DUYỆT CHI'), formatDateTime(effectivePayment?.bod_approved_at || mainReq.bod_approved_at || mainReq.updated_at))}
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    // Tổng hợp nội dung theo tab đang chọn
+    const pages = [];
+    if (showPage1) pages.push(page1Word);
+    if (showPage2) pages.push(page2Word);
+    if (showPage3) pages.push(page3Word);
+
+    const fullDocumentContent = pages.join(`
+      <br clear="all" style="page-break-before: always; mso-break-type: section-break;" />
+    `);
 
     const htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -357,47 +752,38 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           </xml>
           <![endif]-->
           <style>
-            @page {
-              size: 21cm 29.7cm;
-              margin: 1.5cm 1.5cm 1.5cm 1.5cm;
-              mso-page-orientation: portrait;
+            @page Section1 {
+              size: 21.0cm 29.7cm;
+              margin: 1.2cm 1.5cm 1.2cm 1.5cm;
+              mso-header-margin: 0.5cm;
+              mso-footer-margin: 0.5cm;
+              mso-paper-source: 0;
+            }
+            div.Section1 {
+              page: Section1;
             }
             body {
-              font-family: 'Times New Roman', 'Segoe UI', Arial;
-              font-size: 11pt;
-              color: #000000;
-              line-height: 1.35;
+              font-family: 'Times New Roman', 'Segoe UI', Arial, sans-serif;
+              font-size: 10pt;
+              color: #0f172a;
+              line-height: 1.3;
+              margin: 0;
+              padding: 0;
+            }
+            .word-page {
+              width: 100%;
+              margin: 0;
+              padding: 0;
             }
             table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 10pt;
+              border-spacing: 0;
             }
-            th, td {
-              border: 1px solid #333333;
-              padding: 5pt 7pt;
-              font-size: 10pt;
-            }
-            th {
-              background-color: #174378;
-              color: #ffffff;
-              text-align: center;
-              font-weight: bold;
-            }
-            .page-container {
-              page-break-after: always;
-              mso-break-type: page-break;
-            }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .font-semibold { font-weight: bold; }
-            .italic { font-style: italic; }
-            .uppercase { text-transform: uppercase; }
           </style>
         </head>
         <body>
-          ${printableArea.innerHTML}
+          <div class="Section1">
+            ${fullDocumentContent}
+          </div>
         </body>
       </html>
     `;
