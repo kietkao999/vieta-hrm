@@ -509,7 +509,6 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               <span style="font-size: 9pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
             </td>
             <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9.5pt; color: #334155;">
-              <span>${nfc('PHẦN 2 / QUY TRÌNH 3 BƯỚC')}</span><br/>
               <span>${nfc(`Hồ sơ số: ${mainReq.code}`)}</span>
             </td>
           </tr>
@@ -1161,7 +1160,6 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                   <p className="text-xs text-slate-700 mt-0.5">{nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</p>
                 </div>
                 <div className="text-right italic text-xs text-slate-800">
-                  <p>{nfc('PHẦN 2 / QUY TRÌNH 3 BƯỚC')}</p>
                   <p>{nfc(`Hồ sơ số: ${mainReq.code}`)}</p>
                 </div>
               </div>
