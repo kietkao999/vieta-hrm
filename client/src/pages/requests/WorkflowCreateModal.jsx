@@ -535,34 +535,9 @@ const WorkflowCreateModal = ({
               <AttachmentManager
                 attachments={attachments}
                 onChange={(updated) => setAttachments(updated)}
-                title="PHẦN 2: HÓA ĐƠN & CHỨNG TỪ GỐC (Attachments & Invoices)"
+                title="PHẦN 2: HÓA ĐƠN & CHỨNG TỪ GỐC (ATTACHMENTS & INVOICES)"
                 subtitle="Đính kèm Hóa đơn GTGT, Báo giá, Biên bản bàn giao và Ảnh nghiệm thu thực tế"
               />
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mode === 'PURCHASE') setActiveStepTab(1);
-                    else setActiveStepTab(3);
-                  }}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
-                >
-                  ← Quay lại biểu mẫu
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('PAYMENT');
-                    setActiveStepTab(3);
-                  }}
-                  className="flex items-center space-x-1 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold transition-all shadow-md"
-                >
-                  <span>Chuyển sang Bước 3: Đề nghị thanh toán</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
             </div>
           )}
 
@@ -756,30 +731,79 @@ const WorkflowCreateModal = ({
           )}
 
           {/* Footer Submit Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors"
-            >
-              Hủy bỏ
-            </button>
-
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-200 gap-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
               <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  {isSubmitting
-                    ? 'Đang xử lý...'
-                    : mode === 'PURCHASE'
-                    ? 'Trình Ký Giấy Đề Nghị Mua Dịch Vụ'
-                    : 'Trình Ký Giấy Đề Nghị Thanh Toán'}
-                </span>
+                Hủy bỏ
               </button>
+
+              {activeStepTab === 2 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mode === 'PURCHASE') setActiveStepTab(1);
+                    else setActiveStepTab(1);
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors text-xs"
+                >
+                  ← Quay lại Bước 1
+                </button>
+              )}
+
+              {activeStepTab === 3 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveStepTab(2)}
+                  className="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors text-xs"
+                >
+                  ← Quay lại Bước 2 (Chứng từ)
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+              {activeStepTab === 1 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveStepTab(2)}
+                  className="flex items-center space-x-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs"
+                >
+                  <span>Đính kèm chứng từ (Bước 2)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {activeStepTab === 2 && mode === 'PAYMENT' && (
+                <button
+                  type="button"
+                  onClick={() => setActiveStepTab(3)}
+                  className="flex items-center space-x-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer text-xs"
+                >
+                  <span>Chuyển sang Bước 3: Đề nghị thanh toán</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+
+              {(activeStepTab === 1 || activeStepTab === 3 || (activeStepTab === 2 && mode === 'PURCHASE')) && (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex items-center space-x-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer text-xs"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Đang xử lý...'
+                      : mode === 'PURCHASE'
+                      ? 'Trình Ký Giấy Đề Nghị Mua Dịch Vụ'
+                      : 'Trình Ký Giấy Đề Nghị Thanh Toán'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </form>

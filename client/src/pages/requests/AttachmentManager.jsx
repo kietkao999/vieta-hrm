@@ -16,19 +16,19 @@ import api from '../../services/api';
 import AttachmentLightbox from './AttachmentLightbox';
 
 export const FILE_TYPES = [
-  { id: 'HOA_DON_GTGT', label: '🧾 Hóa đơn GTGT', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-  { id: 'BAO_GIA_HOP_DONG', label: '📑 Báo giá & Hợp đồng', badgeClass: 'bg-blue-50 text-blue-800 border-blue-200' },
-  { id: 'BIEN_BAN_NGHIEM_THU', label: '📋 Biên bản nghiệm thu / Bàn giao', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200' },
-  { id: 'ANH_THUC_TE', label: '📸 Ảnh nghiệm thu thực tế', badgeClass: 'bg-purple-50 text-purple-800 border-purple-200' },
-  { id: 'KHAC', label: '📂 Chứng từ khác', badgeClass: 'bg-slate-100 text-slate-700 border-slate-200' }
+  { id: 'HOA_DON_GTGT', label: '🧾 Hóa đơn GTGT', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
+  { id: 'BAO_GIA_HOP_DONG', label: '📑 Báo giá & HĐ', badgeClass: 'bg-blue-50 text-blue-800 border-blue-300' },
+  { id: 'BIEN_BAN_NGHIEM_THU', label: '📋 Biên bản nghiệm thu', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300' },
+  { id: 'ANH_THUC_TE', label: '📸 Ảnh nghiệm thu', badgeClass: 'bg-purple-50 text-purple-800 border-purple-300' },
+  { id: 'KHAC', label: '📂 Chứng từ khác', badgeClass: 'bg-slate-100 text-slate-700 border-slate-300' }
 ];
 
 const AttachmentManager = ({
   attachments = [],
   onChange,
   readOnly = false,
-  title = 'PHẦN 2: HÓA ĐƠN & CHỨNG TỪ GỐC (Attachments & Invoices)',
-  subtitle = 'Nghiệm thu thực tế & đính kèm hóa đơn trước khi trình ký chi tiền'
+  title = 'PHẦN 2: HÓA ĐƠN & CHỨNG TỪ GỐC (ATTACHMENTS & INVOICES)',
+  subtitle = 'Đính kèm Hóa đơn GTGT, Báo giá, Biên bản bàn giao và Ảnh nghiệm thu thực tế'
 }) => {
   const [selectedType, setSelectedType] = useState('HOA_DON_GTGT');
   const [isUploading, setIsUploading] = useState(false);
@@ -120,21 +120,21 @@ const AttachmentManager = ({
           {/* 1. Chọn loại chứng từ trước khi tải lên */}
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-              1. Chọn phân loại chứng từ chuẩn bị tải lên:
+              1. CHỌN PHÂN LOẠI CHỨNG TỪ CHUẨN BỊ TẢI LÊN:
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {FILE_TYPES.map((t) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setSelectedType(t.id)}
-                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold text-left transition-all cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer flex items-center justify-center ${
                     selectedType === t.id
                       ? `${t.badgeClass} ring-2 ring-brand-500/20 shadow-xs font-bold`
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="truncate block">{t.label}</span>
+                  <span className="truncate">{t.label}</span>
                 </button>
               ))}
             </div>

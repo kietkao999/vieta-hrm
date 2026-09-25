@@ -37,16 +37,27 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Hàm giải mã tên file tiếng Việt UTF-8 từ multipart header
+const fixUtf8Filename = (name) => {
+  if (!name) return 'file';
+  try {
+    return Buffer.from(name, 'latin1').toString('utf8');
+  } catch {
+    return name;
+  }
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
+    const originalName = fixUtf8Filename(file.originalname);
+    const ext = path.extname(originalName).toLowerCase();
     const timestamp = Date.now();
     const randomSuffix = Math.round(Math.random() * 1e4);
     const safeBaseName = path
-      .basename(file.originalname, ext)
+      .basename(originalName, ext)
       .replace(/[^a-zA-Z0-9_\u00C0-\u1EF9]/g, '_')
       .slice(0, 30);
     cb(null, `${safeBaseName}_${timestamp}_${randomSuffix}${ext}`);
@@ -64,6 +75,7 @@ router.post('/upload-attachment', upload.single('file'), (req, res) => {
     return res.status(400).json({ message: 'Không có file nào được tải lên.' });
   }
 
+  const fixedName = fixUtf8Filename(req.file.originalname);
   const file_url = `/uploads/payment_requests/${req.file.filename}`;
   const file_size_bytes = req.file.size;
   const file_size =
@@ -74,9 +86,9 @@ router.post('/upload-attachment', upload.single('file'), (req, res) => {
   return res.json({
     success: true,
     file_url,
-    file_name: req.file.originalname,
+    file_name: fixedName,
     file_size,
-    file_type: path.extname(req.file.originalname).replace('.', '').toLowerCase()
+    file_type: path.extname(fixedName).replace('.', '').toLowerCase()
   });
 });
 
