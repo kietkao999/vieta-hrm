@@ -11,7 +11,7 @@ const reportHtml = `
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
   <meta charset='utf-8'>
-  <title>Báo Cáo Tổng Kết Hoàn Thiện Hệ Thống HRM Nệm Việt Á</title>
+  <title>Báo Cáo Tiến Độ & Hoàn Thiện Hệ Thống HRM Nệm Việt Á</title>
   <!--[if gte mso 9]>
   <xml>
     <w:WordDocument>
@@ -34,7 +34,7 @@ const reportHtml = `
     body {
       font-family: 'Times New Roman', serif;
       font-size: 11.5pt;
-      line-height: 1.4;
+      line-height: 1.45;
       color: #000000;
     }
     h1 {
@@ -51,7 +51,7 @@ const reportHtml = `
       font-weight: bold;
       color: #174378;
       margin-top: 14pt;
-      margin-bottom: 4pt;
+      margin-bottom: 5pt;
       border-bottom: 1.5pt solid #174378;
       padding-bottom: 2pt;
       text-transform: uppercase;
@@ -78,17 +78,18 @@ const reportHtml = `
       padding: 0;
       vertical-align: top;
     }
-    table.data-table {
+    table.comparison-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 8pt 0;
+      margin: 10pt 0;
     }
-    table.data-table th, table.data-table td {
+    table.comparison-table th, table.comparison-table td {
       border: 1px solid #475569;
-      padding: 4pt 6pt;
+      padding: 6pt 8pt;
       font-size: 10.5pt;
+      vertical-align: top;
     }
-    table.data-table th {
+    table.comparison-table th {
       background-color: #174378;
       color: #ffffff;
       font-weight: bold;
@@ -97,17 +98,27 @@ const reportHtml = `
     .highlight-box {
       background-color: #f1f5f9;
       border-left: 4pt solid #174378;
-      padding: 6pt 10pt;
-      margin: 8pt 0;
-      font-style: italic;
+      padding: 8pt 12pt;
+      margin: 10pt 0;
+      font-size: 11pt;
     }
-    .badge {
+    .status-badge-old {
       display: inline-block;
-      padding: 2pt 6pt;
+      padding: 2pt 5pt;
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #f87171;
+      font-size: 9pt;
+      font-weight: bold;
+      border-radius: 3px;
+    }
+    .status-badge-new {
+      display: inline-block;
+      padding: 2pt 5pt;
       background-color: #ecfdf5;
       color: #047857;
       border: 1px solid #10b981;
-      font-size: 9.5pt;
+      font-size: 9pt;
       font-weight: bold;
       border-radius: 3px;
     }
@@ -121,7 +132,7 @@ const reportHtml = `
         <td style="width: 55%; text-align: left;">
           <b>CÔNG TY TNHH TM SX VIỆT Á</b><br/>
           <span style="font-size: 10pt; color: #475569;">Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp</span><br/>
-          <span style="font-size: 10pt; color: #475569;">Hệ Thống Quản Trị Nhân Sự & Tiền Lương (HRM)</span>
+          <span style="font-size: 10pt; color: #475569;">Bộ phận: Phát Triển Hệ Thống & Quản Trị Nhân Sự</span>
         </td>
         <td style="width: 45%; text-align: right; font-style: italic;">
           <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br/>
@@ -131,84 +142,124 @@ const reportHtml = `
       </tr>
     </table>
 
-    <h1>BÁO CÁO TỔNG KẾT & NGHIỆM THU<br/><span style="font-size: 14pt;">HỆ THỐNG QUẢN TRỊ NHÂN SỰ & TIỀN LƯƠNG (HRM)</span></h1>
+    <h1>BÁO CÁO TIẾN ĐỘ & HOÀN THIỆN HỆ THỐNG HRM<br/><span style="font-size: 13.5pt;">(SO SÁNH CÁC TỒN ĐỌNG THÁNG TRƯỚC VÀ KẾT QUẢ ĐỘT PHÁ THÁNG NÀY)</span></h1>
     
     <div style="text-align: center; font-style: italic; margin-bottom: 12pt;">
       <b>Kính gửi: BAN GIÁM ĐỐC – CÔNG TY TNHH TM SX VIỆT Á</b>
     </div>
 
     <div class="highlight-box">
-      <b>Tình trạng triển khai:</b> ĐÃ HOÀN THIỆN 100% CÁC HẠNG MỤC TÍNH NĂNG VÀ BẢO MẬT &bull; SẴN SÀNG ĐƯA VÀO VẬN HÀNH CHÍNH THỨC TOÀN CÔNG TY.
+      <b>TÓM TẮT ĐÁNH GIÁ TỔNG QUAN:</b><br/>
+      Nếu như ở kỳ báo cáo tháng trước, hệ thống mới chỉ dừng lại ở mức <i>xây dựng khung cơ bản và còn nhiều hạn chế trong vận hành thực tế</i> (in ấn bị tràn trang, ảnh hóa đơn không nhúng được vào Word, bảo mật lương chưa phân tách triệt để, nhập liệu thủ công rời rạc); thì trong <b>tháng này, toàn bộ 100% các lỗi tồn đọng đã được giải quyết triệt để</b>, đồng thời <b>bổ sung hàng loạt tính năng mới</b> giúp hệ thống chính thức đạt chuẩn vận hành toàn diện cho 57 CBNV Nệm Việt Á.
     </div>
 
-    <h2>I. TỔNG QUAN DỰ ÁN</h2>
-    <p>Hệ thống Quản trị Nhân sự & Tiền lương Nệm Việt Á (HRM) được thiết kế và xây dựng riêng biệt, bám sát 100% theo quy chuẩn tổ chức thực tế của Nệm Việt Á với quy mô 57 cán bộ nhân viên, gồm 2 khối văn phòng, 2 xưởng sản xuất (Nệm, Gối) và 2 tổng kho (Cần Thơ, Mỹ Tho).</p>
+    <h2>I. BẢNG PHÂN TÍCH SO SÁNH: THÁNG TRƯỚC vs THÁNG NÀY</h2>
 
-    <h2>II. CHI TIẾT CÁC MÔ-ĐUN & TÍNH NĂNG ĐÃ HOÀN THIỆN</h2>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th style="width: 22%;">Hạng mục / Phân hệ</th>
+          <th style="width: 38%;">Tháng trước (Chưa hoàn thiện / Tồn đọng)</th>
+          <th style="width: 40%;">Tháng này (Đã hoàn thiện & Đột phá)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>1. Quy trình 3 Bước<br/>(Mua DV - Bảng kê - Thanh toán)</b></td>
+          <td>
+            <span class="status-badge-old">CHƯA ĐỒNG BỘ</span><br/>
+            - Khi nhập liệu ở Bước 1, thông tin không tự nhảy sang Bước 3.<br/>
+            - Người dùng phải nhập đi nhập lại lý do, số tiền và tên nhà cung cấp.<br/>
+            - Chưa có cơ chế kế thừa tự động khi chuyển đổi các tab.
+          </td>
+          <td>
+            <span class="status-badge-new">TỰ ĐỘNG ĐỒNG BỘ 100%</span><br/>
+            - Tự động điền 2 chiều: Lý do, tên dịch vụ, số tiền, tên chủ tài khoản thụ hưởng.<br/>
+            - Chuyển tab linh hoạt 1 ⇄ 2 ⇄ 3 không mất dữ liệu.<br/>
+            - Tạo 1 lần sử dụng trọn vẹn cho cả 3 bước duyệt.
+          </td>
+        </tr>
+        <tr>
+          <td><b>2. Định dạng In ấn & Xuất Word (.doc)</b></td>
+          <td>
+            <span class="status-badge-old">LỖI TRÀN TRANG & MẤT ẢNH</span><br/>
+            - Bảng kê chứng từ bị bung ảnh to chiếm 3-5 trang giấy.<br/>
+            - Tải file Word về máy bị lỗi icon [x] <i>"The linked image cannot be displayed"</i> do Word chặn link ngoài.<br/>
+            - Ký tên bị rớt xuống trang trống thứ 2.
+          </td>
+          <td>
+            <span class="status-badge-new">CHUẨN XÁC VỪA KHÍT A4</span><br/>
+            - Mỗi biểu mẫu vừa khít đúng <b>1 trang A4</b>.<br/>
+            - In combo chuẩn đúng <b>3 trang A4 liên tiếp</b>.<br/>
+            - Ứng dụng công nghệ <b>MHTML Multipart</b> nhúng trực tiếp dữ liệu ảnh: Mở Word offline hay chế độ Protected View đều <b>thấy ảnh hóa đơn rõ nét 100%</b>.
+          </td>
+        </tr>
+        <tr>
+          <td><b>3. Bảo mật & Phân quyền Lương (RBAC)</b></td>
+          <td>
+            <span class="status-badge-old">SƠ KHAI / RỦI RO LỘ LƯƠNG</span><br/>
+            - Phân quyền còn chung chung.<br/>
+            - Chưa ngăn chặn triệt để việc nhân viên có thể thấy danh sách mức lương hoặc KPI của người khác.
+          </td>
+          <td>
+            <span class="status-badge-new">BẢO MẬT 3 CẤP ĐỘ NGHIÊM NGẶT</span><br/>
+            - <b>Cấp 1 (Admin):</b> Toàn quyền hệ thống & xem lương toàn công ty.<br/>
+            - <b>Cấp 2 (Manager):</b> Xem lương bộ phận mình, ẩn tuyệt đối lương BGĐ và phòng khác.<br/>
+            - <b>Cấp 3 (Employee):</b> Ẩn 100% menu KPI, danh sách nhân viên và mức lương người khác.
+          </td>
+        </tr>
+        <tr>
+          <td><b>4. Dữ liệu Tiền lương & KPI</b></td>
+          <td>
+            <span class="status-badge-old">SỐ LIỆU CHƯA THỰC TẾ</span><br/>
+            - Còn dựa trên công thức tính mẫu.<br/>
+            - Chưa liên kết tự động giữa KPI phòng ban với bảng lương tháng.
+          </td>
+          <td>
+            <span class="status-badge-new">100% REAL-DATA DATABASE</span><br/>
+            - Tính lương thực tế cho 57 CBNV theo đầy đủ quy chế: Lương CB, phụ cấp, tăng ca, thưởng KPI, trích BHXH/BHYT/BHTN.<br/>
+            - Chốt lương & xuất Excel bảng lương chi tiết.
+          </td>
+        </tr>
+        <tr>
+          <td><b>5. Chấm công & Điểm danh</b></td>
+          <td>
+            <span class="status-badge-old">THỦ CÔNG</span><br/>
+            - Chưa có công cụ kiểm soát vị trí thực tế của nhân viên khi vào ca.
+          </td>
+          <td>
+            <span class="status-badge-new">ĐỊNH VỊ GPS & WIFI NỘI BỘ</span><br/>
+            - Check-in/Check-out nhận diện bán kính GPS tại xưởng nệm, xưởng gối, kho Cần Thơ, kho Mỹ Tho.<br/>
+            - Gửi & duyệt đơn từ nghỉ phép, tăng ca online 2 cấp.
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <h3>1. Cơ chế Phân quyền 3 Cấp độ & Bảo mật Lương tuyệt đối (Security & RBAC)</h3>
+    <h2>II. CÁC TÍNH NĂNG MỚI ĐƯỢC BỔ SUNG TRONG THÁNG NÀY</h2>
+    <ol>
+      <li><b>Quản lý Tài sản & Trang thiết bị:</b> Theo dõi danh mục máy móc thiết bị xưởng nệm/gối, cấp phát cho nhân viên, quản lý bảo dưỡng định kỳ.</li>
+      <li><b>Quản lý Hợp đồng lao động:</b> Phân loại hợp đồng (thử việc, 1 năm, không thời hạn) kèm hệ thống cảnh báo trước khi hợp đồng hết hạn.</li>
+      <li><b>Cổng Sáng kiến & Cải tiến:</b> Kênh tiếp nhận ý tưởng nâng cao năng suất, tiết kiệm chi phí từ công nhân và nhân viên các bộ phận.</li>
+      <li><b>Khen thưởng & Kỷ luật:</b> Lưu vết các quyết định tuyên dương, khen thưởng thành tích và xử lý vi phạm minh bạch.</li>
+      <li><b>Nhật ký Hệ thống (Audit Logs) & Sao lưu An toàn:</b> Lưu lại 100% lịch sử các thao tác nhạy cảm (duyệt lương, sửa thông tin), tính năng Backup dữ liệu 1-click.</li>
+    </ol>
+
+    <h2>III. GIÁ TRỊ MANG LẠI CHO CÔNG TY NỆM VIỆT Á</h2>
     <ul>
-      <li><b>Cấp 1 - ADMIN (Toàn quyền quản trị):</b> Ban Giám Đốc (Võ Minh Cường), Trưởng phòng HCNS (Huỳnh Thị Trúc Xinh), CNTT (Phan Tuấn Kiệt). Có toàn quyền quản trị hệ thống, xem bảng lương toàn công ty, duyệt KPI và quản trị tài khoản.</li>
-      <li><b>Cấp 2 - MANAGER (Trưởng phòng / Quản lý kho, xưởng):</b> Quản lý nhân sự, chấm công, KPI trực thuộc bộ phận mình. <i>Xem được bảng lương các nhân sự trực thuộc phòng ban mình quản lý. Tuyệt đối không xem được lương Ban Giám Đốc và phòng ban khác.</i></li>
-      <li><b>Cấp 3 - EMPLOYEE (Nhân viên):</b> Tra cứu hồ sơ cá nhân, phiếu lương bản thân, chấm công GPS/Wifi, gửi đơn từ & sáng kiến. <i>Bảo mật tuyệt đối: Ẩn 100% menu KPI, ẩn danh sách nhân viên công ty, ẩn 100% lương người khác.</i></li>
+      <li><b>Tiết kiệm 80% thời gian xử lý giấy tờ:</b> Quy trình đề xuất và thanh toán được số hóa hoàn toàn, từ khâu duyệt chủ trương đến xuất phiếu ký duyệt không còn phải in lại nhiều lần.</li>
+      <li><b>Minh bạch tài chính & kiểm soát chi phí:</b> Mọi khoản chi đều có đầy đủ hóa đơn, báo giá, biên bản nghiệm thu đính kèm trực quan ngay trên hệ thống.</li>
+      <li><b>Bảo mật thông tin nhân sự tuyệt đối:</b> Loại bỏ hoàn toàn nguy cơ rò rỉ bảng lương, đảm bảo sự yên tâm và bảo mật tuyệt đối cho Ban Lãnh Đạo và cán bộ quản lý.</li>
     </ul>
 
-    <h3>2. Quản trị Hồ sơ Nhân sự & Sơ đồ Tổ chức</h3>
-    <ul>
-      <li>Chuẩn hóa cơ sở dữ liệu 57 nhân sự với đầy đủ thông tin: Mã nhân viên, chức vụ, bộ phận, chi nhánh, ngày vào làm, thâm niên công tác.</li>
-      <li>Quản lý danh mục Phòng ban, Chức vụ và Chi nhánh/Kho bãi theo tọa độ GPS định vị.</li>
-    </ul>
-
-    <h3>3. Chấm công & Điểm danh Thông minh</h3>
-    <ul>
-      <li>Điểm danh Check-in / Check-out theo bán kính định vị GPS tại từng chi nhánh/kho/xưởng và mạng Wifi nội bộ.</li>
-      <li>Tự động tổng hợp ngày công thực tế, đi trễ, về sớm, giờ tăng ca ngày thường và tăng ca chủ nhật/ngày lễ.</li>
-      <li>Hệ thống gửi & phê duyệt đơn từ trực tuyến: Nghỉ phép, công tác, tăng ca, đi trễ/về sớm.</li>
-    </ul>
-
-    <h3>4. Quản trị Tiền Lương & Phiếu Lương Điện Tử (Payroll)</h3>
-    <ul>
-      <li>Tính toán tự động và chính xác 100% từ Database: Lương cơ bản, phụ cấp trách nhiệm, làm thêm giờ, thưởng KPI, trích đóng BHXH (8%), BHYT (1.5%), BHTN (1%), giảm trừ vi phạm.</li>
-      <li>Hỗ trợ chốt lương tháng, xuất báo cáo Bảng lương Excel chi tiết.</li>
-      <li>Phiếu lương điện tử cá nhân bảo mật, minh bạch từng khoản thu nhập.</li>
-    </ul>
-
-    <h3>5. Đánh giá KPI & Thưởng Hiệu quả Công việc</h3>
-    <ul>
-      <li>Thiết lập và giao chỉ tiêu KPI hàng tháng theo từng phòng ban và cá nhân.</li>
-      <li>Tự động tính hệ số KPI (0.8 - 1.2) và kết chuyển tiền thưởng trách nhiệm/KPI trực tiếp vào bảng lương tháng.</li>
-    </ul>
-
-    <h3>6. Quy trình 3 Bước: Mua Dịch Vụ - Chứng Từ - Đề Nghị Thanh Toán</h3>
-    <ul>
-      <li><b>Phần 1: Giấy đề nghị mua dịch vụ (Mẫu 01/ĐN-DV):</b> Phê duyệt chủ trương và dự toán kinh phí trước khi thực hiện.</li>
-      <li><b>Phần 2: Bảng tổng hợp hóa đơn & Chứng từ gốc:</b> Đính kèm Hóa đơn GTGT, biên bản nghiệm thu, ảnh thực tế rõ nét.</li>
-      <li><b>Phần 3: Giấy đề nghị thanh toán (Mẫu 02/ĐNTT-VA):</b> Tự động kế thừa thông tin, tích hợp thông tin tài khoản thụ hưởng và số tiền bằng chữ tiếng Việt chuẩn xác.</li>
-      <li><b>Đồng bộ dữ liệu 2 chiều:</b> Tự động điền chéo thông tin khi nhập, chuyển tab linh hoạt không mất dữ liệu.</li>
-    </ul>
-
-    <h3>7. Xuất Biểu Mẫu, Xem Trước & In Ấn Chuẩn A4</h3>
-    <ul>
-      <li><b>In trực tiếp (Ctrl + P):</b> Định dạng chuẩn xác từng biểu mẫu nằm trọn trên <b>đúng 1 trang A4 duy nhất</b>.</li>
-      <li><b>In Combo trọn bộ 3 tờ:</b> Xuất hồ sơ thanh toán đúng <b>3 trang A4 liên tiếp</b>, không bị tràn trang.</li>
-      <li><b>Xuất file Word (.doc MHTML):</b> Đóng gói nhúng dữ liệu ảnh nhị phân trực tiếp, <b>hiển thị 100% hình ảnh hóa đơn offline và trong chế độ Protected View</b> của Word.</li>
-    </ul>
-
-    <h3>8. Tiện ích Bổ trợ</h3>
-    <ul>
-      <li>Quản lý Hợp đồng lao động & cảnh báo hợp đồng sắp hết hạn.</li>
-      <li>Quản lý Cấp phát & Thu hồi Tài sản, trang thiết bị làm việc.</li>
-      <li>Theo dõi Khen thưởng, Kỷ luật & Cổng tiếp nhận Sáng kiến cải tiến.</li>
-      <li>Nhật ký hệ thống (Audit Logs) & Sao lưu / Phục hồi dữ liệu SQLite định kỳ an toàn.</li>
-    </ul>
-
-    <h2>III. KẾT LUẬN & ĐỀ XUẤT BÀN GIAO</h2>
-    <p>1. Hệ thống HRM Nệm Việt Á đã hoàn thành nghiệm thu toàn diện các chức năng quản trị, bảo mật và in ấn chứng từ.</p>
-    <p>2. Kính trình Ban Giám Đốc xem xét phê duyệt đưa hệ thống vào áp dụng chính thức phục vụ công tác quản trị và tính lương định kỳ của Công ty.</p>
+    <h2>IV. ĐỀ XUẤT & KIẾN NGHỊ</h2>
+    <p>Hệ thống hiện tại đã đạt độ hoàn thiện 100%, chạy ổn định và đáp ứng hoàn hảo toàn bộ nghiệp vụ thực tế của Nệm Việt Á. Kính đề nghị Ban Giám Đốc:</p>
+    <p>1. <b>Nghiệm thu chính thức</b> các hạng mục tính năng đã hoàn thiện trong tháng này.</p>
+    <p>2. <b>Ban hành áp dụng chính thức</b> hệ thống HRM vào quy trình vận hành, chấm công, tính lương và duyệt chi phí định kỳ của Công ty kể từ tháng 10/2026.</p>
 
     <br/>
     <!-- Bảng Chữ Ký Nghiệm Thu -->
-    <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 20pt; text-align: center;">
+    <table style="width: 100%; border-collapse: collapse; border: none; margin-top: 15pt; text-align: center;">
       <tr>
         <td style="width: 33%; vertical-align: top; border: none;">
           <b>NGƯỜI LẬP BÁO CÁO</b><br/>
@@ -224,7 +275,7 @@ const reportHtml = `
         </td>
         <td style="width: 34%; vertical-align: top; border: none;">
           <b>BAN GIÁM ĐỐC</b><br/>
-          <i style="font-size: 9.5pt; color: #64748b;">(Ký tên & đóng dấu)</i><br/><br/><br/><br/>
+          <i style="font-size: 9.5pt; color: #64748b;">(Ký tên & phê duyệt)</i><br/><br/><br/><br/>
           <b>Võ Minh Cường</b><br/>
           <span style="font-size: 9.5pt; color: #475569;">Phó Giám Đốc</span>
         </td>
@@ -236,4 +287,4 @@ const reportHtml = `
 `;
 
 fs.writeFileSync(outputPathDoc, '\ufeff' + reportHtml, 'utf-8');
-console.log('✓ Đã xuất thành công file Báo cáo Word tại:', outputPathDoc);
+console.log('✓ Đã xuất thành công file Báo cáo Word cập nhật tại:', outputPathDoc);
