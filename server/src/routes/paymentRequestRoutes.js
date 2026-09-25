@@ -20,8 +20,9 @@ import {
   deletePaymentRequest,
   // Phần 2: Chứng từ & File
   deleteAttachment,
-  // Thống kê
-  getFullStats
+  // Thống kê & In Combo
+  getFullStats,
+  getComboRequestData
 } from '../controllers/paymentRequestController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -92,8 +93,9 @@ router.post('/upload-attachment', upload.single('file'), (req, res) => {
   });
 });
 
-// Thống kê Dashboard
+// Thống kê Dashboard & Combo Print
 router.get('/stats', getFullStats);
+router.get('/combo/:type/:id', getComboRequestData);
 
 // 1. PHẦN 1: MUA DỊCH VỤ (01/ĐN-DV)
 router.get('/purchase', getPurchaseRequests);

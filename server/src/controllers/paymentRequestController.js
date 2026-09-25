@@ -978,3 +978,55 @@ async function getPaymentRequestDetail(id) {
     purchase_items: purchaseItems || []
   };
 }
+
+export const getComboRequestData = async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    let purchaseData = null;
+    let paymentData = null;
+    let allAttachments = [];
+
+    if (type.toUpperCase() === 'PURCHASE') {
+      purchaseData = await getPurchaseRequestDetail(id);
+      if (purchaseData) {
+        // Tìm payment request liên kết nếu có
+        const linkedPayment = await query.get(
+          'SELECT id FROM payment_requests WHERE purchase_request_id = ? LIMIT 1',
+          [purchaseData.id]
+        );
+        if (linkedPayment) {
+          paymentData = await getPaymentRequestDetail(linkedPayment.id);
+        }
+      }
+    } else {
+      paymentData = await getPaymentRequestDetail(id);
+      if (paymentData && paymentData.purchase_request_id) {
+        purchaseData = await getPurchaseRequestDetail(paymentData.purchase_request_id);
+      }
+    }
+
+    if (purchaseData && purchaseData.attachments) {
+      allAttachments = [...allAttachments, ...purchaseData.attachments];
+    }
+    if (paymentData && paymentData.attachments) {
+      const existingUrls = new Set(allAttachments.map(a => a.file_url));
+      paymentData.attachments.forEach(a => {
+        if (!existingUrls.has(a.file_url)) {
+          allAttachments.push(a);
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        purchase_request: purchaseData,
+        payment_request: paymentData,
+        attachments: allAttachments
+      }
+    });
+  } catch (err) {
+    console.error('Lỗi lấy dữ liệu in combo 3 tờ:', err);
+    return res.status(500).json({ message: 'Lỗi lấy dữ liệu combo 3 tờ', error: err.message });
+  }
+};
