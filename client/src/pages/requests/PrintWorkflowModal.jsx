@@ -502,68 +502,68 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     const imageAttachments = allAttachments.filter(isImageAttachment);
     const page2Word = `
       <div class="word-page">
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 4pt; border: none;">
           <tr>
             <td style="width: 60%; vertical-align: top; border: none; text-align: left; padding: 0;">
-              <b style="font-size: 11pt; color: #0f172a;">${nfc('CÔNG TY TNHH TM SX VIỆT Á')}</b><br/>
-              <span style="font-size: 9pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
+              <b style="font-size: 10.5pt; color: #0f172a;">${nfc('CÔNG TY TNHH TM SX VIỆT Á')}</b><br/>
+              <span style="font-size: 8.5pt; color: #475569;">${nfc('Trụ sở: Kim Sơn, Châu Thành, Đồng Tháp')}</span>
             </td>
-            <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9.5pt; color: #334155;">
+            <td style="width: 40%; vertical-align: top; border: none; text-align: right; padding: 0; font-style: italic; font-size: 9pt; color: #334155;">
               <span>${nfc(`Hồ sơ số: ${mainReq.code}`)}</span>
             </td>
           </tr>
         </table>
 
-        <div style="text-align: center; margin: 12pt 0 10pt 0;">
-          <h2 style="font-size: 15pt; font-weight: bold; color: #174378; margin: 0; text-transform: uppercase;">
+        <div style="text-align: center; margin: 6pt 0 4pt 0;">
+          <h2 style="font-size: 13pt; font-weight: bold; color: #174378; margin: 0; text-transform: uppercase;">
             ${nfc('BẢNG TỔNG HỢP HÓA ĐƠN & CHỨNG TỪ GỐC')}
           </h2>
-          <div style="font-style: italic; font-size: 9.5pt; color: #475569; margin-top: 3pt;">
+          <div style="font-style: italic; font-size: 8.5pt; color: #475569; margin-top: 2pt;">
             ${nfc(`Đồng Tháp, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
           </div>
-          <div style="font-style: italic; font-size: 9.5pt; color: #1e293b; margin-top: 2pt; font-weight: bold;">
+          <div style="font-style: italic; font-size: 8.5pt; color: #1e293b; margin-top: 1pt; font-weight: bold;">
             ${nfc('Kèm theo hồ sơ đề xuất & quyết toán chi phí công ty')}
           </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none; font-size: 10pt;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 4pt; border: none; font-size: 9pt;">
           <tr>
-            <td style="width: 50%; border: none; padding: 3pt 0;">
+            <td style="width: 50%; border: none; padding: 2pt 0;">
               ${nfc('Người lập hồ sơ: ')}<b>${nfc(mainReq.creator_name || mainReq.creator_username)}</b>
             </td>
-            <td style="width: 50%; border: none; padding: 3pt 0;">
+            <td style="width: 50%; border: none; padding: 2pt 0;">
               ${nfc('Bộ phận / Phòng ban: ')}<b>${nfc(mainReq.department)}</b>
             </td>
           </tr>
           <tr>
-            <td colspan="2" style="border: none; padding: 3pt 0;">
+            <td colspan="2" style="border: none; padding: 2pt 0;">
               ${nfc('Nội dung công việc / Dịch vụ: ')}<i style="color: #334155;">${nfc(mainReq.purpose || mainReq.payment_content)}</i>
             </td>
           </tr>
         </table>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10pt; border: 1px solid #475569;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6pt; border: 1px solid #475569;">
           <thead>
             <tr style="background-color: #174378; color: #ffffff;">
-              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; width: 35pt; text-align: center;">${nfc('STT')}</th>
-              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left; width: 140pt;">${nfc('Phân loại chứng từ')}</th>
-              <th style="border: 1px solid #475569; padding: 5pt; font-size: 9.5pt; text-align: left;">${nfc('Tên file / Số hóa đơn chứng từ')}</th>
-              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; text-align: center; width: 75pt;">${nfc('Dung lượng')}</th>
-              <th style="border: 1px solid #475569; padding: 5pt 3pt; font-size: 9.5pt; text-align: center; width: 85pt;">${nfc('Ngày tải lên')}</th>
+              <th style="border: 1px solid #475569; padding: 3pt; font-size: 8.5pt; width: 30pt; text-align: center;">${nfc('STT')}</th>
+              <th style="border: 1px solid #475569; padding: 3pt 4pt; font-size: 8.5pt; text-align: left; width: 130pt;">${nfc('Phân loại chứng từ')}</th>
+              <th style="border: 1px solid #475569; padding: 3pt 4pt; font-size: 8.5pt; text-align: left;">${nfc('Tên file / Số hóa đơn chứng từ')}</th>
+              <th style="border: 1px solid #475569; padding: 3pt; font-size: 8.5pt; text-align: center; width: 65pt;">${nfc('Dung lượng')}</th>
+              <th style="border: 1px solid #475569; padding: 3pt; font-size: 8.5pt; text-align: center; width: 75pt;">${nfc('Ngày tải lên')}</th>
             </tr>
           </thead>
           <tbody>
             ${allAttachments.length > 0 ? allAttachments.map((att, idx) => `
-              <tr style="height: 20pt; font-size: 9.5pt;">
-                <td style="border: 1px solid #475569; padding: 3pt; text-align: center;">${idx + 1}</td>
-                <td style="border: 1px solid #475569; padding: 3pt 5pt; font-weight: bold; color: #0f172a;">${nfc(FILE_TYPE_MAP[att.file_type] || att.file_type)}</td>
-                <td style="border: 1px solid #475569; padding: 3pt 5pt;">${nfc(att.file_name)}</td>
-                <td style="border: 1px solid #475569; padding: 3pt; text-align: center; color: #475569;">${att.file_size || '---'}</td>
-                <td style="border: 1px solid #475569; padding: 3pt; text-align: center; color: #475569;">${formatDate(att.uploaded_at)}</td>
+              <tr style="height: 16pt; font-size: 8.5pt;">
+                <td style="border: 1px solid #475569; padding: 2pt; text-align: center;">${idx + 1}</td>
+                <td style="border: 1px solid #475569; padding: 2pt 4pt; font-weight: bold; color: #0f172a;">${nfc(FILE_TYPE_MAP[att.file_type] || att.file_type)}</td>
+                <td style="border: 1px solid #475569; padding: 2pt 4pt;">${nfc(att.file_name)}</td>
+                <td style="border: 1px solid #475569; padding: 2pt; text-align: center; color: #475569;">${att.file_size || '---'}</td>
+                <td style="border: 1px solid #475569; padding: 2pt; text-align: center; color: #475569;">${formatDate(att.uploaded_at)}</td>
               </tr>
             `).join('') : `
               <tr>
-                <td colspan="5" style="border: 1px solid #475569; padding: 8pt; text-align: center; font-style: italic; color: #64748b;">
+                <td colspan="5" style="border: 1px solid #475569; padding: 6pt; text-align: center; font-style: italic; color: #64748b; font-size: 8.5pt;">
                   ${nfc('Chứng từ gốc đính kèm bản cứng theo phiếu')}
                 </td>
               </tr>
@@ -571,39 +571,39 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           </tbody>
         </table>
 
-        <div style="margin-bottom: 12pt; border: 1px solid #cbd5e1; background-color: #f8fafc; padding: 8pt; border-radius: 4px;">
-          <b style="font-size: 9.5pt; text-transform: uppercase; color: #1e293b; display: block; margin-bottom: 6pt;">
+        <div style="margin-bottom: 6pt; border: 1px solid #cbd5e1; background-color: #f8fafc; padding: 4pt; border-radius: 4px;">
+          <b style="font-size: 8.5pt; text-transform: uppercase; color: #1e293b; display: block; margin-bottom: 3pt;">
             ${nfc('Hình ảnh hóa đơn / Nghiệm thu thực tế kèm theo:')}
           </b>
           ${imageAttachments.length > 0 ? `
             <table style="width: 100%; border-collapse: collapse; border: none;">
               <tr>
-                ${imageAttachments.slice(0, 4).map((imgAtt) => `
-                  <td style="width: ${imageAttachments.length === 1 ? '100%' : '50%'}; text-align: center; vertical-align: top; padding: 4pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                    <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" style="max-height: 150pt; max-width: 220pt; margin: 0 auto; display: block;" /><br/>
-                    <span style="font-size: 8.5pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
+                ${imageAttachments.slice(0, 2).map((imgAtt) => `
+                  <td style="width: ${imageAttachments.length === 1 ? '100%' : '50%'}; text-align: center; vertical-align: middle; padding: 2pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
+                    <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" width="240" height="130" style="width: 240px; height: 130px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                    <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
                   </td>
                 `).join('')}
               </tr>
             </table>
           ` : `
-            <div style="padding: 12pt; text-align: center; color: #64748b; font-style: italic; font-size: 9.5pt; border: 1px dashed #cbd5e1; background-color: #ffffff;">
+            <div style="padding: 8pt; text-align: center; color: #64748b; font-style: italic; font-size: 8.5pt; border: 1px dashed #cbd5e1; background-color: #ffffff;">
               ${nfc('Đã đính kèm đầy đủ bản cứng Hóa đơn GTGT & Chứng từ đối soát gốc')}
             </div>
           `}
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15pt; border: none; text-align: center;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 8pt; border: none; text-align: center;">
           <tr>
             <td style="width: 50%; vertical-align: top; border: none; padding: 0 10pt;">
-              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('NGƯỜI LẬP HỒ SƠ')}</b><br/>
-              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
-              <div style="height: 45pt;"></div>
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #0f172a;">${nfc('NGƯỜI LẬP HỒ SƠ')}</b><br/>
+              <i style="font-size: 8pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 35pt;"></div>
             </td>
             <td style="width: 50%; vertical-align: top; border: none; padding: 0 10pt;">
-              <b style="font-size: 10pt; text-transform: uppercase; color: #0f172a;">${nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</b><br/>
-              <i style="font-size: 8.5pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
-              <div style="height: 45pt;"></div>
+              <b style="font-size: 9.5pt; text-transform: uppercase; color: #0f172a;">${nfc('KẾ TOÁN KIỂM TRA CHỨNG TỪ')}</b><br/>
+              <i style="font-size: 8pt; color: #64748b;">${nfc('(Ký & ghi rõ họ tên)')}</i><br/><br/>
+              <div style="height: 35pt;"></div>
             </td>
           </tr>
         </table>
