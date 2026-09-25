@@ -146,10 +146,25 @@ const PaymentRequestPage = () => {
   };
 
   // Mở modal in ấn
-  const handleOpenPrint = (req, type) => {
-    setPrintRequest(req);
-    setPrintType(type);
-    setIsPrintOpen(true);
+  const handleOpenPrint = async (req, type) => {
+    try {
+      let fullData = req;
+      if (!req.items || req.items.length === 0 || !req.attachments) {
+        const endpoint = type === 'PURCHASE' ? `/requests/purchase/${req.id}` : `/requests/payment/${req.id}`;
+        const res = await api.get(endpoint);
+        if (res.data?.data) {
+          fullData = res.data.data;
+        }
+      }
+      setPrintRequest(fullData);
+      setPrintType(type);
+      setIsPrintOpen(true);
+    } catch (err) {
+      console.error('Lỗi nạp dữ liệu in:', err);
+      setPrintRequest(req);
+      setPrintType(type);
+      setIsPrintOpen(true);
+    }
   };
 
   // Xóa phiếu

@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Printer, CheckCircle, ShieldCheck } from 'lucide-react';
+import api from '../../services/api';
 import { numberToVietnameseWords } from '../../utils/numberToVietnameseWords';
 
 const FILE_TYPE_CHECKLIST = [
@@ -10,9 +11,38 @@ const FILE_TYPE_CHECKLIST = [
   { id: 'KHAC', label: 'Chứng từ kế toán khác kèm theo' }
 ];
 
+// Chuẩn hóa Unicode NFC để tránh lỗi tách rời dấu tiếng Việt khi render font
+const nfc = (str) => (str ? String(str).normalize('NFC') : '');
+
 const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => {
   const printRef = useRef(null);
-  if (!isOpen || !request) return null;
+  const [fullReq, setFullReq] = useState(request);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    setFullReq(request);
+    if (!request || !isOpen) return;
+
+    // Tự động tải lại đầy đủ items và attachments nếu chưa có
+    const needFetch =
+      (type === 'PURCHASE' && (!request.items || request.items.length === 0)) ||
+      !request.attachments;
+
+    if (needFetch && request.id) {
+      setIsLoadingDetails(true);
+      const endpoint = type === 'PURCHASE' ? `/requests/purchase/${request.id}` : `/requests/payment/${request.id}`;
+      api.get(endpoint)
+        .then((res) => {
+          if (res.data?.data) {
+            setFullReq(res.data.data);
+          }
+        })
+        .catch((err) => console.error('Lỗi khi tải chi tiết để in:', err))
+        .finally(() => setIsLoadingDetails(false));
+    }
+  }, [request, isOpen, type]);
+
+  if (!isOpen || !fullReq) return null;
 
   const isPurchase = type === 'PURCHASE';
   const formCode = isPurchase ? 'Mẫu 01/ĐN-DV' : 'Mẫu 02/ĐNTT-VA';
@@ -41,16 +71,16 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     }
   };
 
-  const createdDate = new Date(request.created_at || Date.now());
+  const createdDate = new Date(fullReq.created_at || Date.now());
   const dayStr = String(createdDate.getDate()).padStart(2, '0');
   const monthStr = String(createdDate.getMonth() + 1).padStart(2, '0');
   const yearStr = createdDate.getFullYear();
 
-  const totalAmount = isPurchase ? request.total_estimated_amount : request.total_amount;
-  const amountWords = request.amount_in_words || numberToVietnameseWords(totalAmount);
+  const totalAmount = isPurchase ? fullReq.total_estimated_amount : fullReq.total_amount;
+  const amountWords = nfc(fullReq.amount_in_words || numberToVietnameseWords(totalAmount));
 
   // Danh sách loại chứng từ có trong đợt này
-  const attachedTypes = (request.attachments || []).map(a => a.file_type);
+  const attachedTypes = (fullReq.attachments || []).map(a => a.file_type);
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
@@ -61,8 +91,11 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
             <Printer className="w-5 h-5 text-brand-400" />
             <h3 className="font-semibold text-base">Xem trước & In Biểu Mẫu Chuẩn A4</h3>
             <span className="text-xs bg-brand-900 text-brand-200 border border-brand-700 px-2 py-0.5 rounded font-mono font-bold">
-              {request.code}
+              {fullReq.code}
             </span>
+            {isLoadingDetails && (
+              <span className="text-xs text-amber-300 animate-pulse ml-2">(Đang tải chi tiết dịch vụ...)</span>
+            )}
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -84,128 +117,133 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
         {/* Nội dung chuẩn A4 */}
         <div
           ref={printRef}
-          className="print-container p-10 print:p-8 bg-white text-slate-900 font-serif leading-relaxed text-[13px] print:text-[11pt]"
-          style={{ minHeight: '297mm' }}
+          className="print-container p-10 print:p-8 bg-white text-slate-900 leading-relaxed text-[13px] print:text-[11pt]"
+          style={{
+            minHeight: '297mm',
+            fontFamily: "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif"
+          }}
         >
           {/* Header 2 cột: Đơn vị & Tiêu ngữ */}
           <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-300">
             <div>
-              <p className="font-bold uppercase tracking-wide text-xs text-slate-900 font-sans">
-                CÔNG TY TNHH TM SX VIỆT Á
+              <p className="font-bold uppercase tracking-wide text-xs text-slate-900">
+                {nfc('CÔNG TY TNHH TM SX VIỆT Á')}
               </p>
-              <p className="text-[11px] text-slate-600 font-sans">
-                Bộ phận / Phòng ban: <span className="font-bold text-slate-800">{request.department || 'Ban Giám Đốc'}</span>
+              <p className="text-[11px] text-slate-600">
+                Bộ phận / Phòng ban: <span className="font-bold text-slate-800">{nfc(fullReq.department || 'Ban Giám Đốc')}</span>
               </p>
-              <p className="text-[11px] text-slate-600 font-sans">
-                Mã phiếu: <span className="font-mono font-bold text-brand-800">{request.code}</span>
+              <p className="text-[11px] text-slate-600">
+                Mã phiếu: <span className="font-mono font-bold text-brand-800">{fullReq.code}</span>
               </p>
             </div>
-            <div className="text-center font-sans">
+            <div className="text-center">
               <p className="font-bold text-xs uppercase tracking-wide">
-                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                {nfc('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM')}
               </p>
               <p className="font-semibold text-xs italic">
-                Độc lập - Tự do - Hạnh phúc
+                {nfc('Độc lập - Tự do - Hạnh phúc')}
               </p>
               <div className="w-24 h-0.5 bg-slate-800 mx-auto my-1"></div>
               <p className="text-[11px] italic text-slate-600 mt-1">
-                TP. Hồ Chí Minh, ngày {dayStr} tháng {monthStr} năm {yearStr}
+                {nfc(`TP. Hồ Chí Minh, ngày ${dayStr} tháng ${monthStr} năm ${yearStr}`)}
               </p>
             </div>
           </div>
 
           {/* Tiêu đề biểu mẫu */}
           <div className="text-center my-6">
-            <span className="text-[10px] font-sans font-semibold uppercase px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-600">
+            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-600">
               {formCode}
             </span>
-            <h1 className="text-xl font-bold uppercase mt-2 tracking-wide text-slate-900 font-sans">
-              {formTitle}
+            <h1 className="text-xl font-bold uppercase mt-2 tracking-wide text-slate-900">
+              {nfc(formTitle)}
             </h1>
-            {request.priority === 'KHANCAP' && (
-              <span className="inline-block mt-1 px-2.5 py-0.5 bg-rose-100 text-rose-700 border border-rose-300 rounded-full font-sans font-bold text-[11px]">
-                ★ MỨC ĐỘ: KHẨN CẤP
+            {fullReq.priority === 'KHANCAP' && (
+              <span className="inline-block mt-1 px-2.5 py-0.5 bg-rose-100 text-rose-700 border border-rose-300 rounded-full font-bold text-[11px]">
+                {nfc('★ MỨC ĐỘ: KHẨN CẤP')}
               </span>
             )}
           </div>
 
           {/* Kính gửi */}
           <div className="mb-4 text-center italic text-slate-700">
-            <span className="font-semibold">Kính gửi:</span> Ban Giám Đốc Công ty TNHH TM SX Việt Á
+            <span className="font-semibold not-italic">{nfc('Kính gửi:')}</span> {nfc('Ban Giám Đốc Công ty TNHH TM SX Việt Á')}
             <br />
-            <span className="ml-14">Phòng Tài chính - Kế toán</span>
+            <span className="ml-14">{nfc('Phòng Tài chính - Kế toán')}</span>
             <br />
-            <span className="ml-14">Trưởng bộ phận tiếp nhận duyệt ({request.approver_department || request.department})</span>
+            <span className="ml-14">
+              {nfc(`Trưởng bộ phận tiếp nhận duyệt (${fullReq.approver_department || fullReq.department || 'Phòng ban liên quan'})`)}
+            </span>
           </div>
 
           {/* Thông tin người đề nghị */}
           <div className="space-y-2 mb-4 text-slate-800">
             <div className="grid grid-cols-2 gap-4">
               <p>
-                <span className="font-semibold">Họ và tên người đề nghị:</span> {request.creator_name || request.creator_username}
+                <span className="font-semibold">{nfc('Họ và tên người đề nghị:')}</span> {nfc(fullReq.creator_name || fullReq.creator_username)}
               </p>
               <p>
-                <span className="font-semibold">Mã nhân viên:</span> {request.creator_emp_code || '---'}
+                <span className="font-semibold">{nfc('Mã nhân viên:')}</span> {fullReq.creator_emp_code || '---'}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <p>
-                <span className="font-semibold">Chức vụ:</span> {request.creator_position || 'Nhân viên'}
+                <span className="font-semibold">{nfc('Chức vụ:')}</span> {nfc(fullReq.creator_position || 'Nhân viên')}
               </p>
               <p>
-                <span className="font-semibold">Đơn vị / Phòng ban:</span> {request.department}
+                <span className="font-semibold">{nfc('Đơn vị / Phòng ban:')}</span> {nfc(fullReq.department)}
               </p>
             </div>
             <p>
-              <span className="font-semibold">{isPurchase ? 'Lý do & Mục đích mua dịch vụ:' : 'Nội dung đề nghị thanh toán:'}</span>{' '}
-              <span className="italic">{isPurchase ? request.purpose : request.payment_content}</span>
+              <span className="font-semibold">{isPurchase ? nfc('Lý do & Mục đích mua dịch vụ:') : nfc('Nội dung đề nghị thanh toán:')}</span>{' '}
+              <span className="italic">{nfc(isPurchase ? fullReq.purpose : fullReq.payment_content)}</span>
             </p>
           </div>
 
           {/* NỘI DUNG PHẦN 1: Mua dịch vụ (Bảng kê) */}
           {isPurchase && (
             <div className="mb-4">
-              <p className="font-semibold mb-2">Chi tiết các hạng mục / dịch vụ cần mua:</p>
+              <p className="font-semibold mb-2">{nfc('Chi tiết các hạng mục / dịch vụ cần mua:')}</p>
               <table className="w-full border-collapse border border-slate-400 text-xs">
                 <thead>
-                  <tr className="bg-slate-100 font-sans font-bold text-center">
+                  <tr className="bg-slate-100 font-bold text-center">
                     <th className="border border-slate-400 p-2 w-10">STT</th>
-                    <th className="border border-slate-400 p-2 text-left">Tên dịch vụ / Nội dung công việc</th>
-                    <th className="border border-slate-400 p-2 text-left">Đơn vị cung cấp</th>
-                    <th className="border border-slate-400 p-2 w-24">Thời gian</th>
-                    <th className="border border-slate-400 p-2 text-right w-28">Chi phí dự kiến</th>
-                    <th className="border border-slate-400 p-2 text-left">Ghi chú</th>
+                    <th className="border border-slate-400 p-2 text-left">{nfc('Tên dịch vụ / Nội dung công việc')}</th>
+                    <th className="border border-slate-400 p-2 text-left">{nfc('Đơn vị cung cấp')}</th>
+                    <th className="border border-slate-400 p-2 w-24">{nfc('Thời gian')}</th>
+                    <th className="border border-slate-400 p-2 text-right w-28">{nfc('Chi phí dự kiến')}</th>
+                    <th className="border border-slate-400 p-2 text-left">{nfc('Ghi chú')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {request.items && request.items.length > 0 ? (
-                    request.items.map((item, idx) => (
+                  {fullReq.items && fullReq.items.length > 0 ? (
+                    fullReq.items.map((item, idx) => (
                       <tr key={idx}>
                         <td className="border border-slate-400 p-2 text-center">{idx + 1}</td>
-                        <td className="border border-slate-400 p-2 font-medium">{item.service_name}</td>
-                        <td className="border border-slate-400 p-2">{item.supplier_name || '---'}</td>
+                        <td className="border border-slate-400 p-2 font-medium">{nfc(item.service_name)}</td>
+                        <td className="border border-slate-400 p-2">{nfc(item.supplier_name || '---')}</td>
                         <td className="border border-slate-400 p-2 text-center">{formatDate(item.due_date)}</td>
                         <td className="border border-slate-400 p-2 text-right font-mono font-semibold">
                           {formatMoney(item.amount)}
                         </td>
-                        <td className="border border-slate-400 p-2 italic text-slate-600">{item.note || '---'}</td>
+                        <td className="border border-slate-400 p-2 italic text-slate-600">{nfc(item.note || '---')}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan="6" className="border border-slate-400 p-3 text-center italic text-slate-500">
-                        Chi tiết dịch vụ theo nội dung đề nghị nêu trên
+                        {nfc('Chi tiết dịch vụ theo nội dung đề nghị nêu trên')}
                       </td>
                     </tr>
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-slate-100 font-bold font-sans">
+                  <tr className="bg-slate-100 font-bold">
                     <td colSpan="4" className="border border-slate-400 p-2 text-right uppercase">
-                      Tổng cộng dự toán chi phí:
+                      {nfc('Tổng cộng dự toán chi phí:')}
                     </td>
                     <td className="border border-slate-400 p-2 text-right font-mono text-brand-900 text-sm">
-                      {formatMoney(request.total_estimated_amount)}
+                      {formatMoney(fullReq.total_estimated_amount)}
                     </td>
                     <td className="border border-slate-400 p-2"></td>
                   </tr>
@@ -220,35 +258,35 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               <div className="p-3 bg-slate-50 border border-slate-300 rounded-md">
                 <div className="grid grid-cols-2 gap-4">
                   <p>
-                    <span className="font-semibold">Số tiền đề nghị thanh toán:</span>{' '}
+                    <span className="font-semibold">{nfc('Số tiền đề nghị thanh toán:')}</span>{' '}
                     <span className="font-bold text-base text-brand-900 font-mono">
-                      {formatMoney(request.total_amount)}
+                      {formatMoney(fullReq.total_amount)}
                     </span>
                   </p>
                   <p>
-                    <span className="font-semibold">Hình thức thanh toán:</span>{' '}
+                    <span className="font-semibold">{nfc('Hình thức thanh toán:')}</span>{' '}
                     <span className="font-medium">
-                      {request.payment_method === 'TIEN_MAT' ? '💵 Tiền mặt' : '🏦 Chuyển khoản ngân hàng'}
+                      {fullReq.payment_method === 'TIEN_MAT' ? nfc('💵 Tiền mặt') : nfc('🏦 Chuyển khoản ngân hàng')}
                     </span>
                   </p>
                 </div>
               </div>
 
-              {request.payment_method === 'CHUYEN_KHOAN' && (
+              {fullReq.payment_method === 'CHUYEN_KHOAN' && (
                 <div className="p-3 bg-slate-50 border border-slate-300 rounded-md space-y-1 text-xs">
-                  <p className="font-semibold font-sans uppercase text-slate-700">Thông tin tài khoản thụ hưởng:</p>
+                  <p className="font-semibold uppercase text-slate-700">{nfc('Thông tin tài khoản thụ hưởng:')}</p>
                   <div className="grid grid-cols-3 gap-2">
                     <p>
-                      <span className="text-slate-600">Chủ tài khoản:</span>{' '}
-                      <span className="font-bold uppercase">{request.bank_account_holder || '---'}</span>
+                      <span className="text-slate-600">{nfc('Chủ tài khoản:')}</span>{' '}
+                      <span className="font-bold uppercase">{nfc(fullReq.bank_account_holder || '---')}</span>
                     </p>
                     <p>
-                      <span className="text-slate-600">Số tài khoản:</span>{' '}
-                      <span className="font-mono font-bold text-sm text-slate-900">{request.bank_account_number || '---'}</span>
+                      <span className="text-slate-600">{nfc('Số tài khoản:')}</span>{' '}
+                      <span className="font-mono font-bold text-sm text-slate-900">{fullReq.bank_account_number || '---'}</span>
                     </p>
                     <p>
-                      <span className="text-slate-600">Ngân hàng:</span>{' '}
-                      <span className="font-medium">{request.bank_name || '---'}</span>
+                      <span className="text-slate-600">{nfc('Ngân hàng:')}</span>{' '}
+                      <span className="font-medium">{nfc(fullReq.bank_name || '---')}</span>
                     </p>
                   </div>
                 </div>
@@ -259,15 +297,15 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           {/* Số tiền bằng chữ */}
           <div className="mb-4 p-2.5 border-l-4 border-brand-600 bg-slate-50 text-slate-900">
             <p className="italic">
-              <span className="font-semibold not-italic">Bằng chữ:</span>{' '}
+              <span className="font-semibold not-italic">{nfc('Bằng chữ:')}</span>{' '}
               <span className="font-semibold text-slate-800">{amountWords}</span>
             </p>
           </div>
 
           {/* PHẦN 2: Checklist Chứng từ gốc kèm theo */}
           <div className="mb-6 p-3 bg-slate-50 border border-slate-300 rounded-md text-xs">
-            <p className="font-bold font-sans uppercase text-slate-800 mb-1.5">
-              Danh mục chứng từ gốc kèm theo hồ sơ thanh toán:
+            <p className="font-bold uppercase text-slate-800 mb-1.5">
+              {nfc('Danh mục chứng từ gốc kèm theo hồ sơ thanh toán:')}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {FILE_TYPE_CHECKLIST.map((item) => {
@@ -276,7 +314,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                   <div key={item.id} className="flex items-center space-x-2">
                     <span className="font-mono font-bold">{isChecked ? '[ ✔ ]' : '[   ]'}</span>
                     <span className={isChecked ? 'font-semibold text-slate-900' : 'text-slate-500'}>
-                      {item.label}
+                      {nfc(item.label)}
                     </span>
                   </div>
                 );
@@ -290,92 +328,92 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               {/* 1. Người đề nghị */}
               <div className="flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold uppercase font-sans text-[11px]">NGƯỜI ĐỀ NGHỊ</p>
-                  <p className="italic text-[10px] text-slate-500">(Ký, ghi rõ họ tên)</p>
+                  <p className="font-bold uppercase text-[11px]">{nfc('NGƯỜI ĐỀ NGHỊ')}</p>
+                  <p className="italic text-[10px] text-slate-500">{nfc('(Ký, ghi rõ họ tên)')}</p>
                 </div>
                 <div className="my-auto py-2">
-                  <span className="text-slate-400 italic text-[11px] font-sans">Đã lập phiếu</span>
+                  <span className="text-slate-400 italic text-[11px]">{nfc('Đã lập phiếu')}</span>
                 </div>
-                <p className="font-semibold font-sans text-[12px]">{request.creator_name || request.creator_username}</p>
+                <p className="font-semibold text-[12px]">{nfc(fullReq.creator_name || fullReq.creator_username)}</p>
               </div>
 
               {/* 2. Trưởng bộ phận */}
               <div className="flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold uppercase font-sans text-[11px]">
-                    TRƯỞNG BỘ PHẬN
-                    {request.approver_department && request.approver_department !== request.department && (
-                      <span className="block text-[9px] font-normal lowercase italic text-slate-600">({request.approver_department})</span>
+                  <p className="font-bold uppercase text-[11px]">
+                    {nfc('TRƯỞNG BỘ PHẬN')}
+                    {fullReq.approver_department && fullReq.approver_department !== fullReq.department && (
+                      <span className="block text-[9px] font-normal lowercase italic text-slate-600">({nfc(fullReq.approver_department)})</span>
                     )}
                   </p>
-                  <p className="italic text-[10px] text-slate-500">(Ký, duyệt)</p>
+                  <p className="italic text-[10px] text-slate-500">{nfc('(Ký, duyệt)')}</p>
                 </div>
                 <div className="my-auto py-2">
-                  {request.hod_approved_by ? (
-                    <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 font-sans text-[10px]">
+                  {fullReq.hod_approved_by ? (
+                    <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                       <div className="flex items-center justify-center space-x-1 font-bold">
                         <CheckCircle className="w-3 h-3 text-emerald-600" />
-                        <span>ĐÃ DUYỆT</span>
+                        <span>{nfc('ĐÃ DUYỆT')}</span>
                       </div>
-                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(request.hod_approved_at)}</p>
+                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(fullReq.hod_approved_at)}</p>
                     </div>
                   ) : (
-                    <span className="text-slate-300 italic text-[10px]">(Chưa ký)</span>
+                    <span className="text-slate-300 italic text-[10px]">{nfc('(Chưa ký)')}</span>
                   )}
                 </div>
-                <p className="font-semibold font-sans text-[12px]">{request.hod_fullname || '.........................'}</p>
+                <p className="font-semibold text-[12px]">{nfc(fullReq.hod_fullname || '.........................')}</p>
               </div>
 
               {/* 3. Kế toán trưởng */}
               <div className="flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold uppercase font-sans text-[11px]">KẾ TOÁN TRƯỞNG</p>
-                  <p className="italic text-[10px] text-slate-500">(Kiểm tra, xác nhận)</p>
+                  <p className="font-bold uppercase text-[11px]">{nfc('KẾ TOÁN TRƯỞNG')}</p>
+                  <p className="italic text-[10px] text-slate-500">{nfc('(Kiểm tra, xác nhận)')}</p>
                 </div>
                 <div className="my-auto py-2">
-                  {request.acc_approved_by ? (
-                    <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 font-sans text-[10px]">
+                  {fullReq.acc_approved_by ? (
+                    <div className="inline-block p-1.5 bg-emerald-50 border border-emerald-400 rounded text-emerald-800 text-[10px]">
                       <div className="flex items-center justify-center space-x-1 font-bold">
                         <CheckCircle className="w-3 h-3 text-emerald-600" />
-                        <span>ĐÃ DUYỆT</span>
+                        <span>{nfc('ĐÃ DUYỆT')}</span>
                       </div>
-                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(request.acc_approved_at)}</p>
+                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(fullReq.acc_approved_at)}</p>
                     </div>
                   ) : (
-                    <span className="text-slate-300 italic text-[10px]">(Chưa ký)</span>
+                    <span className="text-slate-300 italic text-[10px]">{nfc('(Chưa ký)')}</span>
                   )}
                 </div>
-                <p className="font-semibold font-sans text-[12px]">{request.acc_fullname || '.........................'}</p>
+                <p className="font-semibold text-[12px]">{nfc(fullReq.acc_fullname || '.........................')}</p>
               </div>
 
               {/* 4. Ban Giám Đốc */}
               <div className="flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <p className="font-bold uppercase font-sans text-[11px] text-brand-900">BAN GIÁM ĐỐC</p>
-                  <p className="italic text-[10px] text-slate-500">(Phê duyệt chi)</p>
+                  <p className="font-bold uppercase text-[11px] text-brand-900">{nfc('BAN GIÁM ĐỐC')}</p>
+                  <p className="italic text-[10px] text-slate-500">{nfc('(Phê duyệt chi)')}</p>
                 </div>
                 <div className="my-auto py-2">
-                  {request.bod_approved_by || request.status === 'PAID' ? (
-                    <div className="inline-block p-1.5 bg-brand-50 border border-brand-400 rounded text-brand-900 font-sans text-[10px] shadow-xs">
+                  {fullReq.bod_approved_by || fullReq.status === 'PAID' ? (
+                    <div className="inline-block p-1.5 bg-brand-50 border border-brand-400 rounded text-brand-900 text-[10px] shadow-xs">
                       <div className="flex items-center justify-center space-x-1 font-bold">
                         <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-                        <span>ĐÃ PHÊ DUYỆT</span>
+                        <span>{nfc('ĐÃ PHÊ DUYỆT')}</span>
                       </div>
-                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(request.bod_approved_at || request.updated_at)}</p>
+                      <p className="text-[9px] text-slate-600 mt-0.5">{formatDateTime(fullReq.bod_approved_at || fullReq.updated_at)}</p>
                     </div>
                   ) : (
-                    <span className="text-slate-300 italic text-[10px]">(Chờ phê duyệt)</span>
+                    <span className="text-slate-300 italic text-[10px]">{nfc('(Chờ phê duyệt)')}</span>
                   )}
                 </div>
-                <p className="font-semibold font-sans text-[12px]">{request.bod_fullname || '.........................'}</p>
+                <p className="font-semibold text-[12px]">{nfc(fullReq.bod_fullname || '.........................')}</p>
               </div>
             </div>
           </div>
 
           {/* Dấu đã chi tiền */}
-          {request.status === 'PAID' && (
-            <div className="mt-6 p-2 border-2 border-dashed border-blue-400 bg-blue-50/60 rounded text-center text-xs font-sans text-blue-900">
-              <span className="font-bold uppercase">✔ ĐÃ XUẤT QUỸ / HOÀN TẤT CHI TIỀN</span>
+          {fullReq.status === 'PAID' && (
+            <div className="mt-6 p-2 border-2 border-dashed border-blue-400 bg-blue-50/60 rounded text-center text-xs text-blue-900">
+              <span className="font-bold uppercase">{nfc('✔ ĐÃ XUẤT QUỸ / HOÀN TẤT CHI TIỀN')}</span>
             </div>
           )}
         </div>

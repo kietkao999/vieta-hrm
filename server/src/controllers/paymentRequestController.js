@@ -234,6 +234,12 @@ export const getPurchaseRequests = async (req, res) => {
 
     const records = await query.all(sql, [...params, parseInt(limit, 10), parseInt(offset, 10)]);
 
+    // Nạp đầy đủ danh mục items và attachments cho mỗi phiếu đề nghị mua
+    for (const r of records) {
+      r.items = await query.all('SELECT * FROM purchase_request_items WHERE request_id = ? ORDER BY id ASC', [r.id]);
+      r.attachments = await query.all('SELECT * FROM request_attachments WHERE purchase_request_id = ? ORDER BY id ASC', [r.id]);
+    }
+
     return res.json({
       data: records,
       total: records.length
@@ -590,6 +596,11 @@ export const getPaymentRequests = async (req, res) => {
     `;
 
     const records = await query.all(sql, [...params, parseInt(limit, 10), parseInt(offset, 10)]);
+
+    // Nạp danh sách chứng từ đính kèm cho mỗi phiếu thanh toán
+    for (const r of records) {
+      r.attachments = await query.all('SELECT * FROM request_attachments WHERE payment_request_id = ? ORDER BY id ASC', [r.id]);
+    }
 
     return res.json({
       data: records,

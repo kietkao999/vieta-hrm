@@ -81,7 +81,7 @@ export function numberToVietnameseWords(amount) {
     finalStr = finalStr.charAt(0).toUpperCase() + finalStr.slice(1) + ' đồng chẵn';
   }
 
-  return finalStr;
+  return finalStr.normalize('NFC');
 }
 
 export default numberToVietnameseWords;
