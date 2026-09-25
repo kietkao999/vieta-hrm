@@ -14,7 +14,9 @@ const FILE_TYPE_MAP = {
   KHAC: '📂 Chứng từ kế toán khác'
 };
 
-const getAbsoluteUrl = (url) => {
+const getAttachmentUrl = (attOrUrl) => {
+  if (!attOrUrl) return '';
+  const url = typeof attOrUrl === 'string' ? attOrUrl : (attOrUrl.file_url || attOrUrl.url || attOrUrl.path || attOrUrl.file_path || '');
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
@@ -30,6 +32,20 @@ const getAbsoluteUrl = (url) => {
     }
   }
   return `${origin}${cleanUrl}`;
+};
+
+const isImageAttachment = (att) => {
+  if (!att) return false;
+  const url = att.file_url || att.url || att.path || att.file_path || '';
+  const name = att.file_name || att.name || '';
+  const type = att.file_type || '';
+  return (
+    type === 'ANH_THUC_TE' ||
+    type === 'HOA_DON_GTGT' ||
+    /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(url) ||
+    /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(name) ||
+    url.startsWith('data:image/')
+  );
 };
 
 const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => {
@@ -483,7 +499,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
     `;
 
     // --- HTML TRANG 2 (BẢNG KÊ CHỨNG TỪ) ---
-    const imageAttachments = allAttachments.filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || ''));
+    const imageAttachments = allAttachments.filter(isImageAttachment);
     const page2Word = `
       <div class="word-page">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 8pt; border: none;">
@@ -563,10 +579,10 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           ${imageAttachments.length > 0 ? `
             <table style="width: 100%; border-collapse: collapse; border: none;">
               <tr>
-                ${imageAttachments.slice(0, 2).map((imgAtt) => `
-                  <td style="width: 50%; text-align: center; vertical-align: top; padding: 4pt; border: 1px solid #e2e8f0; background-color: #ffffff;">
-                    <img src="${getAbsoluteUrl(imgAtt.file_url)}" alt="${imgAtt.file_name}" style="max-height: 150pt; max-width: 200pt; margin: 0 auto; display: block;" /><br/>
-                    <span style="font-size: 8.5pt; color: #475569;">${nfc(imgAtt.file_name)}</span>
+                ${imageAttachments.slice(0, 4).map((imgAtt) => `
+                  <td style="width: ${imageAttachments.length === 1 ? '100%' : '50%'}; text-align: center; vertical-align: top; padding: 4pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
+                    <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" style="max-height: 150pt; max-width: 220pt; margin: 0 auto; display: block;" /><br/>
+                    <span style="font-size: 8.5pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
                   </td>
                 `).join('')}
               </tr>
@@ -1224,19 +1240,22 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
                   {allAttachments
-                    .filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || ''))
-                    .slice(0, 2)
+                    .filter(isImageAttachment)
+                    .slice(0, 4)
                     .map((imgAtt, idx) => (
-                      <div key={idx} className="border border-slate-300 bg-white p-1.5 rounded text-center">
+                      <div key={idx} className="border border-slate-300 bg-white p-2 rounded text-center shadow-xs">
                         <img
-                          src={getAbsoluteUrl(imgAtt.file_url)}
-                          alt={imgAtt.file_name}
-                          className="max-h-40 mx-auto object-contain rounded"
+                          src={getAttachmentUrl(imgAtt)}
+                          alt={imgAtt.file_name || 'Ảnh chứng từ'}
+                          className="max-h-44 mx-auto object-contain rounded"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
                         />
-                        <p className="text-[10px] text-slate-600 mt-1 truncate font-medium">{nfc(imgAtt.file_name)}</p>
+                        <p className="text-[10px] text-slate-600 mt-1 truncate font-medium">{nfc(imgAtt.file_name || 'Ảnh đính kèm')}</p>
                       </div>
                     ))}
-                  {allAttachments.filter(a => /\.(jpg|jpeg|png|webp|gif)$/i.test(a.file_url || a.file_name || '')).length === 0 && (
+                  {allAttachments.filter(isImageAttachment).length === 0 && (
                     <div className="col-span-2 p-4 border border-dashed border-slate-300 rounded text-center text-slate-400 italic text-xs">
                       {nfc('Đã đính kèm đầy đủ bản cứng Hóa đơn GTGT & Chứng từ đối soát gốc')}
                     </div>
