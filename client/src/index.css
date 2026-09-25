@@ -97,14 +97,46 @@ body {
 
 /* Print Styles for A4 official documents */
 @media print {
-  body {
+  html, body {
     background-color: #ffffff !important;
+    background: #ffffff !important;
     color: #000000 !important;
     font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
   
-  header, aside, .no-print, nav {
-    display: none !important;
+  /* Ẩn toàn bộ giao diện nền web */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Chỉ hiển thị khu vực in A4 */
+  .print-container, .print-container * {
+    visibility: visible !important;
+  }
+
+  .print-modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    inset: auto !important;
+  }
+
+  .print-modal-card {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
   }
 
   .print-container {
@@ -115,11 +147,19 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+  }
+
+  header, aside, nav, .no-print, .backdrop-blur-xs {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm 10mm 12mm;
+    margin: 8mm 10mm 8mm 10mm;
   }
 }
 

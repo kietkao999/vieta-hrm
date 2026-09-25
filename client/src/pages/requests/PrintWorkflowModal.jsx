@@ -103,8 +103,8 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   const showPage3 = printMode === 'COMBO_3_PAGES' || printMode === 'PAYMENT_ONLY';
 
   return (
-    <div className="fixed inset-0 z-70 flex items-start justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden my-2 sm:my-4 print:my-0 print:shadow-none print:w-full print:max-w-none print:rounded-none">
+    <div className="print-modal-overlay fixed inset-0 z-70 flex items-start justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+      <div className="print-modal-card relative w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden my-2 sm:my-4 print:my-0 print:shadow-none print:w-full print:max-w-none print:rounded-none">
         
         {/* Header Toolbar Cố định trên cùng modal */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-3.5 bg-slate-800 text-white no-print sticky top-0 z-30 shadow-md gap-3">
