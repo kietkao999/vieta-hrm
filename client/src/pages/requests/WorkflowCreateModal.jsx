@@ -132,7 +132,7 @@ const WorkflowCreateModal = ({
     mode === 'PURCHASE' ? calculatedEstimatedTotal : finalPaymentAmount
   );
 
-  // Thao tác bảng items Phần 1
+  // Thao tác bảng items Phần 1 & Tự động đồng bộ sang Phần 3
   const handleAddItem = () => {
     setItems(prev => [
       ...prev,
@@ -151,6 +151,81 @@ const WorkflowCreateModal = ({
       copy[idx] = { ...copy[idx], [field]: val };
       return copy;
     });
+
+    if (field === 'service_name' && idx === 0 && val) {
+      if (!purpose || purpose === items[0]?.service_name) {
+        setPurpose(val);
+      }
+      if (!paymentContent || paymentContent === items[0]?.service_name) {
+        setPaymentContent(val);
+      }
+    }
+    if (field === 'supplier_name' && idx === 0 && val) {
+      if (!bankAccountHolder) {
+        setBankAccountHolder(val.toUpperCase());
+      }
+    }
+    if (field === 'amount') {
+      const newTotal = items.reduce((sum, it, i) => sum + (parseFloat(i === idx ? val : it.amount) || 0), 0);
+      if (newTotal > 0 && (!totalAmount || parseFloat(totalAmount) === 0 || parseFloat(totalAmount) === calculatedEstimatedTotal)) {
+        setTotalAmount(String(newTotal));
+      }
+    }
+  };
+
+  const handlePurposeChange = (val) => {
+    setPurpose(val);
+    if (!paymentContent || paymentContent === purpose) {
+      setPaymentContent(val);
+    }
+  };
+
+  const handlePaymentContentChange = (val) => {
+    setPaymentContent(val);
+    if (!purpose || purpose === paymentContent) {
+      setPurpose(val);
+    }
+  };
+
+  const handleSwitchTab = (tabNum) => {
+    if (tabNum === 3) {
+      setMode('PAYMENT');
+      setActiveStepTab(3);
+      if (!paymentContent.trim()) {
+        const autoContent = purpose.trim() || (items[0]?.service_name ? `Thanh toán: ${items[0].service_name}` : '');
+        if (autoContent) setPaymentContent(autoContent);
+      }
+      if (!totalAmount || parseFloat(totalAmount) === 0) {
+        if (calculatedEstimatedTotal > 0) {
+          setTotalAmount(String(calculatedEstimatedTotal));
+        }
+      }
+      if (!bankAccountHolder && items[0]?.supplier_name) {
+        setBankAccountHolder(items[0].supplier_name.toUpperCase());
+      }
+    } else if (tabNum === 1) {
+      setMode('PURCHASE');
+      setActiveStepTab(1);
+      if (!purpose.trim() && paymentContent.trim()) {
+        setPurpose(paymentContent.trim());
+      }
+      if (!items[0]?.service_name && paymentContent.trim()) {
+        setItems(prev => {
+          const copy = [...prev];
+          copy[0] = { ...copy[0], service_name: paymentContent.trim() };
+          return copy;
+        });
+      }
+      if ((!items[0]?.amount || parseFloat(items[0].amount) === 0) && finalPaymentAmount > 0) {
+        setItems(prev => {
+          const copy = [...prev];
+          copy[0] = { ...copy[0], amount: String(finalPaymentAmount) };
+          return copy;
+        });
+      }
+    } else {
+      setActiveStepTab(2);
+    }
   };
 
   // Gửi biểu mẫu
@@ -285,10 +360,7 @@ const WorkflowCreateModal = ({
         <div className="grid grid-cols-3 p-2 bg-slate-100 border-b border-slate-200 gap-1.5 text-xs">
           <button
             type="button"
-            onClick={() => {
-              setMode('PURCHASE');
-              setActiveStepTab(1);
-            }}
+            onClick={() => handleSwitchTab(1)}
             disabled={Boolean(sourcePurchaseRequest)}
             className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
               mode === 'PURCHASE' && activeStepTab === 1
@@ -302,7 +374,7 @@ const WorkflowCreateModal = ({
 
           <button
             type="button"
-            onClick={() => setActiveStepTab(2)}
+            onClick={() => handleSwitchTab(2)}
             className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
               activeStepTab === 2
                 ? 'bg-white text-emerald-700 shadow-xs border border-slate-200'
@@ -315,10 +387,7 @@ const WorkflowCreateModal = ({
 
           <button
             type="button"
-            onClick={() => {
-              setMode('PAYMENT');
-              setActiveStepTab(3);
-            }}
+            onClick={() => handleSwitchTab(3)}
             className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer ${
               mode === 'PAYMENT' && activeStepTab === 3
                 ? 'bg-white text-blue-700 shadow-xs border border-slate-200'
@@ -406,7 +475,7 @@ const WorkflowCreateModal = ({
                   required
                   rows={2}
                   value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
+                  onChange={(e) => handlePurposeChange(e.target.value)}
                   placeholder="Ví dụ: Bảo dưỡng định kỳ hệ thống máy móc xưởng nệm, thuê xe tải giao hàng đại lý..."
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
                 />
@@ -588,7 +657,7 @@ const WorkflowCreateModal = ({
                   required
                   rows={2}
                   value={paymentContent}
-                  onChange={(e) => setPaymentContent(e.target.value)}
+                  onChange={(e) => handlePaymentContentChange(e.target.value)}
                   placeholder="Ví dụ: Thanh toán đợt 1 tiền bảo dưỡng máy cắt mút xốp theo Hóa đơn GTGT số 001..."
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
                 />

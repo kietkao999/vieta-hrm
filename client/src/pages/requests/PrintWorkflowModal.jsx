@@ -151,12 +151,25 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
   const monthStr = String(createdDate.getMonth() + 1).padStart(2, '0');
   const yearStr = createdDate.getFullYear();
 
-  // Danh sách dòng bảng dịch vụ cho Phần 1 (đệm thêm dòng trống nếu ít hơn 6 dòng cho chuẩn trang in)
-  const purchaseItems = effectivePurchase?.items || [];
-  const minRows = Math.max(purchaseItems.length, 6);
+  // Danh sách dòng bảng dịch vụ cho Phần 1 (Tự động kế thừa từ Đề nghị thanh toán nếu chưa có bảng chi tiết)
+  const rawPurchaseItems = (effectivePurchase?.items && effectivePurchase.items.length > 0)
+    ? effectivePurchase.items
+    : (effectivePurchase?.purchase_items && effectivePurchase.purchase_items.length > 0)
+    ? effectivePurchase.purchase_items
+    : (effectivePayment?.payment_content || mainReq.payment_content || mainReq.purpose)
+    ? [{
+        service_name: effectivePayment?.payment_content || mainReq.payment_content || mainReq.purpose,
+        supplier_name: effectivePayment?.bank_account_holder || mainReq.bank_account_holder || '---',
+        due_date: mainReq.created_at,
+        amount: effectivePayment?.total_amount || mainReq.total_amount || mainReq.total_estimated_amount || 0,
+        note: ''
+      }]
+    : [];
+
+  const minRows = Math.max(rawPurchaseItems.length, 6);
   const purchaseTableRows = [];
   for (let i = 0; i < minRows; i++) {
-    purchaseTableRows.push(purchaseItems[i] || null);
+    purchaseTableRows.push(rawPurchaseItems[i] || null);
   }
 
   // Danh sách loại chứng từ đính kèm
