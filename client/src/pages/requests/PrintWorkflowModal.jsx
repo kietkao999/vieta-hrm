@@ -578,12 +578,19 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
           ${imageAttachments.length > 0 ? `
             <table style="width: 100%; border-collapse: collapse; border: none;">
               <tr>
-                ${imageAttachments.slice(0, 2).map((imgAtt) => `
-                  <td style="width: ${imageAttachments.length === 1 ? '100%' : '50%'}; text-align: center; vertical-align: middle; padding: 2pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                    <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" width="240" height="130" style="width: 240px; height: 130px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
-                    <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
+                ${imageAttachments.length === 1 ? `
+                  <td style="width: 100%; text-align: center; vertical-align: middle; padding: 4pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
+                    <img src="${getAttachmentUrl(imageAttachments[0])}" alt="${imageAttachments[0].file_name || 'Ảnh'}" width="480" height="270" style="width: 480px; height: 270px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                    <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imageAttachments[0].file_name || 'Ảnh đính kèm')}</span>
                   </td>
-                `).join('')}
+                ` : `
+                  ${imageAttachments.slice(0, 2).map((imgAtt) => `
+                    <td style="width: 50%; text-align: center; vertical-align: middle; padding: 2pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
+                      <img src="${getAttachmentUrl(imgAtt)}" alt="${imgAtt.file_name || 'Ảnh'}" width="235" height="140" style="width: 235px; height: 140px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                      <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
+                    </td>
+                  `).join('')}
+                `}
               </tr>
             </table>
           ` : `
@@ -1236,7 +1243,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                 <p className="font-bold text-xs uppercase text-slate-800 mb-1.5">
                   {nfc('Hình ảnh hóa đơn / Nghiệm thu thực tế kèm theo:')}
                 </p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className={`grid ${allAttachments.filter(isImageAttachment).length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2.5`}>
                   {allAttachments
                     .filter(isImageAttachment)
                     .slice(0, 4)
@@ -1245,7 +1252,7 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
                         <img
                           src={getAttachmentUrl(imgAtt)}
                           alt={imgAtt.file_name || 'Ảnh chứng từ'}
-                          className="max-h-44 mx-auto object-contain rounded"
+                          className={`${allAttachments.filter(isImageAttachment).length === 1 ? 'max-h-72 sm:max-h-80' : 'max-h-44'} mx-auto object-contain rounded`}
                           onError={(e) => {
                             e.target.style.display = 'none';
                           }}
