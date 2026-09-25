@@ -402,15 +402,22 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
       return `<div style="height: 45pt;"></div>`;
     };
 
-    // Chuẩn bị ảnh Base64 nhúng trực tiếp vào Word (tránh lỗi bảo mật Protected View của Word không tải ảnh URL ngoài)
+    // Chuẩn bị ảnh Base64 theo chuẩn MHTML nhúng trực tiếp vào Word (Word mở được 100% không bị lỗi The linked image cannot be displayed)
     const rawImageAttachments = allAttachments.filter(isImageAttachment);
     const imageAttachments = await Promise.all(
-      rawImageAttachments.map(async (att) => {
+      rawImageAttachments.map(async (att, idx) => {
         const url = getAttachmentUrl(att);
-        const base64Url = await convertImageToBase64(url);
+        const dataUrl = await convertImageToBase64(url);
+        const mimeType = (dataUrl.match(/^data:([^;]+);/) || [])[1] || 'image/jpeg';
+        const rawBase64 = dataUrl.replace(/^data:[^;]+;base64,/, '');
+        const formattedBase64 = rawBase64.match(/.{1,76}/g)?.join('\r\n') || rawBase64;
+        const cid = `image_att_${idx + 1}.jpg`;
         return {
           ...att,
-          displaySrc: base64Url || url
+          cid,
+          mimeType,
+          formattedBase64,
+          displaySrc: cid
         };
       })
     );
@@ -627,13 +634,13 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
               <tr>
                 ${imageAttachments.length === 1 ? `
                   <td style="width: 100%; text-align: center; vertical-align: middle; padding: 4pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                    <img src="${imageAttachments[0].displaySrc}" alt="${imageAttachments[0].file_name || 'Ảnh'}" width="480" height="270" style="width: 480px; height: 270px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                    <img src="${imageAttachments[0].cid}" alt="${imageAttachments[0].file_name || 'Ảnh'}" width="480" height="270" style="width: 480px; height: 270px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
                     <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imageAttachments[0].file_name || 'Ảnh đính kèm')}</span>
                   </td>
                 ` : `
                   ${imageAttachments.slice(0, 2).map((imgAtt) => `
                     <td style="width: 50%; text-align: center; vertical-align: middle; padding: 2pt; border: 1px solid #cbd5e1; background-color: #ffffff;">
-                      <img src="${imgAtt.displaySrc}" alt="${imgAtt.file_name || 'Ảnh'}" width="235" height="140" style="width: 235px; height: 140px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
+                      <img src="${imgAtt.cid}" alt="${imgAtt.file_name || 'Ảnh'}" width="235" height="140" style="width: 235px; height: 140px; object-fit: contain; margin: 0 auto; display: block;" /><br/>
                       <span style="font-size: 8pt; color: #475569; font-weight: 500;">${nfc(imgAtt.file_name || 'Ảnh đính kèm')}</span>
                     </td>
                   `).join('')}
@@ -806,58 +813,84 @@ const PrintWorkflowModal = ({ request, type = 'PURCHASE', isOpen, onClose }) => 
       <br clear="all" style="page-break-before: always; mso-break-type: section-break;" />
     `);
 
-    const htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset='utf-8'>
-          <title>${fileName}</title>
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForBrowser/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-          <style>
-            @page Section1 {
-              size: 21.0cm 29.7cm;
-              margin: 1.2cm 1.5cm 1.2cm 1.5cm;
-              mso-header-margin: 0.5cm;
-              mso-footer-margin: 0.5cm;
-              mso-paper-source: 0;
-            }
-            div.Section1 {
-              page: Section1;
-            }
-            body {
-              font-family: 'Times New Roman', 'Segoe UI', Arial, sans-serif;
-              font-size: 10pt;
-              color: #0f172a;
-              line-height: 1.3;
-              margin: 0;
-              padding: 0;
-            }
-            .word-page {
-              width: 100%;
-              margin: 0;
-              padding: 0;
-            }
-            table {
-              border-spacing: 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="Section1">
-            ${fullDocumentContent}
-          </div>
-        </body>
-      </html>
-    `;
+    const htmlContent = `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+  <head>
+    <meta charset='utf-8'>
+    <title>${fileName}</title>
+    <!--[if gte mso 9]>
+    <xml>
+      <w:WordDocument>
+        <w:View>Print</w:View>
+        <w:Zoom>100</w:Zoom>
+        <w:DoNotOptimizeForBrowser/>
+      </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+      @page Section1 {
+        size: 21.0cm 29.7cm;
+        margin: 1.2cm 1.5cm 1.2cm 1.5cm;
+        mso-header-margin: 0.5cm;
+        mso-footer-margin: 0.5cm;
+        mso-paper-source: 0;
+      }
+      div.Section1 {
+        page: Section1;
+      }
+      body {
+        font-family: 'Times New Roman', 'Segoe UI', Arial, sans-serif;
+        font-size: 10pt;
+        color: #0f172a;
+        line-height: 1.3;
+        margin: 0;
+        padding: 0;
+      }
+      .word-page {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      table {
+        border-spacing: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="Section1">
+      ${fullDocumentContent}
+    </div>
+  </body>
+</html>`;
 
-    const blob = new Blob(['\ufeff', htmlContent], {
+    const mhtmlImageParts = imageAttachments
+      .filter((att) => att.formattedBase64)
+      .map(
+        (att) => `------=_NextPart_WORD_DOC_BOUNDARY
+Content-Location: ${att.cid}
+Content-Transfer-Encoding: base64
+Content-Type: ${att.mimeType || 'image/jpeg'}
+
+${att.formattedBase64}
+`
+      )
+      .join('\r\n');
+
+    const mhtmlDocument = `MIME-Version: 1.0
+Content-Type: multipart/related; boundary="----=_NextPart_WORD_DOC_BOUNDARY"
+
+------=_NextPart_WORD_DOC_BOUNDARY
+Content-Location: file:///C:/document.htm
+Content-Transfer-Encoding: 8bit
+Content-Type: text/html; charset="utf-8"
+
+${htmlContent}
+
+${mhtmlImageParts}
+------=_NextPart_WORD_DOC_BOUNDARY--
+`;
+
+    const blob = new Blob(['\ufeff', mhtmlDocument], {
       type: 'application/msword;charset=utf-8'
     });
 
