@@ -285,25 +285,35 @@ const PaymentRequestPage = () => {
       {/* 4 Thẻ Thống Kê Tổng Quan */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Mua dịch vụ chờ duyệt */}
-        <div className="bg-white p-4 rounded-xl border border-brand-200 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => setActiveMainTab('PURCHASE')}
+          className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            activeMainTab === 'PURCHASE' ? 'bg-brand-50/70 border-brand-500 ring-2 ring-brand-500/20 shadow-md' : 'bg-white border-slate-200 hover:border-brand-300 shadow-xs'
+          }`}
+        >
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase">Mua Dịch Vụ Chờ Duyệt</span>
             <div className="text-2xl font-black text-brand-700 mt-1">{stats.purchase.pending}</div>
             <span className="text-[11px] text-slate-400">Đã duyệt: {stats.purchase.approved}</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-600">
+          <div className="w-10 h-10 rounded-xl bg-brand-100 border border-brand-200 flex items-center justify-center text-brand-600">
             <ShoppingBag className="w-5 h-5" />
           </div>
         </div>
 
         {/* 2. Thanh toán chờ duyệt */}
-        <div className="bg-white p-4 rounded-xl border border-amber-200 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => setActiveMainTab('PAYMENT')}
+          className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            activeMainTab === 'PAYMENT' ? 'bg-amber-50/70 border-amber-500 ring-2 ring-amber-500/20 shadow-md' : 'bg-white border-slate-200 hover:border-amber-300 shadow-xs'
+          }`}
+        >
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase">Thanh Toán Chờ Duyệt</span>
             <div className="text-2xl font-black text-amber-600 mt-1">{stats.payment.pending}</div>
             <span className="text-[11px] text-slate-400">Đã chi: {stats.payment.paid} phiếu</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
             <Clock className="w-5 h-5" />
           </div>
         </div>
@@ -337,33 +347,43 @@ const PaymentRequestPage = () => {
         </div>
       </div>
 
-      {/* 3 TABS ĐIỀU HƯỚNG CHÍNH */}
+      {/* 2 TABS ĐIỀU HƯỚNG CHÍNH */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setActiveMainTab('PURCHASE')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeMainTab === 'PURCHASE'
-                  ? 'bg-brand-600 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-400/30'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
               }`}
             >
               <ShoppingBag className="w-4 h-4" />
-              <span>PHẦN 1: Giấy đề nghị mua dịch vụ ({purchaseList.length})</span>
+              <span>PHẦN 1: Giấy đề nghị mua dịch vụ</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeMainTab === 'PURCHASE' ? 'bg-white text-brand-700' : 'bg-slate-200 text-slate-800'
+              }`}>
+                {purchaseList.length}
+              </span>
             </button>
 
             <button
               onClick={() => setActiveMainTab('PAYMENT')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeMainTab === 'PAYMENT'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/30'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
               }`}
             >
               <Receipt className="w-4 h-4" />
-              <span>PHẦN 3: Giấy đề nghị thanh toán ({paymentList.length})</span>
+              <span>PHẦN 3: Giấy đề nghị thanh toán</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeMainTab === 'PAYMENT' ? 'bg-white text-emerald-700' : 'bg-emerald-100 text-emerald-800 font-bold'
+              }`}>
+                {paymentList.length}
+              </span>
             </button>
           </div>
 
