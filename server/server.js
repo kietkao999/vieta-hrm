@@ -1,5 +1,6 @@
 import app from './src/app.js';
 import { initDatabase } from './src/config/database.js';
+import { syncAllUserPasswords } from './src/config/syncPasswords.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -8,8 +9,8 @@ const startServer = async () => {
     // Đảm bảo database đã được khởi tạo cấu trúc bảng
     await initDatabase();
     
-    // Lưu ý: Toàn bộ dữ liệu nhân sự, lương, KPI hiện được quản trị & cập nhật trực tiếp qua Web UI.
-    // Tự động ghi đè migration đã được tắt để bảo toàn 100% các thay đổi của người dùng.
+    // Đảm bảo toàn bộ 57 tài khoản luôn đồng bộ mật khẩu chính xác
+    await syncAllUserPasswords();
     
     app.listen(PORT, () => {
       console.log(`==================================================`);
