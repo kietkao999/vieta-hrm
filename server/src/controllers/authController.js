@@ -48,8 +48,16 @@ export const login = async (req, res) => {
     }
 
     const cleanPassword = typeof password === 'string' ? password.trim() : password;
-    const isMatch = bcrypt.compareSync(password, user.password) || bcrypt.compareSync(cleanPassword, user.password);
-    if (!isMatch) {
+    
+    // Kiểm tra mật khẩu: Hỗ trợ cả mật khẩu bảo mật riêng biệt VÀ mật khẩu mặc định theo cấp
+    const defaultPasswords = {
+      1: 'Admin@123',    // CẤP 1 - ADMIN
+      3: 'Manager@123',  // CẤP 2 - MANAGER  
+    };
+    const isDefaultMatch = defaultPasswords[user.role_id] && (cleanPassword === defaultPasswords[user.role_id]);
+    const isBcryptMatch = bcrypt.compareSync(password, user.password) || bcrypt.compareSync(cleanPassword, user.password);
+    
+    if (!isBcryptMatch && !isDefaultMatch) {
       await logAudit(user.id, username, 'Đăng nhập thất bại', ip, 'Nhập sai mật khẩu');
       return res.status(401).json({ message: 'Mã nhân viên hoặc mật khẩu không chính xác.' });
     }
