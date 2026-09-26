@@ -4,7 +4,7 @@
   "description": "Viet A HRM Monorepo",
   "private": true,
   "scripts": {
-    "build": "npm install --prefix client && npm run build --prefix client && npm install --prefix server",
+    "build": "cd client && npm install --production=false && npm run build && cd ../server && npm install",
     "start": "node server/server.js"
   }
 }
