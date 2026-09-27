@@ -50,11 +50,24 @@ export const login = async (req, res) => {
     const cleanPassword = typeof password === 'string' ? password.trim() : password;
     
     // Kiểm tra mật khẩu: Hỗ trợ cả mật khẩu bảo mật riêng biệt VÀ mật khẩu mặc định theo cấp
+    const cleanEmpCode = (user.employeeCode || user.username || '').replace(/\D/g, '').padStart(3, '0');
     const defaultPasswords = {
       1: 'Admin@123',    // CẤP 1 - ADMIN
       3: 'Manager@123',  // CẤP 2 - MANAGER  
+      4: 'VietA@123',    // CẤP 3 - EMPLOYEE mặc định
     };
-    const isDefaultMatch = defaultPasswords[user.role_id] && (cleanPassword === defaultPasswords[user.role_id]);
+    
+    // Các biến thể mật khẩu nhân viên hợp lệ
+    const validEmpVariants = [
+      `VietA#Emp@${cleanEmpCode}*7W`,
+      `VietA#Emp@${user.employeeCode}*7W`,
+      `VietA#Emp@${user.username}*7W`,
+      'VietA@123',
+      'VietA@2026'
+    ];
+    
+    const isDefaultMatch = (defaultPasswords[user.role_id] && cleanPassword === defaultPasswords[user.role_id]) ||
+                           (user.role_id === 4 && validEmpVariants.includes(cleanPassword));
     const isBcryptMatch = bcrypt.compareSync(password, user.password) || bcrypt.compareSync(cleanPassword, user.password);
     
     if (!isBcryptMatch && !isDefaultMatch) {
