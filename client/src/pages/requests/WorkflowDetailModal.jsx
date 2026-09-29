@@ -30,6 +30,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { numberToVietnameseWords } from '../../utils/numberToVietnameseWords';
 import AttachmentManager from './AttachmentManager';
 
+import {
+  canUserApproveHOD,
+  canUserApproveAccountant,
+  canUserApproveDirector,
+  canUserRejectRequest
+} from '../../utils/requestPermissions';
+
 const WorkflowDetailModal = ({
   request,
   type = 'PURCHASE', // 'PURCHASE' | 'PAYMENT'
@@ -65,27 +72,11 @@ const WorkflowDetailModal = ({
     }
   };
 
-  // Xác định quyền duyệt
-  const canApproveHOD =
-    request.status === 'PENDING_HOD' &&
-    (user?.roleName === 'ADMIN' ||
-      (user?.roleName === 'MANAGER' &&
-        ((request.approver_department && user?.departmentName === request.approver_department) ||
-          user?.departmentName === request.department)));
-
-  const canApproveAccountant =
-    !isPurchase &&
-    request.status === 'PENDING_ACC' &&
-    (user?.roleName === 'ADMIN' || user?.departmentName === 'Khối văn phòng' || user?.roleName === 'HR');
-
-  const canApproveDirector =
-    !isPurchase &&
-    request.status === 'PENDING_BOD' &&
-    user?.roleName === 'ADMIN';
-
-  const canReject =
-    ['PENDING_HOD', 'PENDING_ACC', 'PENDING_BOD'].includes(request.status) &&
-    (user?.roleName === 'ADMIN' || user?.roleName === 'MANAGER' || user?.roleName === 'HR');
+  // Xác định quyền duyệt linh hoạt theo vai trò & phòng ban
+  const canApproveHOD = canUserApproveHOD(user, request);
+  const canApproveAccountant = !isPurchase && canUserApproveAccountant(user, request);
+  const canApproveDirector = !isPurchase && canUserApproveDirector(user, request);
+  const canReject = canUserRejectRequest(user, request);
 
   // Phê duyệt
   const handleApprove = async () => {

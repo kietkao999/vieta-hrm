@@ -53,10 +53,10 @@ Nhằm đảm bảo **tính bảo mật tuyệt đối**, không để nhân vi�
 | 5 | `vieta036` | **Phạm Tấn Hưng** | Phòng Kinh Doanh | Trưởng phòng Kinh doanh | `VietA#Mgr@036$9Q` |
 | 6 | `vieta046` | **Nguyễn Thái Cần** | Xưởng Sản Xuất Gối | Trưởng nhóm thổi gối | `VietA#Mgr@046$9Q` |
 | 7 | `vieta050` | **Trần Minh Lý** | Xưởng Sản Xuất Nệm | Quản lý Xưởng nệm | `VietA#Mgr@050$9Q` |
-| 8 | `vieta056` | **Trần Thị Bảo Châu** | Xưởng Sản Xuất Nệm | Kế toán xưởng sản xuất | `VietA#Mgr@056$9Q` |
 
 ### 3. CẤP 3 - EMPLOYEE (Xem duy nhất phiếu lương & thông tin cá nhân)
-* Toàn bộ 46 nhân sự còn lại có mật khẩu riêng biệt chuẩn hóa theo dạng: `VietA#Emp@[MãNV]*7W` (được liệt kê đầy đủ từng dòng trong file Word bàn giao).
+* Nhân sự **Trần Thị Bảo Châu** (`vieta056` - Kế toán xưởng sản xuất) thuộc **Cấp 3 (Employee)** với mật khẩu: `VietA#Emp@056*7W` (hoặc `VietA@123`).
+* Toàn bộ 47 nhân sự còn lại có mật khẩu riêng biệt chuẩn hóa theo dạng: `VietA#Emp@[MãNV]*7W` (được liệt kê đầy đủ từng dòng trong file Word bàn giao).
 
 ---
 

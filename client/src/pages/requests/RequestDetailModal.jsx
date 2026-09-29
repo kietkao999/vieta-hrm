@@ -24,6 +24,12 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { numberToVietnameseWords } from '../../utils/numberToVietnameseWords';
+import {
+  canUserApproveHOD,
+  canUserApproveAccountant,
+  canUserApproveDirector,
+  canUserRejectRequest
+} from '../../utils/requestPermissions';
 
 const RequestDetailModal = ({
   request,
@@ -60,24 +66,21 @@ const RequestDetailModal = ({
   };
 
   // Xác định quyền duyệt của user hiện tại
-  const canApproveHOD =
-    request.status === 'PENDING_HOD' &&
-    (user?.roleName === 'ADMIN' || (user?.roleName === 'MANAGER' && user?.departmentName === request.department));
+  const canApproveHOD = canUserApproveHOD(user, request);
 
   const canApproveAccountant =
-    request.status === 'PENDING_ACCOUNTANT' &&
-    (user?.roleName === 'ADMIN' || user?.departmentName === 'Khối văn phòng' || user?.roleName === 'HR');
+    (request.status === 'PENDING_ACCOUNTANT' || request.status === 'PENDING_ACC') &&
+    canUserApproveAccountant(user, request);
 
   const canApproveDirector =
-    request.status === 'PENDING_DIRECTOR' && user?.roleName === 'ADMIN';
+    (request.status === 'PENDING_DIRECTOR' || request.status === 'PENDING_BOD') &&
+    canUserApproveDirector(user, request);
 
   const canPay =
     request.status === 'APPROVED' &&
     (user?.roleName === 'ADMIN' || user?.departmentName === 'Khối văn phòng' || user?.roleName === 'HR');
 
-  const canReject =
-    ['PENDING_HOD', 'PENDING_ACCOUNTANT', 'PENDING_DIRECTOR'].includes(request.status) &&
-    (user?.roleName === 'ADMIN' || user?.roleName === 'MANAGER' || user?.roleName === 'HR');
+  const canReject = canUserRejectRequest(user, request);
 
   // Xử lý Phê duyệt
   const handleApprove = async () => {

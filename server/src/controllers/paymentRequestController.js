@@ -32,6 +32,74 @@ async function generateCode(type) {
   return `${codePrefix}${String(seq).padStart(4, '0')}`;
 }
 
+/**
+ * Danh sách phòng ban mà một quản lý (Manager) có quyền phê duyệt / phụ trách
+ */
+export function getManagerDepartmentAliases(user) {
+  if (!user) return [];
+  const aliases = new Set();
+  const dept = user.departmentName || user.department_name || '';
+  const pos = (user.positionName || user.position_name || '').toLowerCase();
+  const name = (user.fullname || '').toLowerCase();
+
+  if (dept) aliases.add(dept);
+
+  if (pos.includes('kế toán') || name.includes('hùng') || dept === 'Khối văn phòng') {
+    aliases.add('Phòng Kế toán');
+    aliases.add('Phòng Kế toán - Tài chính');
+  }
+  if (pos.includes('hcns') || pos.includes('nhân sự') || name.includes('xinh') || dept === 'Khối văn phòng') {
+    aliases.add('Phòng Hành chính Nhân sự');
+    aliases.add('Phòng HCNS');
+  }
+  if (pos.includes('r&d') || name.includes('hoàng') || dept === 'Khối văn phòng') {
+    aliases.add('Phòng R&D');
+  }
+  if (pos.includes('marketing') || name.includes('kiệt') || dept === 'Khối văn phòng') {
+    aliases.add('Phòng Marketing');
+  }
+  if (dept.toLowerCase().includes('kinh doanh') || name.includes('hưng')) {
+    aliases.add('Phòng kinh doanh');
+  }
+  if (dept.toLowerCase().includes('nệm') || name.includes('lý')) {
+    aliases.add('Xưởng sản xuất nệm');
+  }
+  if (dept.toLowerCase().includes('gối') || name.includes('cần')) {
+    aliases.add('Xưởng sản xuất gối');
+  }
+  if (dept.toLowerCase().includes('cần thơ') || name.includes('tâm')) {
+    aliases.add('Kho Cần Thơ');
+  }
+  if (dept.toLowerCase().includes('mỹ tho') || name.includes('hường')) {
+    aliases.add('Kho Mỹ Tho');
+  }
+
+  return Array.from(aliases);
+}
+
+/**
+ * Kiểm tra xem User có quyền phê duyệt đề xuất (Cấp 1 - Trưởng bộ phận)
+ */
+export function checkIsManagerAuthorized(user, request) {
+  if (!user || !request) return false;
+  if (user.roleName === 'ADMIN') return true;
+  if (user.roleName !== 'MANAGER') return false;
+
+  const userId = Number(user.userId || user.id);
+  if (request.target_approver_id && Number(request.target_approver_id) === userId) {
+    return true;
+  }
+
+  const aliases = getManagerDepartmentAliases(user);
+  const targetDept = request.approver_department || request.department;
+
+  if (targetDept && aliases.some(a => a.toLowerCase() === targetDept.toLowerCase())) return true;
+  if (request.department && aliases.some(a => a.toLowerCase() === request.department.toLowerCase())) return true;
+  if (request.approver_department && aliases.some(a => a.toLowerCase() === request.approver_department.toLowerCase())) return true;
+
+  return false;
+}
+
 // ==========================================
 // 1. PHẦN 1: GIẤY ĐỀ NGHỊ MUA DỊCH VỤ (Mẫu 01/ĐN-DV)
 // ==========================================
@@ -170,12 +238,14 @@ export const getPurchaseRequests = async (req, res) => {
       whereConditions.push('pr.user_id = ?');
       params.push(userId);
     } else if (userRole === 'MANAGER' && tab !== 'all') {
+      const aliases = getManagerDepartmentAliases(req.user);
+      const placeholders = aliases.map(() => '?').join(', ');
       if (tab === 'to_approve') {
-        whereConditions.push("(pr.status = 'PENDING_HOD' AND (pr.approver_department = ? OR (pr.approver_department IS NULL AND pr.department = ?) OR pr.target_approver_id = ?))");
-        params.push(userDept, userDept, userId);
+        whereConditions.push(`(pr.status = 'PENDING_HOD' AND (pr.approver_department IN (${placeholders}) OR (pr.approver_department IS NULL AND pr.department IN (${placeholders})) OR pr.target_approver_id = ?))`);
+        params.push(...aliases, ...aliases, userId);
       } else {
-        whereConditions.push('(pr.user_id = ? OR pr.department = ? OR pr.approver_department = ? OR pr.target_approver_id = ?)');
-        params.push(userId, userDept, userDept, userId);
+        whereConditions.push(`(pr.user_id = ? OR pr.department IN (${placeholders}) OR pr.approver_department IN (${placeholders}) OR pr.target_approver_id = ?)`);
+        params.push(userId, ...aliases, ...aliases, userId);
       }
     }
 
@@ -285,9 +355,7 @@ export const approvePurchaseRequest = async (req, res) => {
 
     // Kiểm tra quyền duyệt: Admin hoặc Trưởng phòng nhận duyệt hoặc Trưởng phòng ban người tạo
     const targetDept = request.approver_department || request.department;
-    const isAuthorized =
-      userRole === 'ADMIN' ||
-      (userRole === 'MANAGER' && (userDept === targetDept || userDept === request.department || userId === request.target_approver_id));
+    const isAuthorized = checkIsManagerAuthorized(req.user, request);
 
     if (!isAuthorized) {
       return res.status(403).json({
@@ -532,12 +600,27 @@ export const getPaymentRequests = async (req, res) => {
       whereConditions.push('pay.user_id = ?');
       params.push(userId);
     } else if (userRole === 'MANAGER' && tab !== 'all') {
+      const aliases = getManagerDepartmentAliases(req.user);
+      const placeholders = aliases.map(() => '?').join(', ');
+      const isAccountant =
+        userDept === 'Khối văn phòng' ||
+        userDept === 'Phòng Kế toán' ||
+        (req.user.positionName && req.user.positionName.toLowerCase().includes('kế toán')) ||
+        (req.user.fullname && req.user.fullname.toLowerCase().includes('hùng'));
+
       if (tab === 'to_approve') {
-        whereConditions.push("(pay.status = 'PENDING_HOD' AND (pay.approver_department = ? OR (pay.approver_department IS NULL AND pay.department = ?) OR pay.target_approver_id = ?))");
-        params.push(userDept, userDept, userId);
+        if (isAccountant) {
+          whereConditions.push(`(
+            (pay.status = 'PENDING_HOD' AND (pay.approver_department IN (${placeholders}) OR (pay.approver_department IS NULL AND pay.department IN (${placeholders})) OR pay.target_approver_id = ?))
+            OR pay.status = 'PENDING_ACC'
+          )`);
+        } else {
+          whereConditions.push(`(pay.status = 'PENDING_HOD' AND (pay.approver_department IN (${placeholders}) OR (pay.approver_department IS NULL AND pay.department IN (${placeholders})) OR pay.target_approver_id = ?))`);
+        }
+        params.push(...aliases, ...aliases, userId);
       } else {
-        whereConditions.push('(pay.user_id = ? OR pay.department = ? OR pay.approver_department = ? OR pay.target_approver_id = ?)');
-        params.push(userId, userDept, userDept, userId);
+        whereConditions.push(`(pay.user_id = ? OR pay.department IN (${placeholders}) OR pay.approver_department IN (${placeholders}) OR pay.target_approver_id = ?)`);
+        params.push(userId, ...aliases, ...aliases, userId);
       }
     }
 
@@ -665,9 +748,7 @@ export const approvePaymentRequest = async (req, res) => {
       updateParams.push(nextStatus, userId, nowIso, paymentProof || '', nowIso);
     } else if (request.status === 'PENDING_HOD') {
       // Cần Trưởng phòng hoặc ADMIN
-      const isAuthorized =
-        userRole === 'ADMIN' ||
-        (userRole === 'MANAGER' && (userDept === targetDept || userDept === request.department || userId === request.target_approver_id));
+      const isAuthorized = checkIsManagerAuthorized(req.user, request);
 
       if (!isAuthorized) {
         return res.status(403).json({ message: `Chỉ Trưởng phòng ban được chỉ định duyệt (${targetDept}) hoặc Ban Giám Đốc mới có quyền duyệt cấp 1.` });
@@ -677,7 +758,14 @@ export const approvePaymentRequest = async (req, res) => {
       updateParams.push(nextStatus, userId, nowIso, comment.trim(), nowIso);
     } else if (request.status === 'PENDING_ACC') {
       // Cần Kế toán hoặc ADMIN
-      if (!['ADMIN', 'HR'].includes(userRole) && userDept !== 'Khối văn phòng' && userDept !== 'Phòng Kế toán') {
+      const isAccountant =
+        ['ADMIN', 'HR'].includes(userRole) ||
+        userDept === 'Khối văn phòng' ||
+        userDept === 'Phòng Kế toán' ||
+        (req.user.positionName && req.user.positionName.toLowerCase().includes('kế toán')) ||
+        (req.user.fullname && req.user.fullname.toLowerCase().includes('hùng'));
+
+      if (!isAccountant) {
         return res.status(403).json({ message: 'Chỉ Phòng Kế toán hoặc Ban Quản trị mới có quyền thẩm định tài chính cấp 2.' });
       }
       nextStatus = 'PENDING_BOD';
