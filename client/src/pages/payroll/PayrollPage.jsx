@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp } from 'lucide-react';
+import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp, Wallet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const TIER_PRESETS = [
@@ -18,6 +18,41 @@ const GRADE_PRESETS = Array.from({ length: 11 }, (_, i) => ({
   salary: i * 400000,
   level: i
 }));
+
+const formatInputNumber = (val) => {
+  if (val === '' || val === null || val === undefined) return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (clean === '') return '';
+  const num = parseInt(clean, 10);
+  return new Intl.NumberFormat('vi-VN').format(num);
+};
+
+const formatVND = (amount) => {
+  if (amount === undefined || amount === null) return '0 đ';
+  return Number(amount).toLocaleString('vi-VN') + ' đ';
+};
+
+export const calculateEmployeeIncome = (p) => {
+  if (!p) return 0;
+  if (p.total_income !== undefined && p.total_income !== null && !isNaN(p.total_income)) {
+    return Number(p.total_income);
+  }
+  const totalBase = (Number(p.tier_salary) || 0) + (Number(p.grade_salary) || 0);
+  const wDays = p.work_days !== undefined && p.work_days !== null ? Number(p.work_days) : 26;
+  const baseWork = p.base_work_salary !== undefined && p.base_work_salary !== null 
+    ? Number(p.base_work_salary) 
+    : Math.round((totalBase / 26) * wDays);
+  const otHrs = Number(p.ot_hours) || 0;
+  const otSal = p.ot_salary !== undefined && p.ot_salary !== null 
+    ? Number(p.ot_salary) 
+    : Math.round((totalBase / 208) * otHrs * 1.5);
+  const respAmount = Number(p.responsibility_kpi || p.responsibility_net) || 0;
+  const perfBonus = Number(p.performance_kpi || p.performance_bonus) || 0;
+  const otherBonus = Number(p.other_bonus) || 0;
+  const mealPhone = Number(p.meal_phone_allowance) || 0;
+  const otherAllowance = Number(p.other_allowance) || 0;
+  return baseWork + otSal + respAmount + perfBonus + otherBonus + mealPhone + otherAllowance;
+};
 
 const PayrollPage = () => {
   const { user } = useAuth();
@@ -260,11 +295,6 @@ const PayrollPage = () => {
       uniRefund,
       net
     };
-  };
-
-  const formatVND = (amount) => {
-    if (amount === undefined || amount === null) return '0 đ';
-    return Number(amount).toLocaleString('vi-VN') + ' đ';
   };
 
   const getPayslipRows = (p) => {
@@ -879,6 +909,10 @@ const PayrollPage = () => {
                   <span className="text-slate-800 font-medium">Giảm trừ cắt giờ / Vi phạm:</span>
                   <span className="font-bold text-rose-700">-{formatVND(otherDeduct + hrDeduct)}</span>
                 </div>
+                <div className="flex justify-between items-center py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="font-bold text-amber-950">Tổng thu nhập (chưa trừ):</span>
+                  <span className="font-black text-amber-900">{formatVND(totalIncome)}</span>
+                </div>
                 <div className="flex justify-between items-center py-2 px-3 bg-rose-100/70 border border-rose-300 rounded-lg">
                   <span className="font-bold text-rose-950">Tổng các khoản khấu trừ:</span>
                   <span className="font-black text-rose-800">-{formatVND(totalDeductions)}</span>
@@ -1072,48 +1106,62 @@ const PayrollPage = () => {
           </div>
 
           {/* Quick Metrics Strip for Selected Department & Month */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 print:hidden">
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
                 <Users size={20} />
               </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase">Nhân sự lọc</p>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 uppercase truncate">Nhân sự lọc</p>
                 <p className="text-base font-black text-slate-800">{filteredPayrolls.length} người</p>
               </div>
             </div>
 
+            <div className="bg-white p-3.5 rounded-xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/50 shadow-sm flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold shrink-0">
+                <Wallet size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-amber-800 uppercase truncate" title="Tổng thu nhập thực tế chưa trừ tạm ứng & các khoản khấu trừ">
+                  Tổng Thu Nhập Chưa Trừ
+                </p>
+                <p className="text-base font-black text-amber-800 truncate">
+                  {formatVND(filteredPayrolls.reduce((sum, p) => sum + calculateEmployeeIncome(p), 0))}
+                </p>
+              </div>
+            </div>
+
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
                 <DollarSign size={20} />
               </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Quỹ Lương Thực Lĩnh</p>
-                <p className="text-base font-black text-emerald-700">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 uppercase truncate">Tổng Quỹ Lương Thực Lĩnh</p>
+                <p className="text-base font-black text-emerald-700 truncate">
                   {formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.net_salary || 0), 0))}
                 </p>
               </div>
             </div>
 
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
                 <Award size={20} />
               </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Thưởng & KPI</p>
-                <p className="text-base font-black text-indigo-700">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 uppercase truncate">Tổng Thưởng & KPI</p>
+                <p className="text-base font-black text-indigo-700 truncate">
                   {formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.responsibility_kpi || p.responsibility_net || 0) + (p.performance_kpi || p.performance_bonus || 0) + (p.other_bonus || 0), 0))}
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3 col-span-2 sm:col-span-1">
+              <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold shrink-0">
                 <ShieldAlert size={20} />
               </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase">Tổng Các Khấu Trừ</p>
-                <p className="text-base font-black text-red-600">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-400 uppercase truncate">Tổng Các Khấu Trừ</p>
+                <p className="text-base font-black text-red-600 truncate">
                   -{formatVND(filteredPayrolls.reduce((sum, p) => sum + (p.social_insurance || 0) + (p.union_fee || 0) + (p.income_tax || 0) + (p.advance_payment || 0) + (p.hour_deduction || 0) + (p.other_deductions || 0) + (p.discipline_deduction || 0), 0))}
                 </p>
               </div>
@@ -1124,7 +1172,7 @@ const PayrollPage = () => {
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 rounded-xl text-xs text-slate-700 print:hidden">
             <span className="font-bold text-brand-800">💡 Công thức chuẩn: </span>
             <span className="text-slate-600 font-medium">
-              Tổng thực lĩnh = [((Lương tầng + Bậc)/26) × Ngày công] + [((Lương tầng + Bậc)/208) × Giờ OT × 1.5] + Thưởng KPI TN + Thưởng KPI HQ + Thưởng khác + PC Cơm & ĐT + PC khác - BHXH - Đoàn phí - Thuế TNCN - Tạm ứng - Trừ cắt giờ - Trừ khác
+              <strong className="text-amber-800">Thu nhập chưa trừ</strong> = [((Lương tầng + Bậc)/26) × Ngày công] + [((Lương tầng + Bậc)/208) × Giờ OT × 1.5] + Thưởng KPI TN + Thưởng KPI HQ + Thưởng khác + PC Cơm/ĐT/Khác | <strong className="text-emerald-800">Tổng thực lĩnh</strong> = Thu nhập chưa trừ - Khấu trừ (BHXH, Đoàn phí, Thuế TNCN, Tạm ứng, Cắt giờ, Vi phạm) + Hoàn đồng phục
             </span>
           </div>
 
@@ -1254,6 +1302,9 @@ const PayrollPage = () => {
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-black text-brand-700 text-sm">{formatVND(p.net_salary)}</div>
+                            <div className="text-[10px] text-amber-700 font-semibold mt-0.5" title="Tổng thu nhập chưa trừ tạm ứng & khấu trừ">
+                              Chưa trừ: {formatVND(calculateEmployeeIncome(p))}
+                            </div>
                           </td>
                           <td className="px-3 py-3 text-center">
                             <span
