@@ -215,6 +215,23 @@ export const initDatabase = async () => {
       )
     `);
 
+    // Migration an toàn cho bảng attendance (note, updated_by)
+    try {
+      const attCols = await query.all('PRAGMA table_info(attendance)');
+      const attColNames = (attCols || []).map(c => c.name);
+      if (!attColNames.includes('note')) {
+        await query.exec('ALTER TABLE attendance ADD COLUMN note TEXT');
+      }
+      if (!attColNames.includes('updated_by')) {
+        await query.exec('ALTER TABLE attendance ADD COLUMN updated_by TEXT');
+      }
+      if (!attColNames.includes('cut_hours')) {
+        await query.exec('ALTER TABLE attendance ADD COLUMN cut_hours REAL DEFAULT 0');
+      }
+    } catch (e) {
+      // Bỏ qua nếu đã tồn tại
+    }
+
     // 9. Leave Requests
     await query.exec(`
       CREATE TABLE IF NOT EXISTS leave_requests (

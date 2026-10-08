@@ -1,19 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import {
   Calendar as CalendarIcon,
   Clock,
+  Clock3,
   Download,
   Plus,
   Filter,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Printer,
   ClipboardList,
-  FileText
+  FileText,
+  Search,
+  Building2,
+  Users,
+  LayoutGrid,
+  ListFilter,
+  TrendingUp,
+  X,
+  RotateCcw,
+  Sparkles,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import TimesheetMatrixView from './TimesheetMatrixView';
 
 /* ═══════════════════════════════════════════════════════════════
    AttendancePage — Hợp nhất "Bảng Chấm Công" + "Đơn Xin Nghỉ Phép"
@@ -40,6 +53,14 @@ const AttendancePage = () => {
   const [attLoading, setAttLoading] = useState(true);
   const [month, setMonth] = useState(currentMonth.toString());
   const [year, setYear] = useState(currentYear.toString());
+  
+  // Bộ lọc tối ưu cho Bảng chấm công
+  const [departments, setDepartments] = useState([]);
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [statusAttFilter, setStatusAttFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState('matrix'); // 'matrix' (Bảng tính Google Sheets) | 'summary' (Tổng hợp) | 'list' (Chi tiết)
+
   const [attModalOpen, setAttModalOpen] = useState(false);
   const [attFormData, setAttFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
@@ -65,12 +86,23 @@ const AttendancePage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Tải danh mục phòng ban
+  useEffect(() => {
+    api.get('/departments')
+      .then(res => setDepartments(res.data || []))
+      .catch(err => console.error('Lỗi tải danh mục phòng ban:', err));
+  }, []);
+
   // ═══ CHẤM CÔNG LOGIC ═══
   const fetchAttendance = async () => {
     setAttLoading(true);
     try {
-      const res = await api.get(`/attendance?month=${month}&year=${year}`);
-      setAttRecords(res.data);
+      const params = { month, year };
+      if (departmentFilter && departmentFilter !== 'all') params.department_id = departmentFilter;
+      if (statusAttFilter && statusAttFilter !== 'all') params.status = statusAttFilter;
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      const res = await api.get('/attendance', { params });
+      setAttRecords(res.data || []);
     } catch (err) {
       setError('Lỗi tải dữ liệu chấm công');
     } finally {
@@ -80,7 +112,96 @@ const AttendancePage = () => {
 
   useEffect(() => {
     fetchAttendance();
-  }, [month, year]);
+  }, [month, year, departmentFilter, statusAttFilter]);
+
+  // Bộ lọc tức thì trên dữ liệu đã tải
+  const filteredRecords = useMemo(() => {
+    return attRecords.filter(r => {
+      if (departmentFilter !== 'all') {
+        const matchDept = String(r.department_id) === String(departmentFilter) || r.department_name === departmentFilter;
+        if (!matchDept) return false;
+      }
+      if (statusAttFilter !== 'all') {
+        if (!r.status?.toLowerCase().includes(statusAttFilter.toLowerCase())) return false;
+      }
+      if (searchTerm.trim()) {
+        const term = searchTerm.trim().toLowerCase();
+        const matchName = r.fullname?.toLowerCase().includes(term);
+        const matchCode = r.employee_code?.toLowerCase().includes(term);
+        if (!matchName && !matchCode) return false;
+      }
+      return true;
+    });
+  }, [attRecords, departmentFilter, statusAttFilter, searchTerm]);
+
+  // Gom nhóm tổng hợp theo từng nhân viên (Monthly Matrix)
+  const employeeSummary = useMemo(() => {
+    const map = {};
+    filteredRecords.forEach(r => {
+      const key = r.employee_id;
+      if (!map[key]) {
+        map[key] = {
+          employee_id: r.employee_id,
+          employee_code: r.employee_code,
+          fullname: r.fullname,
+          department_name: r.department_name,
+          position_name: r.position_name,
+          fullDays: 0,
+          halfDays: 0,
+          paidLeaves: 0,
+          unpaidLeaves: 0,
+          businessTrips: 0,
+          weeklyOffs: 0,
+          totalWorkDays: 0,
+          totalOtHours: 0,
+          totalLateMinutes: 0,
+          recordsCount: 0
+        };
+      }
+      const item = map[key];
+      item.recordsCount += 1;
+      item.totalOtHours += (Number(r.ot_hours) || 0);
+      item.totalLateMinutes += (Number(r.late_minutes) || 0);
+
+      const st = (r.status || '').toLowerCase();
+      if (st.includes('nửa ngày') || st === 'nn') {
+        item.halfDays += 1;
+        item.totalWorkDays += 0.5;
+      } else if (st.includes('phép') || st === 'p') {
+        item.paidLeaves += 1;
+        item.totalWorkDays += 1.0;
+      } else if (st.includes('không lương') || st === 'kl') {
+        item.unpaidLeaves += 1;
+      } else if (st.includes('công tác') || st === 'ct') {
+        item.businessTrips += 1;
+        item.totalWorkDays += 1.0;
+      } else if (st.includes('tuần') || st === 'off') {
+        item.weeklyOffs += 1;
+      } else {
+        item.fullDays += 1;
+        item.totalWorkDays += 1.0;
+      }
+    });
+
+    return Object.values(map).sort((a, b) => a.fullname.localeCompare(b.fullname, 'vi'));
+  }, [filteredRecords]);
+
+  // Thống kê tổng quan đầu trang
+  const summaryStats = useMemo(() => {
+    const totalDays = employeeSummary.reduce((sum, e) => sum + e.totalWorkDays, 0);
+    const totalEmployees = employeeSummary.length;
+    const totalFull = employeeSummary.reduce((sum, e) => sum + e.fullDays, 0);
+    const totalHalf = employeeSummary.reduce((sum, e) => sum + e.halfDays, 0);
+    const totalLeaves = employeeSummary.reduce((sum, e) => sum + e.paidLeaves + e.unpaidLeaves, 0);
+    const totalOt = employeeSummary.reduce((sum, e) => sum + e.totalOtHours, 0);
+    return { totalDays, totalEmployees, totalFull, totalHalf, totalLeaves, totalOt };
+  }, [employeeSummary]);
+
+  const handleResetFilters = () => {
+    setDepartmentFilter('all');
+    setStatusAttFilter('all');
+    setSearchTerm('');
+  };
 
   const handleAttSubmit = async (e) => {
     e.preventDefault();
@@ -400,92 +521,396 @@ const AttendancePage = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════
-          TAB 1: BẢNG CHẤM CÔNG
+          TAB 1: BẢNG CHẤM CÔNG (ĐÃ TỐI ƯU TỔNG QUAN & LỌC)
          ═══════════════════════════════════════════════ */}
       {activeTab === 'attendance' && (
         <>
-          {/* Filter bar */}
-          <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <CalendarIcon size={18} className="text-slate-400" />
-              <span className="text-sm font-semibold text-slate-700">Tháng</span>
-              <select
-                value={month}
-                onChange={e => setMonth(e.target.value)}
-                className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-semibold text-slate-700">Năm</span>
-              <select
-                value={year}
-                onChange={e => setYear(e.target.value)}
-                className="border border-slate-200 rounded-lg px-2 py-1 text-sm outline-none font-bold text-slate-700"
-              >
-                {Array.from({ length: 12 }, (_, i) => 2024 + i).map(y => (
-                  <option key={y} value={y.toString()}>{y}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Attendance table */}
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
-            {attLoading ? (
-              <div className="flex justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+          <div className="space-y-4">
+          {/* ═══ THẺ THỐNG KÊ TỔNG QUAN ═══ */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="rounded-xl border border-brand-200 bg-gradient-to-br from-white to-brand-50/60 p-4 shadow-sm">
+              <div className="flex items-center justify-between text-brand-700 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Tổng công</span>
+                <CheckCircle2 size={16} />
               </div>
-            ) : (
-              <table className="w-full text-left text-sm border-collapse min-w-[800px]">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-xs">
-                  <tr>
-                    <th className="px-4 py-3">Ngày</th>
-                    {user?.roleName !== 'EMPLOYEE' && <th className="px-4 py-3">Nhân viên</th>}
-                    <th className="px-4 py-3">Phòng ban</th>
-                    <th className="px-4 py-3">Giờ vào (Check-in)</th>
-                    <th className="px-4 py-3">Giờ ra (Check-out)</th>
-                    <th className="px-4 py-3">Trạng thái</th>
-                    <th className="px-4 py-3">Ghi chú</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {attRecords.length === 0 ? (
-                    <tr><td colSpan="7" className="text-center py-8 text-slate-500">Chưa có dữ liệu chấm công tháng này</td></tr>
-                  ) : attRecords.map(r => (
-                    <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-semibold text-slate-700">{r.date}</td>
-                      {user?.roleName !== 'EMPLOYEE' && (
-                        <td className="px-4 py-3">
-                          <div className="font-semibold text-slate-800">{r.fullname}</div>
-                          <div className="text-xs text-slate-500">{r.employee_code}</div>
-                        </td>
-                      )}
-                      <td className="px-4 py-3">{r.department_name}</td>
-                      <td className="px-4 py-3 font-mono text-emerald-600 font-bold">{r.check_in || '--:--'}</td>
-                      <td className="px-4 py-3 font-mono text-brand-600 font-bold">{r.check_out || '--:--'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          r.status === 'Có mặt' ? 'bg-emerald-100 text-emerald-700' :
-                          r.status === 'Đi trễ' ? 'bg-amber-100 text-amber-700' :
-                          r.status === 'Nghỉ phép' ? 'bg-blue-100 text-blue-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">{r.note}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+              <p className="text-xl font-black text-brand-900">{summaryStats.totalDays.toFixed(1).replace(/\.0$/, '')} công</p>
+              <p className="text-[10px] text-brand-600 font-medium mt-0.5">Theo bộ lọc hiện tại</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between text-slate-500 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Nhân sự</span>
+                <Users size={16} />
+              </div>
+              <p className="text-xl font-black text-slate-800">{summaryStats.totalEmployees} người</p>
+              <p className="text-[10px] text-slate-500 font-medium mt-0.5">{filteredRecords.length} lượt chấm</p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50/40 p-4 shadow-sm">
+              <div className="flex items-center justify-between text-emerald-700 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Đi làm (X)</span>
+                <ClipboardList size={16} />
+              </div>
+              <p className="text-xl font-black text-emerald-800">{summaryStats.totalFull} ngày</p>
+              <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Làm việc đủ ngày</p>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/50 p-4 shadow-sm">
+              <div className="flex items-center justify-between text-amber-700 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Nửa ngày (NN)</span>
+                <Clock3 size={16} />
+              </div>
+              <p className="text-xl font-black text-amber-800">{summaryStats.totalHalf} buổi</p>
+              <p className="text-[10px] text-amber-700 font-medium mt-0.5">Tính 0.5 công/buổi</p>
+            </div>
+
+            <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-white to-blue-50/40 p-4 shadow-sm">
+              <div className="flex items-center justify-between text-blue-700 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Nghỉ phép (P)</span>
+                <FileText size={16} />
+              </div>
+              <p className="text-xl font-black text-blue-800">{summaryStats.totalLeaves} lượt</p>
+              <p className="text-[10px] text-blue-600 font-medium mt-0.5">Phép & không lương</p>
+            </div>
+
+            <div className="rounded-xl border border-indigo-200 bg-gradient-to-br from-white to-indigo-50/40 p-4 shadow-sm">
+              <div className="flex items-center justify-between text-indigo-700 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Tăng ca (OT)</span>
+                <TrendingUp size={16} />
+              </div>
+              <p className="text-xl font-black text-indigo-800">{summaryStats.totalOt} giờ</p>
+              <p className="text-[10px] text-indigo-600 font-medium mt-0.5">Giờ làm thêm</p>
+            </div>
           </div>
 
-          {/* Attendance Modal */}
+          {/* ═══ BỘ LỌC ĐA NĂNG & ĐIỀU HƯỚNG CHẾ ĐỘ XEM ═══ */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            {/* Left: Filters */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Tháng & Năm */}
+              <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold">
+                <CalendarIcon size={14} className="text-slate-500" />
+                <span className="text-slate-600">T:</span>
+                <select
+                  value={month}
+                  onChange={e => setMonth(e.target.value)}
+                  className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                    <option key={m} value={m}>T{m.toString().padStart(2, '0')}</option>
+                  ))}
+                </select>
+                <span className="text-slate-300">/</span>
+                <select
+                  value={year}
+                  onChange={e => setYear(e.target.value)}
+                  className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => 2024 + i).map(y => (
+                    <option key={y} value={y.toString()}>{y}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Lọc Phòng ban */}
+              {user?.roleName !== 'EMPLOYEE' && (
+                <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs">
+                  <Building2 size={14} className="text-slate-500 shrink-0" />
+                  <select
+                    value={departmentFilter}
+                    onChange={e => setDepartmentFilter(e.target.value)}
+                    className="bg-transparent font-medium text-slate-700 outline-none max-w-[160px] cursor-pointer"
+                  >
+                    <option value="all">Tất cả phòng ban</option>
+                    {departments.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Lọc Trạng thái */}
+              <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs">
+                <Filter size={14} className="text-slate-500 shrink-0" />
+                <select
+                  value={statusAttFilter}
+                  onChange={e => setStatusAttFilter(e.target.value)}
+                  className="bg-transparent font-medium text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="Có mặt">Có mặt (X)</option>
+                  <option value="nửa ngày">Nghỉ nửa ngày (NN)</option>
+                  <option value="phép">Nghỉ phép (P)</option>
+                  <option value="không lương">Nghỉ không lương (KL)</option>
+                  <option value="Công tác">Công tác (CT)</option>
+                </select>
+              </div>
+
+              {/* Ô tìm kiếm nhân sự */}
+              {user?.roleName !== 'EMPLOYEE' && (
+                <div className="relative flex items-center min-w-[200px] flex-1 sm:flex-initial">
+                  <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Tìm tên hoặc mã NV..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-7 py-1.5 text-xs outline-none focus:border-brand-500 focus:bg-white transition-all font-medium"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Nút reset nếu đang có filter */}
+              {(departmentFilter !== 'all' || statusAttFilter !== 'all' || searchTerm) && (
+                <button
+                  onClick={handleResetFilters}
+                  title="Đặt lại bộ lọc"
+                  className="flex items-center space-x-1 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 border border-rose-200 px-2 py-1.5 rounded-lg font-semibold transition-all cursor-pointer"
+                >
+                  <RotateCcw size={12} />
+                  <span>Đặt lại</span>
+                </button>
+              )}
+            </div>
+
+            {/* Right: View Mode Toggle */}
+            <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0 self-start lg:self-auto overflow-x-auto">
+              <button
+                onClick={() => setViewMode('matrix')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  viewMode === 'matrix'
+                    ? 'bg-emerald-700 text-white shadow-sm'
+                    : 'text-slate-700 hover:text-slate-900'
+                }`}
+              >
+                <FileSpreadsheet size={14} />
+                <span>Bảng Tính Google Sheets (7 Kho/Xưởng)</span>
+              </button>
+              <button
+                onClick={() => setViewMode('summary')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  viewMode === 'summary'
+                    ? 'bg-white text-brand-900 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid size={14} />
+                <span>Tổng hợp nhân sự ({employeeSummary.length})</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  viewMode === 'list'
+                    ? 'bg-white text-brand-900 shadow-sm border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <ListFilter size={14} />
+                <span>Chi tiết từng ngày ({filteredRecords.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ═══ CHẾ ĐỘ 0: MẪU BẢNG TÍNH GOOGLE SHEETS (7 BỘ PHẬN) ═══ */}
+          {viewMode === 'matrix' && (
+            <TimesheetMatrixView
+              month={month}
+              year={year}
+              onMonthChange={setMonth}
+              onYearChange={setYear}
+              onRefresh={fetchAttendance}
+            />
+          )}
+
+          {/* ═══ CHẾ ĐỘ 1: BẢNG TỔNG HỢP NHÂN SỰ (MONTHLY MATRIX) ═══ */}
+          {viewMode === 'summary' && (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
+              {attLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm border-collapse min-w-[950px]">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3 text-center w-12">STT</th>
+                      <th className="px-4 py-3">Mã NV</th>
+                      <th className="px-4 py-3">Họ và Tên</th>
+                      <th className="px-4 py-3">Phòng ban</th>
+                      <th className="px-4 py-3">Chức vụ</th>
+                      <th className="px-4 py-3 text-right text-brand-700 bg-brand-50/50">Công thực tế</th>
+                      <th className="px-4 py-3 text-center text-emerald-700">Có mặt (X)</th>
+                      <th className="px-4 py-3 text-center text-amber-700">Nửa ngày (NN)</th>
+                      <th className="px-4 py-3 text-center text-blue-700">Phép (P)</th>
+                      <th className="px-4 py-3 text-center text-rose-700">Không lương (KL)</th>
+                      <th className="px-4 py-3 text-right">Tăng ca (OT)</th>
+                      <th className="px-4 py-3 text-center">Chi tiết</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {employeeSummary.length === 0 ? (
+                      <tr>
+                        <td colSpan="12" className="text-center py-10 text-slate-500 font-medium">
+                          Chưa có dữ liệu chấm công phù hợp với bộ lọc Tháng {month}/{year}
+                        </td>
+                      </tr>
+                    ) : (
+                      employeeSummary.map((emp, idx) => (
+                        <tr key={emp.employee_id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="px-4 py-3 text-center font-semibold text-slate-400 text-xs">{idx + 1}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-xs text-brand-700">{emp.employee_code}</td>
+                          <td className="px-4 py-3 font-bold text-slate-800">{emp.fullname}</td>
+                          <td className="px-4 py-3 text-slate-600 text-xs">{emp.department_name || 'Khác'}</td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">{emp.position_name || '--'}</td>
+                          <td className="px-4 py-3 text-right font-black text-brand-700 bg-brand-50/30 text-sm">
+                            {emp.totalWorkDays.toFixed(1).replace(/\.0$/, '')} công
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-emerald-700">
+                            {emp.fullDays > 0 ? `${emp.fullDays} ngày` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-amber-700">
+                            {emp.halfDays > 0 ? `${emp.halfDays} buổi` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-blue-700">
+                            {emp.paidLeaves > 0 ? `${emp.paidLeaves} ngày` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-rose-600">
+                            {emp.unpaidLeaves > 0 ? `${emp.unpaidLeaves} ngày` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-indigo-700">
+                            {emp.totalOtHours > 0 ? `${emp.totalOtHours}h` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => {
+                                setSearchTerm(emp.fullname);
+                                setViewMode('list');
+                              }}
+                              className="text-xs font-semibold text-brand-600 hover:text-brand-800 hover:underline cursor-pointer"
+                            >
+                              Xem {emp.recordsCount} ngày
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  {employeeSummary.length > 0 && (
+                    <tfoot className="bg-slate-50 font-bold text-slate-800 border-t-2 border-slate-200 text-xs">
+                      <tr>
+                        <td colSpan="5" className="px-4 py-3 text-right uppercase tracking-wider text-slate-600">
+                          TỔNG CỘNG ({employeeSummary.length} NHÂN SỰ):
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-brand-700 bg-brand-100/50 text-sm">
+                          {summaryStats.totalDays.toFixed(1).replace(/\.0$/, '')} công
+                        </td>
+                        <td className="px-4 py-3 text-center text-emerald-700 font-black">
+                          {summaryStats.totalFull} ngày
+                        </td>
+                        <td className="px-4 py-3 text-center text-amber-700 font-black">
+                          {summaryStats.totalHalf} buổi
+                        </td>
+                        <td className="px-4 py-3 text-center text-blue-700 font-black">
+                          {summaryStats.totalLeaves} lượt
+                        </td>
+                        <td className="px-4 py-3 text-center text-slate-400">-</td>
+                        <td className="px-4 py-3 text-right text-indigo-700 font-black">
+                          {summaryStats.totalOt}h
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* ═══ CHẾ ĐỘ 2: DANH SÁCH CHI TIẾT TỪNG NGÀY (DAILY LOGS) ═══ */}
+          {viewMode === 'list' && (
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
+              {attLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-700"></div>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm border-collapse min-w-[850px]">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Ngày</th>
+                      {user?.roleName !== 'EMPLOYEE' && <th className="px-4 py-3">Nhân viên</th>}
+                      <th className="px-4 py-3">Phòng ban</th>
+                      <th className="px-4 py-3">Giờ vào (Check-in)</th>
+                      <th className="px-4 py-3">Giờ ra (Check-out)</th>
+                      <th className="px-4 py-3 text-right">Tăng ca (OT)</th>
+                      <th className="px-4 py-3">Trạng thái</th>
+                      <th className="px-4 py-3">Ghi chú</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredRecords.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="text-center py-10 text-slate-500 font-medium">
+                          Chưa có dữ liệu chấm công phù hợp với bộ lọc hiện tại
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRecords.map(r => {
+                        const dateObj = new Date(r.date);
+                        const daysOfWeek = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+                        const dayName = !isNaN(dateObj) ? daysOfWeek[dateObj.getDay()] : '';
+                        
+                        return (
+                          <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="font-bold text-slate-800">{r.date}</span>
+                              {dayName && <span className="block text-[11px] text-slate-400 font-medium">{dayName}</span>}
+                            </td>
+                            {user?.roleName !== 'EMPLOYEE' && (
+                              <td className="px-4 py-3">
+                                <div className="font-bold text-slate-800">{r.fullname}</div>
+                                <div className="text-xs font-mono text-brand-700">{r.employee_code}</div>
+                              </td>
+                            )}
+                            <td className="px-4 py-3 text-slate-600 text-xs">{r.department_name}</td>
+                            <td className="px-4 py-3 font-mono text-emerald-600 font-bold">{r.check_in || '--:--'}</td>
+                            <td className="px-4 py-3 font-mono text-brand-600 font-bold">{r.check_out || '--:--'}</td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-indigo-700 text-xs">
+                              {r.ot_hours > 0 ? `${r.ot_hours} giờ` : '--'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center space-x-1 ${
+                                r.status === 'Có mặt' || r.status?.startsWith('Có mặt') ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                                r.status?.includes('nửa ngày') ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                                r.status?.includes('phép') ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                r.status?.includes('không lương') ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                                r.status?.includes('Công tác') ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                                'bg-slate-100 text-slate-700 border border-slate-200'
+                              }`}>
+                                <span>{r.status}</span>
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-slate-500">{r.note || '--'}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Attendance Modal */}
           {attModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4">
               <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-6">

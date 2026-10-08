@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp, Wallet } from 'lucide-react';
+import { DollarSign, Printer, Search, Plus, Edit2, Trash2, CheckCircle, XCircle, Calculator, Clock, Award, ShieldAlert, Gift, Coffee, Building2, Users, TrendingUp, Wallet, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const TIER_PRESETS = [
@@ -130,6 +130,23 @@ const PayrollPage = () => {
   useEffect(() => {
     fetchData();
   }, [month, year, departmentFilter]);
+
+  const [isSyncingAttendance, setIsSyncingAttendance] = useState(false);
+
+  const handleSyncAttendance = async () => {
+    setIsSyncingAttendance(true);
+    try {
+      const res = await api.post('/payroll/sync-attendance', { month, year });
+      setSuccess(res.data?.message || `Đã đồng bộ ngày công thực tế tháng ${month}/${year}!`);
+      fetchData();
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi đồng bộ dữ liệu chấm công');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setIsSyncingAttendance(false);
+    }
+  };
 
   const handleGeneratePayroll = async () => {
     if (window.confirm(`Bạn có chắc muốn tự động khởi tạo và tính lương cho toàn bộ nhân viên trong tháng ${month}/${year} theo công thức mới?`)) {
@@ -959,12 +976,23 @@ const PayrollPage = () => {
               : 'Tra cứu chi tiết thu nhập, lương cơ sở, KPI và phụ cấp cá nhân theo từng tháng'}
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-2">
+          {(isAdmin || isManager) && (
+            <button
+              onClick={handleSyncAttendance}
+              disabled={isSyncingAttendance}
+              title="Tự động đồng bộ số ngày công và giờ làm thêm thực tế từ Bảng Chấm Công sang Bảng Lương trực tuyến"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold flex items-center space-x-1.5 shadow-sm transition disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw size={15} className={isSyncingAttendance ? 'animate-spin' : ''} />
+              <span>{isSyncingAttendance ? 'Đang đồng bộ...' : 'Đồng Bộ Từ Chấm Công'}</span>
+            </button>
+          )}
           {isAdmin && (
             <button
               onClick={handleGeneratePayroll}
               disabled={isGenerating}
-              className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 shadow-sm transition disabled:opacity-50 cursor-pointer"
+              className="bg-brand-700 hover:bg-brand-800 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold flex items-center space-x-1.5 shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Calculator size={16} />
               <span>{isGenerating ? 'Đang tính toán...' : `Tính Lương Tháng ${month}/${year}`}</span>
@@ -1259,8 +1287,17 @@ const PayrollPage = () => {
                           </td>
                           <td className="px-3 py-3 text-right">
                             <div className="font-bold text-slate-800">{formatVND(baseWork)}</div>
-                            <div className="text-[10px] text-slate-500 font-medium">
-                              <span className="bg-slate-100 px-1 py-0.2 rounded mr-1">{wDays} công</span>
+                            <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                              <span
+                                className={`px-1.5 py-0.5 rounded mr-1 font-bold ${
+                                  p.attendance_count > 0 
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                                    : 'bg-slate-100 text-slate-600'
+                                }`}
+                                title={p.attendance_count > 0 ? `Đã liên kết trực tuyến từ ${p.attendance_count} ngày chấm công thực tế` : 'Mặc định (26 công)'}
+                              >
+                                {wDays} công{p.attendance_count > 0 && <span className="text-[9px] text-emerald-600 ml-0.5 font-normal">● Live</span>}
+                              </span>
                               {otHrs > 0 ? (
                                 <span className="text-indigo-700 bg-indigo-50 px-1 py-0.2 rounded font-bold">
                                   {otHrs}h OT (+{formatVND(otSal)})

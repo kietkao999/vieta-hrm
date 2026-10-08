@@ -18,7 +18,14 @@ export const getPayroll = async (req, res) => {
              k.responsibility_amount as kpi_responsibility_amount,
              k.performance_bonus as kpi_performance_bonus,
              k.discipline_deduction as kpi_discipline_deduction,
-             k.note as kpi_note
+             k.note as kpi_note,
+             (SELECT COUNT(*) FROM attendance att WHERE att.employee_id = p.employee_id AND att.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_count,
+             (SELECT SUM(CASE 
+                           WHEN UPPER(att2.status) = 'NN' OR att2.status LIKE '%nửa ngày%' OR att2.status LIKE '%1/2%' THEN 0.5
+                           WHEN UPPER(att2.status) IN ('KL', 'OFF', 'TS') OR att2.status LIKE '%không lương%' OR att2.status LIKE '%nghỉ tuần%' OR att2.status LIKE '%thai sản%' THEN 0
+                           ELSE 1
+                         END)
+              FROM attendance att2 WHERE att2.employee_id = p.employee_id AND att2.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_work_days
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
@@ -195,8 +202,26 @@ export const generatePayroll = async (req, res) => {
         SELECT * FROM payrolls WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?
       `, [emp.id, padMonth, month.toString(), year]);
 
-      const workDays = exist ? parseFloat(exist.work_days ?? 26) : 26;
-      const otHours = exist ? parseFloat(exist.ot_hours ?? 0) : 0;
+      // 2.3b Tự động lấy số ngày công và giờ tăng ca thực tế từ Bảng Chấm Công nếu đã có dữ liệu
+      const daysInTargetMonth = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
+      const startDateTarget = `${year}-${padMonth}-01`;
+      const endDateTarget = `${year}-${padMonth}-${daysInTargetMonth.toString().padStart(2, '0')}`;
+
+      const attSum = await query.get(`
+        SELECT 
+          SUM(CASE 
+                WHEN UPPER(status) = 'NN' OR status LIKE '%nửa ngày%' OR status LIKE '%1/2%' THEN 0.5
+                WHEN UPPER(status) IN ('KL', 'OFF', 'TS') OR status LIKE '%không lương%' OR status LIKE '%nghỉ tuần%' OR status LIKE '%thai sản%' THEN 0
+                ELSE 1
+              END) as actual_work_days,
+          SUM(COALESCE(ot_hours, 0)) as actual_ot_hours
+        FROM attendance
+        WHERE employee_id = ? AND date >= ? AND date <= ?
+      `, [emp.id, startDateTarget, endDateTarget]);
+
+      const hasAttendance = attSum && attSum.actual_work_days !== null;
+      const workDays = hasAttendance ? Number(attSum.actual_work_days.toFixed(1)) : (exist ? parseFloat(exist.work_days ?? 26) : 26);
+      const otHours = hasAttendance ? Number(attSum.actual_ot_hours.toFixed(1)) : (exist ? parseFloat(exist.ot_hours ?? 0) : 0);
       const otherBonus = exist ? parseFloat(exist.other_bonus ?? 0) : 0;
       const mealPhoneAllowance = exist ? parseFloat(exist.meal_phone_allowance ?? 0) : 0;
       const otherAllowance = exist ? parseFloat(exist.other_allowance ?? 0) : 0;
@@ -465,3 +490,108 @@ export const deletePayroll = async (req, res) => {
     return res.status(500).json({ message: 'Lỗi xóa phiếu lương.' });
   }
 };
+
+/**
+ * Tự động đồng bộ số ngày công và giờ làm thêm từ bảng attendance sang bảng payrolls trực tuyến
+ */
+export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = null) => {
+  const mNum = parseInt(month, 10);
+  const yNum = parseInt(year, 10);
+  const padMonth = mNum.toString().padStart(2, '0');
+  const daysInMonth = new Date(yNum, mNum, 0).getDate();
+  const startDate = `${yNum}-${padMonth}-01`;
+  const endDate = `${yNum}-${padMonth}-${daysInMonth.toString().padStart(2, '0')}`;
+
+  let sql = `
+    SELECT employee_id,
+           SUM(CASE 
+                 WHEN UPPER(status) = 'NN' OR status LIKE '%nửa ngày%' OR status LIKE '%1/2%' THEN 0.5
+                 WHEN UPPER(status) IN ('KL', 'OFF', 'TS') OR status LIKE '%không lương%' OR status LIKE '%nghỉ tuần%' OR status LIKE '%thai sản%' THEN 0
+                 ELSE 1
+               END) as actual_work_days,
+           SUM(COALESCE(ot_hours, 0)) as actual_ot_hours,
+           COUNT(*) as total_records
+    FROM attendance
+    WHERE date >= ? AND date <= ?
+  `;
+  const params = [startDate, endDate];
+  if (employeeId) {
+    sql += ` AND employee_id = ?`;
+    params.push(employeeId);
+  }
+  sql += ` GROUP BY employee_id`;
+
+  const attSummaries = await query.all(sql, params);
+  let updatedCount = 0;
+  const now = new Date().toISOString();
+
+  for (const att of (attSummaries || [])) {
+    const p = await query.get(`
+      SELECT * FROM payrolls
+      WHERE employee_id = ? AND (month = ? OR month = ?) AND year = ?
+    `, [att.employee_id, padMonth, mNum.toString(), yNum]);
+
+    if (!p) continue;
+
+    const wDays = Number(att.actual_work_days.toFixed(1));
+    const otHrs = Number(att.actual_ot_hours.toFixed(1));
+    const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
+    const baseWorkSalary = Math.round((totalBase / 26) * wDays);
+    const otSalary = Math.round((totalBase / 208) * otHrs * 1.5);
+
+    const respAmount = p.responsibility_kpi !== undefined && p.responsibility_kpi !== null 
+      ? parseFloat(p.responsibility_kpi) 
+      : (p.responsibility_net ? parseFloat(p.responsibility_net) : 0);
+    const perfBonus = p.performance_kpi !== undefined && p.performance_kpi !== null
+      ? parseFloat(p.performance_kpi)
+      : (p.performance_bonus ? parseFloat(p.performance_bonus) : 0);
+    const discDeduct = parseFloat(p.discipline_deduction || 0);
+    const otherBonus = parseFloat(p.other_bonus || 0);
+    const mealPhone = parseFloat(p.meal_phone_allowance || 0);
+    const otherAllowance = parseFloat(p.other_allowance || 0);
+    const totalIncome = baseWorkSalary + otSalary + respAmount + perfBonus + otherBonus + mealPhone + otherAllowance;
+
+    const socialIns = parseFloat(p.social_insurance || 0);
+    const uFee = parseFloat(p.union_fee || 0);
+    const incTax = parseFloat(p.income_tax || 0);
+    const advPay = parseFloat(p.advance_payment || 0);
+    const hrDeduct = parseFloat(p.hour_deduction || 0);
+    const otherDeduct = parseFloat(p.other_deductions || 0);
+    const totalDeductions = socialIns + uFee + incTax + advPay + hrDeduct + otherDeduct + discDeduct;
+    const uniformRefund = parseFloat(p.uniform_refund || 0);
+    const netSalary = Math.max(0, totalIncome - totalDeductions + uniformRefund);
+
+    await query.run(`
+      UPDATE payrolls
+      SET work_days = ?,
+          base_work_salary = ?,
+          ot_hours = ?,
+          ot_salary = ?,
+          net_salary = ?,
+          updated_at = ?
+      WHERE id = ?
+    `, [wDays, baseWorkSalary, otHrs, otSalary, netSalary, now, p.id]);
+
+    updatedCount++;
+  }
+
+  return { updatedCount, totalAttendanceEmployees: (attSummaries || []).length };
+};
+
+export const syncAttendanceWithPayrollController = async (req, res) => {
+  try {
+    const { month, year, employee_id } = req.body;
+    if (!month || !year) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp tháng và năm cần đồng bộ.' });
+    }
+    const result = await syncAttendanceToPayrollForMonth(month, year, employee_id);
+    return res.json({
+      message: `Đã liên kết và đồng bộ thành công dữ liệu chấm công cho ${result.updatedCount} nhân sự sang Bảng Lương Tháng ${month}/${year}!`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Lỗi đồng bộ chấm công sang bảng lương:', error);
+    return res.status(500).json({ message: 'Lỗi đồng bộ dữ liệu chấm công sang bảng lương.' });
+  }
+};
+

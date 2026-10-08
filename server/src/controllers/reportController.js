@@ -136,6 +136,18 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.responsibility_net) as total_responsibility_kpi,
              SUM(p.performance_bonus) as total_performance_bonus,
              SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             SUM(
+               CASE 
+                 WHEN p.base_work_salary > 0 THEN p.base_work_salary 
+                 ELSE (COALESCE(p.tier_salary, 0) + COALESCE(p.grade_salary, 0)) 
+               END
+               + COALESCE(p.ot_salary, 0)
+               + COALESCE(p.responsibility_net, p.responsibility_kpi, 0)
+               + COALESCE(p.performance_bonus, p.performance_kpi, 0)
+               + COALESCE(p.other_bonus, 0)
+               + COALESCE(p.meal_phone_allowance, 0)
+               + COALESCE(p.other_allowance, 0)
+             ) as total_gross_salary,
              COUNT(DISTINCT p.employee_id) as employee_count
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
@@ -152,6 +164,18 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.responsibility_net) as total_responsibility,
              SUM(p.performance_bonus) as total_performance,
              SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             SUM(
+               CASE 
+                 WHEN p.base_work_salary > 0 THEN p.base_work_salary 
+                 ELSE (COALESCE(p.tier_salary, 0) + COALESCE(p.grade_salary, 0)) 
+               END
+               + COALESCE(p.ot_salary, 0)
+               + COALESCE(p.responsibility_net, p.responsibility_kpi, 0)
+               + COALESCE(p.performance_bonus, p.performance_kpi, 0)
+               + COALESCE(p.other_bonus, 0)
+               + COALESCE(p.meal_phone_allowance, 0)
+               + COALESCE(p.other_allowance, 0)
+             ) as total_gross,
              COUNT(p.id) as total_records
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
@@ -163,6 +187,18 @@ export const getPayrollReport = async (req, res) => {
     const topSalaries = await query.all(`
       SELECT e.fullname, e.code, 
              SUM(p.net_salary) as net_salary,
+             SUM(
+               CASE 
+                 WHEN p.base_work_salary > 0 THEN p.base_work_salary 
+                 ELSE (COALESCE(p.tier_salary, 0) + COALESCE(p.grade_salary, 0)) 
+               END
+               + COALESCE(p.ot_salary, 0)
+               + COALESCE(p.responsibility_net, p.responsibility_kpi, 0)
+               + COALESCE(p.performance_bonus, p.performance_kpi, 0)
+               + COALESCE(p.other_bonus, 0)
+               + COALESCE(p.meal_phone_allowance, 0)
+               + COALESCE(p.other_allowance, 0)
+             ) as gross_salary,
              COALESCE(d.name, 'Chưa phân') as department_name,
              COUNT(p.id) as months_counted
       FROM payrolls p

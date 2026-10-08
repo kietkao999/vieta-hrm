@@ -379,24 +379,46 @@ const ReportPage = () => {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG THỰC LĨNH ({sortedActiveMonths.length} THÁNG)</p>
-            <p className="text-xl font-bold text-brand-700 mt-1">{formatCurrency(yearTotal?.total_net)} đ</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm">
+            <p className="text-xs font-bold text-amber-800 uppercase tracking-wide truncate" title="Tổng thu nhập thực tế trước các khoản giảm trừ">
+              TỔNG THU NHẬP CHƯA TRỪ ({sortedActiveMonths.length} THÁNG)
+            </p>
+            <p className="text-xl font-black text-amber-800 mt-1">
+              {formatCurrency(yearTotal?.total_gross)} đ
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG LƯƠNG TẦNG & BẬC</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{formatCurrency(yearTotal?.total_base)} đ</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
+              TỔNG THỰC LĨNH ({sortedActiveMonths.length} THÁNG)
+            </p>
+            <p className="text-xl font-bold text-brand-700 mt-1">
+              {formatCurrency(yearTotal?.total_net)} đ
+            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">TỔNG KPI & HIỆU QUẢ</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
+              TỔNG LƯƠNG TẦNG & BẬC
+            </p>
+            <p className="text-xl font-bold text-slate-800 mt-1">
+              {formatCurrency(yearTotal?.total_base)} đ
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
+              TỔNG KPI & HIỆU QUẢ
+            </p>
             <p className="text-xl font-bold text-emerald-700 mt-1">
               {formatCurrency((yearTotal?.total_responsibility || 0) + (yearTotal?.total_performance || 0))} đ
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400">SỐ LƯỢT PHIẾU LƯƠNG</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{yearTotal?.total_records || 0}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
+              SỐ LƯỢT PHIẾU LƯƠNG
+            </p>
+            <p className="text-xl font-bold text-slate-800 mt-1">
+              {yearTotal?.total_records || 0}
+            </p>
           </div>
         </div>
 
@@ -416,7 +438,14 @@ const ReportPage = () => {
                     <span className="text-sm font-bold text-slate-700">Tháng {m.month.toString().padStart(2, '0')}</span>
                     <div className="flex items-center space-x-3">
                       <span className="text-xs text-slate-500">{m.employee_count} NV</span>
-                      <span className="text-sm font-bold text-brand-700">{formatCurrency(m.total_net_salary)} đ</span>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-brand-700 block">{formatCurrency(m.total_net_salary)} đ</span>
+                        {m.total_gross_salary > 0 && (
+                          <span className="text-[11px] text-amber-800 font-semibold block" title="Tổng thu nhập chưa trừ">
+                            Chưa trừ: {formatCurrency(m.total_gross_salary)} đ
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -440,7 +469,14 @@ const ReportPage = () => {
                         <p className="text-xs text-slate-500">{s.department_name} • {s.months_counted} tháng</p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-brand-700">{formatCurrency(s.net_salary)} đ</span>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-brand-700 block">{formatCurrency(s.net_salary)} đ</span>
+                      {s.gross_salary > 0 && (
+                        <span className="text-[11px] text-amber-800 font-semibold block" title="Thu nhập chưa trừ">
+                          Chưa trừ: {formatCurrency(s.gross_salary)} đ
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
