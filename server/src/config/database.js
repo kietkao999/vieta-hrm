@@ -367,6 +367,7 @@ export const initDatabase = async () => {
       'income_tax REAL DEFAULT 0',
       'advance_payment REAL DEFAULT 0',
       'hour_deduction REAL DEFAULT 0',
+      'cut_hours REAL DEFAULT 0',
       'other_deductions REAL DEFAULT 0',
       'uniform_refund REAL DEFAULT 0'
     ];

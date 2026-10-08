@@ -923,9 +923,15 @@ const PayrollPage = () => {
                   <span className="font-bold text-rose-700">-{formatVND(advPay)}</span>
                 </div>
                 <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                  <span className="text-slate-800 font-medium">Giảm trừ cắt giờ / Vi phạm:</span>
-                  <span className="font-bold text-rose-700">-{formatVND(otherDeduct + hrDeduct)}</span>
+                  <span className="text-slate-800 font-medium">Giảm trừ cắt giờ{currentSlip?.cut_hours > 0 ? ` (${currentSlip.cut_hours}h)` : ''}:</span>
+                  <span className="font-bold text-rose-700">-{formatVND(hrDeduct)}</span>
                 </div>
+                {otherDeduct > 0 && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                    <span className="text-slate-800 font-medium">Giảm trừ khác / Vi phạm:</span>
+                    <span className="font-bold text-rose-700">-{formatVND(otherDeduct)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <span className="font-bold text-amber-950">Tổng thu nhập (chưa trừ):</span>
                   <span className="font-black text-amber-900">{formatVND(totalIncome)}</span>
@@ -1329,8 +1335,11 @@ const PayrollPage = () => {
                             </div>
                             <div className="text-[10px] text-slate-500 flex flex-wrap justify-end gap-1 mt-0.5 max-w-[200px] ml-auto">
                               {p.social_insurance > 0 && <span className="bg-red-50 text-red-700 px-1 rounded">BH: -{formatVND(p.social_insurance)}</span>}
-                              {p.union_fee > 0 && <span className="bg-red-50 text-red-700 px-1 rounded">CĐ: -{formatVND(p.union_fee)}</span>}
-                              {p.hour_deduction > 0 && <span className="bg-amber-50 text-amber-800 px-1 rounded">Cắt giờ: -{formatVND(p.hour_deduction)}</span>}
+                              {p.hour_deduction > 0 && (
+                                <span className="bg-amber-50 text-amber-800 px-1 rounded font-semibold border border-amber-200" title={`Cắt ${p.cut_hours ? `${p.cut_hours} giờ` : ''}`}>
+                                  Cắt giờ{p.cut_hours > 0 ? ` (${p.cut_hours}h)` : ''}: -{formatVND(p.hour_deduction)}
+                                </span>
+                              )}
                               {p.advance_payment > 0 && <span className="bg-orange-50 text-orange-800 px-1 rounded">T.Ứng: -{formatVND(p.advance_payment)}</span>}
                               {p.other_deductions > 0 && <span className="bg-slate-100 text-slate-700 px-1 rounded">Khác: -{formatVND(p.other_deductions)}</span>}
                               {p.discipline_deduction > 0 && <span className="bg-rose-100 text-rose-800 px-1 rounded">K.Luật: -{formatVND(p.discipline_deduction)}</span>}

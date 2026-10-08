@@ -25,7 +25,8 @@ export const getPayroll = async (req, res) => {
                            WHEN UPPER(att2.status) IN ('KL', 'OFF', 'TS') OR att2.status LIKE '%không lương%' OR att2.status LIKE '%nghỉ tuần%' OR att2.status LIKE '%thai sản%' THEN 0
                            ELSE 1
                          END)
-              FROM attendance att2 WHERE att2.employee_id = p.employee_id AND att2.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_work_days
+              FROM attendance att2 WHERE att2.employee_id = p.employee_id AND att2.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_work_days,
+             (SELECT SUM(COALESCE(att3.cut_hours, 0)) FROM attendance att3 WHERE att3.employee_id = p.employee_id AND att3.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_cut_hours
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
       LEFT JOIN departments d ON e.department_id = d.id
@@ -114,7 +115,10 @@ export const getPayroll = async (req, res) => {
       const uFee = r.union_fee || 0;
       const incTax = r.income_tax || 0;
       const advPay = r.advance_payment || 0;
-      const hrDeduct = r.hour_deduction || 0;
+      const cutHrs = r.cut_hours !== undefined && r.cut_hours !== null && r.cut_hours > 0 ? Number(r.cut_hours) : (Number(r.attendance_cut_hours) || 0);
+      const hrDeduct = r.hour_deduction !== undefined && r.hour_deduction !== null && r.hour_deduction > 0
+        ? Number(r.hour_deduction)
+        : (cutHrs > 0 ? Math.round((totalBase / 208) * cutHrs) : 0);
       const otherDeduct = r.other_deductions || 0;
       const totalDeductions = socialIns + uFee + incTax + advPay + hrDeduct + otherDeduct + discDeduct;
       const uniformRefund = r.uniform_refund || 0;
@@ -122,6 +126,8 @@ export const getPayroll = async (req, res) => {
 
       return {
         ...r,
+        cut_hours: cutHrs,
+        hour_deduction: hrDeduct,
         responsibility_quota: respQuota,
         responsibility_deduction_rate: 1 - respRate,
         responsibility_rate: respRate,
@@ -214,7 +220,8 @@ export const generatePayroll = async (req, res) => {
                 WHEN UPPER(status) IN ('KL', 'OFF', 'TS') OR status LIKE '%không lương%' OR status LIKE '%nghỉ tuần%' OR status LIKE '%thai sản%' THEN 0
                 ELSE 1
               END) as actual_work_days,
-          SUM(COALESCE(ot_hours, 0)) as actual_ot_hours
+          SUM(COALESCE(ot_hours, 0)) as actual_ot_hours,
+          SUM(COALESCE(cut_hours, 0)) as actual_cut_hours
         FROM attendance
         WHERE employee_id = ? AND date >= ? AND date <= ?
       `, [emp.id, startDateTarget, endDateTarget]);
@@ -222,6 +229,11 @@ export const generatePayroll = async (req, res) => {
       const hasAttendance = attSum && attSum.actual_work_days !== null;
       const workDays = hasAttendance ? Number(attSum.actual_work_days.toFixed(1)) : (exist ? parseFloat(exist.work_days ?? 26) : 26);
       const otHours = hasAttendance ? Number(attSum.actual_ot_hours.toFixed(1)) : (exist ? parseFloat(exist.ot_hours ?? 0) : 0);
+      const cutHours = hasAttendance ? Number(attSum.actual_cut_hours.toFixed(1)) : (exist ? parseFloat(exist.cut_hours ?? 0) : 0);
+      const totalBase = tierSalary + gradeSalary;
+      const hourDeduction = cutHours > 0
+        ? Math.round((totalBase / 208) * cutHours)
+        : (exist ? parseFloat(exist.hour_deduction ?? 0) : 0);
       const otherBonus = exist ? parseFloat(exist.other_bonus ?? 0) : 0;
       const mealPhoneAllowance = exist ? parseFloat(exist.meal_phone_allowance ?? 0) : 0;
       const otherAllowance = exist ? parseFloat(exist.other_allowance ?? 0) : 0;
@@ -229,7 +241,6 @@ export const generatePayroll = async (req, res) => {
       const unionFee = exist ? parseFloat(exist.union_fee ?? 0) : 0;
       const incomeTax = exist ? parseFloat(exist.income_tax ?? 0) : 0;
       const advancePayment = exist ? parseFloat(exist.advance_payment ?? 0) : 0;
-      const hourDeduction = exist ? parseFloat(exist.hour_deduction ?? 0) : 0;
       const otherDeductions = exist ? parseFloat(exist.other_deductions ?? 0) : discDeduct;
       const uniformRefund = exist ? parseFloat(exist.uniform_refund ?? 0) : 0;
 
@@ -265,7 +276,7 @@ export const generatePayroll = async (req, res) => {
               responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
               performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
               other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
-              social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, hour_deduction = ?,
+              social_insurance = ?, union_fee = ?, income_tax = ?, advance_payment = ?, cut_hours = ?, hour_deduction = ?,
               other_deductions = ?, uniform_refund = ?, net_salary = ?, updated_at = ?
           WHERE id = ?
         `, [
@@ -275,7 +286,7 @@ export const generatePayroll = async (req, res) => {
           respQuota, deductRate, fullPayroll.respNet, fullPayroll.respNet,
           perfBonus, discDeduct, fullPayroll.perfNet, perfBonus,
           otherBonus, mealPhoneAllowance, otherAllowance,
-          socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
+          socialInsurance, unionFee, incomeTax, advancePayment, cutHours, hourDeduction,
           otherDeductions, uniformRefund, fullPayroll.netSalary, now,
           exist.id
         ]);
@@ -289,9 +300,9 @@ export const generatePayroll = async (req, res) => {
             responsibility_quota, responsibility_deduction_rate, responsibility_net, responsibility_kpi,
             performance_bonus, discipline_deduction, performance_net, performance_kpi,
             other_bonus, meal_phone_allowance, other_allowance,
-            social_insurance, union_fee, income_tax, advance_payment, hour_deduction,
+            social_insurance, union_fee, income_tax, advance_payment, cut_hours, hour_deduction,
             other_deductions, uniform_refund, net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
         `, [
           emp.id, padMonth, year,
           tierSalary, gradeSalary,
@@ -300,7 +311,7 @@ export const generatePayroll = async (req, res) => {
           respQuota, deductRate, fullPayroll.respNet, fullPayroll.respNet,
           perfBonus, discDeduct, fullPayroll.perfNet, perfBonus,
           otherBonus, mealPhoneAllowance, otherAllowance,
-          socialInsurance, unionFee, incomeTax, advancePayment, hourDeduction,
+          socialInsurance, unionFee, incomeTax, advancePayment, cutHours, hourDeduction,
           otherDeductions, uniformRefund, fullPayroll.netSalary, now, now
         ]);
       }
@@ -399,7 +410,15 @@ export const updatePayroll = async (req, res) => {
     const uFee = parseFloat(union_fee !== undefined ? union_fee : payroll.union_fee || 0);
     const incTax = parseFloat(income_tax !== undefined ? income_tax : payroll.income_tax || 0);
     const advPay = parseFloat(advance_payment !== undefined ? advance_payment : payroll.advance_payment || 0);
-    const hrDeduct = parseFloat(hour_deduction !== undefined ? hour_deduction : payroll.hour_deduction || 0);
+    const cutHrs = parseFloat(String(req.body.cut_hours !== undefined ? req.body.cut_hours : payroll.cut_hours || 0).replace(',', '.')) || 0;
+    let hrDeduct = 0;
+    if (hour_deduction !== undefined) {
+      hrDeduct = parseFloat(hour_deduction || 0);
+    } else if (req.body.cut_hours !== undefined) {
+      hrDeduct = Math.round((totalBase / 208) * cutHrs);
+    } else {
+      hrDeduct = parseFloat(payroll.hour_deduction || 0);
+    }
     const oDeduct = parseFloat(other_deductions !== undefined ? other_deductions : payroll.other_deductions || 0);
     const uniformRefund = parseFloat(String(uniform_refund !== undefined ? uniform_refund : payroll.uniform_refund || 0).replace(',', '.')) || 0;
 
@@ -425,6 +444,7 @@ export const updatePayroll = async (req, res) => {
       SET tier_salary = ?, grade_salary = ?, 
           work_days = ?, base_work_salary = ?,
           ot_hours = ?, ot_salary = ?,
+          cut_hours = ?,
           responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
           performance_bonus = ?, discipline_deduction = ?, performance_net = ?, performance_kpi = ?,
           other_bonus = ?, meal_phone_allowance = ?, other_allowance = ?,
@@ -435,6 +455,7 @@ export const updatePayroll = async (req, res) => {
       tSalary, gSalary,
       wDays, baseWorkSalary,
       otHrs, otSalary,
+      cutHrs,
       respQuota, respDeductRate, respKpiVal, respKpiVal,
       perfKpiVal, discDeduct, perfNet, perfKpiVal,
       oBonus, mealPhone, oAllowance,
@@ -510,6 +531,7 @@ export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = 
                  ELSE 1
                END) as actual_work_days,
            SUM(COALESCE(ot_hours, 0)) as actual_ot_hours,
+           SUM(COALESCE(cut_hours, 0)) as actual_cut_hours,
            COUNT(*) as total_records
     FROM attendance
     WHERE date >= ? AND date <= ?
@@ -535,9 +557,11 @@ export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = 
 
     const wDays = Number(att.actual_work_days.toFixed(1));
     const otHrs = Number(att.actual_ot_hours.toFixed(1));
+    const cutHrs = Number(att.actual_cut_hours.toFixed(1));
     const totalBase = (p.tier_salary || 0) + (p.grade_salary || 0);
     const baseWorkSalary = Math.round((totalBase / 26) * wDays);
     const otSalary = Math.round((totalBase / 208) * otHrs * 1.5);
+    const hrDeduct = cutHrs > 0 ? Math.round((totalBase / 208) * cutHrs) : (parseFloat(p.hour_deduction || 0));
 
     const respAmount = p.responsibility_kpi !== undefined && p.responsibility_kpi !== null 
       ? parseFloat(p.responsibility_kpi) 
@@ -555,7 +579,6 @@ export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = 
     const uFee = parseFloat(p.union_fee || 0);
     const incTax = parseFloat(p.income_tax || 0);
     const advPay = parseFloat(p.advance_payment || 0);
-    const hrDeduct = parseFloat(p.hour_deduction || 0);
     const otherDeduct = parseFloat(p.other_deductions || 0);
     const totalDeductions = socialIns + uFee + incTax + advPay + hrDeduct + otherDeduct + discDeduct;
     const uniformRefund = parseFloat(p.uniform_refund || 0);
@@ -567,10 +590,12 @@ export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = 
           base_work_salary = ?,
           ot_hours = ?,
           ot_salary = ?,
+          cut_hours = ?,
+          hour_deduction = ?,
           net_salary = ?,
           updated_at = ?
       WHERE id = ?
-    `, [wDays, baseWorkSalary, otHrs, otSalary, netSalary, now, p.id]);
+    `, [wDays, baseWorkSalary, otHrs, otSalary, cutHrs, hrDeduct, netSalary, now, p.id]);
 
     updatedCount++;
   }

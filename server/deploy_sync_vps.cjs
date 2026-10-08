@@ -18,6 +18,10 @@ const filesToUpload = [
   {
     local: path.resolve(__dirname, 'src/routes/payrollRoutes.js'),
     remote: '/var/www/vieta-hrm/server/src/routes/payrollRoutes.js'
+  },
+  {
+    local: path.resolve(__dirname, 'src/config/database.js'),
+    remote: '/var/www/vieta-hrm/server/src/config/database.js'
   }
 ];
 
@@ -71,15 +75,24 @@ conn.on('ready', () => {
       console.log('Đã tải xong client/dist!');
     }
 
-    // Chạy đồng bộ chấm công tháng 10 và khởi động lại PM2
+    // Chạy migration cột cut_hours trên payrolls và đồng bộ chấm công tháng 10
     const execCmd = `
       cd /var/www/vieta-hrm/server &&
-      node -e "import('./src/controllers/payrollController.js').then(async ({ syncAttendanceToPayrollForMonth }) => {
+      node -e "import('./src/config/database.js').then(async ({ query, initDatabase }) => {
+        try {
+          await query.run('ALTER TABLE payrolls ADD COLUMN cut_hours REAL DEFAULT 0');
+          console.log('VPS: Da them cot cut_hours vao payrolls');
+        } catch(e) {}
+        const { syncAttendanceToPayrollForMonth } = await import('./src/controllers/payrollController.js');
         const res = await syncAttendanceToPayrollForMonth(10, 2026);
         console.log('Kết quả đồng bộ tháng 10/2026:', JSON.stringify(res));
+
+        const cuong = await query.all('SELECT p.id, e.fullname, e.code, p.work_days, p.cut_hours, p.hour_deduction, p.net_salary FROM payrolls p JOIN employees e ON p.employee_id = e.id WHERE (p.month = 10 OR p.month = \\'10\\') AND p.year = 2026 AND (p.cut_hours > 0 OR p.hour_deduction > 0)');
+        console.log('Nhân sự có khấu trừ cắt giờ trên VPS:', JSON.stringify(cuong, null, 2));
+
         process.exit(0);
       });" &&
-      pm2 restart all || pm2 restart vieta-hrm || pm2 restart hrm-server
+      pm2 restart all
     `;
 
     console.log('Đang thực thi đồng bộ dữ liệu và khởi động lại dịch vụ trên VPS...');
