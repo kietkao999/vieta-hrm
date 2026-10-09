@@ -24,59 +24,428 @@ export const DEFAULT_DOCUMENTS = [
     status: 'Đang hiệu lực',
     created_by: 'Võ Minh Cường (Phó Giám đốc)',
     content: `CÔNG TY TNHH TMSX VIỆT Á
+
 Số: 01-2026/QĐ-NQLD
+
+-----------
+
 CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+
 Độc lập - Tự do - Hạnh phúc
-Kim Sơn, ngày 01 tháng 08 năm 2026
+
+-------------
+
+	                		                   Kim Sơn, ngày 01 tháng 08 năm 2026
+
+
 
 NỘI QUY CÔNG TY
+
 (THÔNG BÁO NỘI BỘ)
+
 Cùng làm việc đúng giờ – văn minh – an toàn – hiệu quả
 
-6 GIÁ TRỊ CỐT LÕI:
-• CHẤT LƯỢNG  •  TRÁCH NHIỆM  •  SÁNG TẠO  •  ĐỒNG ĐỘI  •  TÔN TRỌNG  •  GƯƠNG MẪU
+6 GIÁ TRỊ CỐT LÕI• CHẤT LƯỢNG  •  TRÁCH NHIỆM  •  SÁNG TẠO • ĐỒNG ĐỘI •  TÔN TRỌNG • GƯƠNG MẪU
+
+
 
 I. MỤC ĐÍCH
-* Xây dựng môi trường làm việc chuyên nghiệp, văn minh, đoàn kết.
-* Nâng cao tinh thần trách nhiệm và sự phối hợp trong công việc.
-* Đảm bảo hoạt động sản xuất, kinh doanh hiệu quả và an toàn.
+
+Xây dựng môi trường làm việc chuyên nghiệp, văn minh, đoàn kết.
+
+Nâng cao tinh thần trách nhiệm và sự phối hợp trong công việc.
+
+Đảm bảo hoạt động sản xuất, kinh doanh hiệu quả và an toàn.
 
 II. PHẠM VI ÁP DỤNG
-* Áp dụng cho toàn thể nhân viên chính thức, thử việc và các cá nhân làm việc theo sự quản lý của Công ty.
 
-III. QUY ĐỊNH CHUNG
-1. Đi làm đúng giờ: Đi làm và chấm công đúng giờ theo quy định. Nếu có việc đột xuất hoặc đến muộn, báo quản lý trực tiếp sớm nhất có thể.
-2. Đồng phục và tác phong: Mặc đúng đồng phục khi làm việc. Giữ tác phong gọn gàng, lịch sự, giao tiếp văn minh và tôn trọng mọi người.
-3. Phục vụ khách hàng: Luôn vui vẻ, lịch sự, đặt nhu cầu khách hàng lên hàng đầu. Chủ động xử lý vấn đề "không quá 24 giờ". Không tranh cãi, lớn tiếng làm ảnh hưởng hình ảnh Công ty.
-4. 5S – nơi làm việc: Giữ nơi làm việc sạch, gọn, dễ tìm và dễ sử dụng. Phân loại vật dụng, sắp xếp đúng chỗ, vệ sinh thường xuyên mỗi ngày.
-5. Hàng hóa: Sắp xếp hàng hóa, nguyên vật liệu, thành phẩm đúng vị trí. Không để hàng hóa chắn lối đi hoặc gây mất an toàn.
-6. Ứng xử với đồng nghiệp: Hỗ trợ, hợp tác thay vì cạnh tranh không lành mạnh. Tôn trọng sự khác biệt, giao tiếp chuyên nghiệp. Không gây gổ, xúc phạm hoặc có hành vi bạo lực.
-7. Đối với công việc: Làm việc có trách nhiệm, đúng thời hạn. Chủ động đề xuất giải pháp cải thiện hiệu suất.
-8. Hút thuốc: Chỉ hút thuốc tại khu vực quy định. Tuyệt đối không hút thuốc tại xưởng, kho, văn phòng hoặc khu vực có nguy cơ cháy nổ.
-9. Tiền hàng: Kiểm tra tiền cẩn thận trước khi nhận. Không nhận tiền giả, tiền rách hoặc không đủ điều kiện lưu thông.
-10. Bảo mật thông tin: Giữ bí mật thông tin về Công ty, khách hàng, nhà cung cấp, giá bán và dữ liệu nội bộ. Không tự ý chụp ảnh, quay phim hoặc đăng thông tin nội bộ lên mạng xã hội.
+Áp dụng cho toàn thể nhân viên chính thức, thử việc và các cá nhân làm việc theo sự quản lý của Công ty.
+
+III. QUY ĐỊNH CHUNG	
+
+1. Đi làm đúng giờ
+
+Đi làm và chấm công đúng giờ theo quy định.
+
+Nếu có việc đột xuất hoặc đến muộn, báo quản lý trực tiếp sớm nhất có thể.
+
+2. Đồng phục và tác phong
+
+Mặc đúng đồng phục khi làm việc.
+
+Giữ tác phong gọn gàng, lịch sự, giao tiếp văn minh và tôn trọng mọi người.
+
+3. Phục vụ khách hàng
+
+Luôn vui vẻ, lịch sự, đặt nhu cầu khách hàng lên hàng đầu.
+
+Trung thực trong tư vấn và cam kết với khách hàng.
+
+Chủ động xử lý vấn đề “ không quá 24 giờ” đảm bảo trải nghiệm dịch vụ tốt nhất.
+
+Không tranh cãi, lớn tiếng hoặc có lời nói, hành động làm ảnh hưởng hình ảnh Công ty.
+
+Nếu vấn đề vượt thẩm quyền, báo trưởng phòng hoặc quản lý để được hỗ trợ.
+
+4. 5S – nơi làm việc
+
+Giữ nơi làm việc sạch, gọn, dễ tìm và dễ sử dụng.
+
+Phân loại vật dụng, sắp xếp đúng chỗ, vệ sinh thường xuyên và duy trì mỗi ngày.
+
+
+
+
+
+5. Hàng hóa
+
+Sắp xếp hàng hóa, nguyên vật liệu, thành phẩm đúng vị trí.
+
+Không để hàng hóa chắn lối đi hoặc gây mất an toàn.
+
+Kiểm tra, vệ sinh và bảo quản hàng hóa thường xuyên.
+
+6. Ứng xử với đồng nghiệp
+
+Hỗ trợ, hợp tác thay vì cạnh tranh không lành mạnh.
+
+Tôn trọng sự khác biệt, giao tiếp chuyên nghiệp.
+
+Không gây gổ, xúc phạm, đe dọa hoặc có hành vi bạo lực.
+
+Giải quyết mâu thuẫn trên tinh thần xây dựng mục tiêu chung.
+
+7. Đối với công việc
+
+Làm việc có trách nhiệm, đúng thời hạn.
+
+Không ngừng học hỏi, nâng cao năng lực cá nhân.
+
+Chủ động đề xuất giải pháp để cải thiện hiệu suất.
+
+8. Hút thuốc		
+
+Chỉ hút thuốc tại khu vực được Công ty quy định.
+
+Không hút thuốc tại xưởng, kho, văn phòng hoặc khu vực có nguy cơ cháy nổ.
+
+Dập tắt tàn thuốc và bỏ đúng nơi quy định.
+
+9. Tiền hàng
+
+Kiểm tra tiền cẩn thận trước khi nhận.
+
+Không nhận tiền giả, tiền nghi giả, tiền rách hoặc không đủ điều kiện lưu thông.
+
+Nếu phát sinh thiệt hại do lỗi cá nhân, thực hiện trách nhiệm theo quy định Công ty và pháp luật.
+
+10. Bảo mật thông tin
+
+Giữ bí mật thông tin về Công ty, khách hàng, nhà cung cấp, giá bán và dữ liệu nội bộ.
+
+Không tự ý sao chép, chia sẻ, chụp ảnh, quay phim hoặc đăng thông tin nội bộ lên mạng xã hội khi chưa được phép.
+
+Quy định bảo mật tiếp tục được thực hiện sau khi nghỉ việc.
 
 IV. THỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI
-* Giờ hành chính:
-  - Buổi sáng: 07:30 – 11:30.
-  - Nghỉ trưa: 11:30 – 13:00.
-  - Buổi chiều: 13:00 – 17:00.
-* Xưởng sản xuất và Kho: Có mặt lúc 07:20 để họp đầu giờ, nhận kế hoạch và phân công công việc.
 
-V. CHẤM CÔNG & NGHỈ PHÉP
-* Chấm công bằng vân tay khi vào và kết thúc ca làm việc.
-* Nghỉ phép phải làm đơn báo trước ít nhất 03 ngày làm việc và chờ Trưởng bộ phận phê duyệt.
-* Nghỉ việc phải viết đơn và thực hiện thời gian báo trước 30 ngày kèm bàn giao công việc đầy đủ.
-* Nghỉ không phép 02 ngày trong kỳ sẽ bị cắt thưởng KPI của kỳ đó theo Quy chế KPI.
+Giờ hành chính
 
-VI. LÀM THÊM GIỜ, TIỀN LƯƠNG & TẠM ỨNG
-* Tiền làm thêm giờ (tăng ca sau 17:00) được tính theo hệ số 150% (1,5).
-* Tiền lương: Trả 01 lần/tháng vào ngày 10 dương lịch của tháng kế tiếp.
-* Tạm ứng lương: Tạm ứng vào ngày 25 dương lịch hằng tháng (đăng ký trước ngày 23), tối đa 50% tiền lương thực tế theo ngày công đã làm.
+Buổi sáng: 07:30 – 11:30.
 
-VII. ĐIỀU KHOẢN THỰC HIỆN
-* Quy chế có hiệu lực từ ngày 01/08/2026.
-* Đại diện Công ty: Phó Giám đốc VÕ MINH CƯỜNG (Đã ký duyệt).`
+Nghỉ trưa: 11:30 – 13:00.
+
+Buổi chiều: 13:00 – 17:00.
+
+Xưởng sản xuất và Kho
+
+Có mặt lúc 07:20 để họp đầu giờ, nhận kế hoạch và phân công công việc.
+
+Lưu ý
+
+Không tự ý đi trễ, về sớm hoặc rời nơi làm việc khi chưa được quản lý cho phép.
+
+Tăng ca, đổi ca hoặc điều chỉnh giờ làm thực hiện theo kế hoạch Công ty.
+
+
+
+V. CHẤM CÔNG
+
+Chấm công bằng vân tay khi vào và kết thúc ca.
+
+Nếu quên chấm công, báo quản lý và HCNS ngay trong ngày để được xác nhận.
+
+Không có xác nhận hoặc căn cứ làm việc thì ngày đó sẽ không được tính công.
+
+Dữ liệu chấm công là căn cứ tính lương, phép, tăng ca, thưởng và các chế độ liên quan.
+
+VI. NGHỈ PHÉP, NGHỈ VIỆC
+
+1. Nghỉ phép
+
+Có kế hoạch nghỉ phép phải làm đơn báo trước ít nhất 03 ngày làm việc và chờ Trưởng bộ phận phê duyệt.
+
+Trường hợp đột xuất như ốm đau, tai nạn, việc gia đình… cần báo cho quản lý sớm nhất có thể.
+
+Mỗi bộ phận tại chi nhánh không bố trí quá 02 người nghỉ cùng thời điểm.
+
+Vị trí quan trọng, không có người thay thế: tối đa 01 người nghỉ cùng thời điểm, trừ khi Ban Giám đốc có quyết định khác.
+
+Không tự ý nghỉ khi chưa được phê duyệt.
+
+2. Nghỉ việc
+
+Khi nhân viên muốn nghỉ việc, phải viết đơn và thực hiện thời gian báo trước 30 ngày.
+
+Trước khi nghỉ, nhân viên cần hoàn tất bàn giao công việc, hồ sơ, tài sản, công cụ và các khoản liên quan.
+
+Trường hợp tự ý nghỉ việc, không thực hiện đúng thời gian báo trước hoặc không hoàn tất bàn giao, Công ty sẽ không giải quyết các quyền lợi liên quan.
+
+Việc thanh toán tiền lương được thực hiện theo thời gian làm việc thực tế và quy định pháp luật, các khoản trách nhiệm/bồi thường (nếu có) được xử lý theo quy định riêng.
+
+3. Nghỉ không phép
+
+Nghỉ không báo trước hoặc chưa được Trưởng bộ phận phê duyệt được xem là nghỉ không phép, trừ trường hợp có lý do chính đáng được Công ty xem xét.
+
+Nghỉ không phép 02 ngày trong kỳ sẽ bị cắt thưởng KPI của kỳ đó, theo Quy chế KPI của Công ty.
+
+Trường hợp tự ý nghỉ liên tục từ 05 ngày làm việc trở lên mà không có lý do chính đáng được xem là nghỉ việc không được phê duyệt mọi quyền lợi sẽ không được giải quyết.
+
+Trường hợp nhân viên tự ý nghỉ nhiều ngày, Công ty sẽ liên hệ để xác nhận tình trạng làm việc và thực hiện các thủ tục cần thiết theo quy định.
+
+4. Quy định đối với nhân viên thử việc
+
+Thời gian thử việc từ 30 đến 45 ngày : mức lương thử việc bằng 85% mức lương của công việc chính thức.
+
+Nhân viên thử việc có nhu cầu nghỉ việc cần báo cho quản lý và HCNS sớm nhất có thể để Công ty chủ động sắp xếp nhân sự.
+
+Trường hợp nghỉ việc trước thời gian thử việc quy định:
+
+Làm việc dưới 07 ngày: không áp dụng chi trả tiền lương hoàn thành thử việc.
+
+Từ đủ 07 ngày đến dưới 01 tháng: Công ty xem xét hỗ trợ 150.000 đồng/ngày làm việc theo chính sách nội bộ.
+
+VII. LÀM THÊM GIỜ
+
+Chỉ tính tăng ca khi có yêu cầu của Công ty và được trưởng bộ phận phê duyệt.
+
+Thời gian tăng ca được tính từ 17:00 trở đi sau giờ làm việc bình thường.	
+
+Tiền làm thêm giờ thực hiện theo quy định là 150% (hệ số 1,5).
+
+VIII. TIỀN LƯƠNG, TẠM ỨNG
+
+Tiền lương
+
+Trả 01 lần/tháng vào ngày 10 dương lịch của tháng kế tiếp.
+
+Thanh toán bằng chuyển khoản hoặc tiền mặt theo thỏa thuận.
+
+Tạm ứng
+
+Tạm ứng vào ngày 25 dương lịch hằng tháng.
+
+Đăng ký với quản lý và HCNS trước ngày 23 để trình Ban Giám đốc.
+
+Mức tạm ứng tối đa 50% tiền lương thực tế của tháng, căn cứ ngày công đã làm.
+
+Khoản tạm ứng sẽ được trừ vào kỳ lương gần nhất.
+
+Công ty có thể từ chối hoặc điều chỉnh tạm ứng trong một số trường hợp theo quy định.
+
+IX. AN TOÀN LAO ĐỘNG & PCCC
+
+Tuân thủ đầy đủ quy định an toàn lao động và PCCC.
+
+Không tự ý vận hành máy khi chưa được hướng dẫn hoặc phân công.
+
+Không tự ý sửa máy móc, thiết bị điện.
+
+Thấy nguy cơ mất an toàn phải báo quản lý ngay.
+
+Không che chắn bình chữa cháy, tủ điện và lối thoát hiểm.
+
+X. TÀI SẢN, CÔNG CỤ DỤNG CỤ
+
+Giữ gìn tài sản, công cụ được giao.
+
+Không tự ý mang tài sản Công ty ra ngoài hoặc dùng cho mục đích cá nhân.
+
+Khi nghỉ việc, bàn giao đầy đủ tài sản và công việc.
+
+Nếu làm mất, hư hỏng do lỗi cá nhân thì thực hiện trách nhiệm theo quy định.
+
+XI. BẢO QUẢN MÁY MÓC
+
+Kiểm tra máy trước khi vận hành và chỉ sử dụng khi đảm bảo an toàn.
+
+Sử dụng đúng hướng dẫn, đúng mục đích.
+
+Tắt nguồn và vệ sinh máy sau ca hoặc khi không sử dụng.
+
+Máy có dấu hiệu bất thường phải báo Trưởng bộ phận.
+
+Không tự ý tháo lắp hoặc sửa chữa khi chưa được phân công.
+
+XII. TIẾT KIỆM
+
+Tiết kiệm điện, nước, tắt thiết bị khi không sử dụng.
+
+Sử dụng nguyên vật liệu, công cụ đúng mục đích và định mức.
+
+Không để lãng phí hoặc thất thoát hàng hóa, tài sản.
+
+Khuyến khích mọi người đề xuất cách làm tiết kiệm và hiệu quả hơn.
+
+
+
+XIII. GIAO NHẬN HÀNG
+
+Xuất – nhập hàng phải có đầy đủ phiếu và chứng từ.
+
+Kiểm đếm đúng số lượng, chất lượng trước khi giao/nhận.
+
+Không tự ý xuất, nhập hoặc điều chuyển hàng khi chưa được phê duyệt.
+
+Không ký thay người khác khi chưa được ủy quyền.
+
+Nhân viên giao hàng
+
+Kiểm tra hàng trước khi giao, giao đúng hàng, đúng nơi, đúng thời gian.
+
+Đơn hàng công nợ phải được bộ phận phụ trách xác nhận trước khi giao.
+
+Hàng trả về
+
+Kiểm tra đúng sản phẩm và tình trạng hàng; lập biên bản khi cần.
+
+Hàng mới, lỗi do sản xuất: nhận về đổi trả theo chính sách.
+
+Hàng cũ, rách, hư hỏng hoặc không do lỗi Công ty: báo khách và xử lý theo quy định.
+
+XIV. BÀN GIAO KHI NGHỈ VIỆC
+
+Hoàn tất bàn giao công việc, hồ sơ, tài liệu và tài sản được giao.
+
+Đối chiếu và thanh toán công nợ nếu có.
+
+Hoàn tất thủ tục nghỉ việc sau khi có xác nhận bàn giao của các bộ phận liên quan.
+
+XV. BẢO MẬT THÔNG TIN NỘI BỘ VÀ QUY ĐỊNH SỬ DỤNG HÌNH ẢNH, THƯƠNG HIỆU TRÊN MẠNG XÃ HỘI
+
+Bảo mật thông tin nội bộ:
+
+Không tự ý chia sẻ thông tin, dữ liệu, tài liệu, giá bán, khách hàng, nhà cung cấp và thông tin nội bộ.
+
+Không tự ý chụp ảnh, quay phim hoặc đăng thông tin nội bộ lên mạng xã hội khi chưa được chấp thuận.
+
+Nghĩa vụ bảo mật tiếp tục được thực hiện sau khi nghỉ việc.
+
+Quy định sử dụng hình ảnh, thương hiệu trên mạng xã hội:
+
+Người lao động không được tự ý đăng tải, chia sẻ, quảng bá hoặc sử dụng hình ảnh, video, nội dung mang thương hiệu, sản phẩm nệm, gối của các công ty hoặc nhãn hàng cạnh tranh với Nệm Việt Á trên các nền tảng mạng xã hội như TikTok, Facebook, Zalo và các nền tảng tương tự khác.
+
+Đối với các sản phẩm thương mại khác ngoài nhóm sản phẩm nệm, gối mà công ty sản xuất ra, bao gồm như: mùng, mền, drap và các sản phẩm khác. Người lao động được phép đăng tải, chia sẻ, quảng bá bình thường, với điều kiện nội dung không vi phạm pháp luật, không tiết lộ thông tin mật và không gây ảnh hưởng xấu đến uy tín, hình ảnh của Công ty.
+
+Xử lý vi phạm: 
+
+-    Người lao động vi phạm các quy định tại Điều này sẽ bị xem xét, xử lý căn cứ vào tính chất, mức độ, hậu quả, lỗi vi phạm và các quy định hiện hành, cụ thể:
+
+a) Về tiền thưởng: Sẽ cắt toàn bộ tiền thưởng tháng, thưởng hiệu quả công việc và các khoản thưởng khác được thực hiện theo quy chế thưởng của Công ty đã ban hành.
+
+b) Về xét tăng lương: Người lao động vi phạm sẽ không được xem xét tăng lương tầng, bậc… trong vòng 12 tháng.
+
+c) Về bồi thường thiệt hại: Trường hợp hành vi vi phạm gây thiệt hại thực tế cho Công ty, người lao động có trách nhiệm bồi thường nếu có đủ căn cứ xác định trách nhiệm, mức thiệt hại và các điều kiện liên quan theo quy định của công ty.
+
+XVI. PHÒNG, CHỐNG QUẤY RỐI TÌNH DỤC
+
+Công ty không chấp nhận bất kỳ hành vi quấy rối tình dục nào tại nơi làm việc.
+
+Tôn trọng cơ thể, danh dự và ranh giới của đồng nghiệp.
+
+Không dùng lời nói, tin nhắn, hình ảnh, cử chỉ khiếm nhã, không đụng chạm trái ý muốn, không ép buộc/gợi ý tình cảm hoặc tình dục để đổi lấy lợi ích công việc.
+
+Người bị quấy rối hoặc người chứng kiến có thể báo quản lý, HCNS hoặc Ban Giám đốc.
+
+Công ty tiếp nhận, bảo mật thông tin và xử lý theo mức độ vi phạm, quy định Công ty và pháp luật.
+
+XVII. TẠM THỜI ĐIỀU CHUYỂN CÔNG VIỆC
+
+Công ty có thể tạm thời điều chuyển công việc trong các trường hợp pháp luật cho phép và khi có nhu cầu sản xuất, kinh doanh.
+
+Các trường hợp có thể gồm thiên tai, hỏa hoạn, dịch bệnh, sự cố điện/nước/máy móc hoặc nhu cầu cần thiết khác.
+
+Công ty thông báo trước 03 ngày để nhân viên sắp xếp thực hiện.
+
+Tiền lương trong thời gian điều chuyển thực hiện theo quy định Công ty.
+
+XVIII. VI PHẠM VÀ XỬ LÝ
+
+Các vi phạm gồm: 
+
+Đi trễ/về sớm.
+
+Nghỉ sai quy định, không chấm công.
+
+Gây mất đoàn kết hoặc xúc phạm người khác.
+
+Tiết lộ thông tin công ty, tự ý mang tài sản ra ngoài, gây thiệt hại tài sản do lỗi cá nhân.
+
+Gian lận trong báo cáo thu chi, thanh toán... 
+
+Sử dụng rượu bia, chất kích thích trong giờ làm việc và các hành vi vi phạm khác.
+
+Các hình thức xử lý theo quy định hiện hành.
+
+
+
+XIX. ĐIỀU KHOẢN THỰC HIỆN
+
+Mọi nhân viên có trách nhiệm đọc, hiểu và thực hiện.
+
+Trưởng bộ phận có trách nhiệm hướng dẫn, nhắc nhở và giám sát.
+
+Nội dung chưa phù hợp hoặc phát sinh vướng mắc sẽ được Ban Giám đốc xem xét điều chỉnh.
+
+Quy chế có hiệu lực từ ngày 01/08/2026 và thay thế các nội quy công ty trước đây có nội dung khác với Chính sách này./.
+
+
+
+Nơi nhận:	
+
+Trưởng phòng kinh doanh;
+
+Trưởng phòng kế toán;
+
+Trưởng phòng marketing;
+
+Phòng nhân sự;
+
+Quản lý chi nhánh Mỹ Tho;
+
+Quản lý chi nhánh Cần Thơ;
+
+Tất cả nhân viên công ty;
+
+Lưu VP./.
+
+ĐẠI DIỆN CÔNG TY
+
+PHÓ GIÁM ĐỐC
+
+(Ký, ghi rõ họ tên và đóng dấu)
+
+
+
+
+
+
+
+
+
+
+
+                     VÕ MINH CƯỜNG`
   },
   {
     title: 'Phúc Lợi Công Ty 2026',
