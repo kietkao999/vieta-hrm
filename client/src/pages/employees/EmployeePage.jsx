@@ -12,9 +12,10 @@ const EmployeePage = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  const isManager = user?.roleName === 'MANAGER';
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
+  const [departmentId, setDepartmentId] = useState(isManager ? (user?.departmentId || '') : '');
   const [status, setStatus] = useState('');
   const [departments, setDepartments] = useState([]);
 
@@ -32,7 +33,11 @@ const EmployeePage = () => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
-      if (departmentId) params.append('department_id', departmentId);
+      if (isManager && user?.departmentId) {
+        params.append('department_id', user.departmentId);
+      } else if (departmentId) {
+        params.append('department_id', departmentId);
+      }
       if (status) params.append('status', status);
 
       const [empRes, deptRes] = await Promise.all([
@@ -142,12 +147,18 @@ const EmployeePage = () => {
         </form>
         
         <div className="grid grid-cols-2 gap-2 w-full md:w-auto md:flex">
-          <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-brand-500 bg-white w-full md:min-w-[150px]">
-            <option value="">Tất cả phòng ban</option>
-            {departments.map(d => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
+          {isManager ? (
+            <div className="border border-blue-200 bg-blue-50/70 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-blue-900 flex items-center whitespace-nowrap min-w-[160px]" title="Phòng ban trực thuộc quản lý của bạn">
+              🏢 {user?.departmentName || 'Phòng ban của tôi'}
+            </div>
+          ) : (
+            <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-brand-500 bg-white w-full md:min-w-[150px]">
+              <option value="">Tất cả phòng ban</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          )}
           <select value={status} onChange={(e) => setStatus(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-brand-500 bg-white w-full md:min-w-[150px]">
             <option value="">Tất cả trạng thái</option>
             <option value="Đang làm việc">Đang làm việc</option>
@@ -157,6 +168,12 @@ const EmployeePage = () => {
           </select>
         </div>
       </div>
+
+      {isManager && (
+        <div className="rounded-xl bg-blue-50/90 border border-blue-200 p-3 text-xs text-blue-800 font-semibold flex items-center space-x-2">
+          <span>🛡️ <strong>Phân quyền Quản lý:</strong> Chỉ xem và quản lý hồ sơ nhân viên trực thuộc <strong>{user?.departmentName || 'phòng ban/kho/xưởng được phân công'}</strong>. Không có quyền truy cập hồ sơ nhân sự các phòng ban khác.</span>
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
         {loading ? (

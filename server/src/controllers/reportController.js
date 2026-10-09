@@ -1,14 +1,24 @@
 import { query } from '../config/database.js';
 import XLSX from 'xlsx';
 
-// Helper tạo điều kiện lọc theo phòng ban
-const getDeptFilterClause = async (department_id) => {
-  if (!department_id || department_id === 'all') {
+// Helper tạo điều kiện lọc theo phòng ban (Bảo mật: Trưởng phòng chỉ xem phòng ban mình)
+const getDeptFilterClause = async (department_id, user = null) => {
+  let targetDept = department_id;
+  // Trưởng phòng CHỈ XEM được phòng ban của mình
+  if (user?.roleName === 'MANAGER') {
+    targetDept = user.departmentId;
+    if (!targetDept && user.employeeId) {
+      const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [user.employeeId]);
+      targetDept = emp?.department_id || null;
+    }
+  }
+
+  if (!targetDept || targetDept === 'all') {
     return { deptFilter: '', deptParams: [], deptInfo: null };
   }
-  const deptInfo = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
-  const dId = deptInfo ? deptInfo.id : department_id;
-  const dName = deptInfo ? deptInfo.name : department_id;
+  const deptInfo = await query.get('SELECT * FROM departments WHERE id = ? OR name = ?', [targetDept, targetDept]);
+  const dId = deptInfo ? deptInfo.id : targetDept;
+  const dName = deptInfo ? deptInfo.name : targetDept;
   const deptFilter = ` AND (e.department_id = ? OR e.department_id = ? OR d.id = ? OR d.name = ?)`;
   const deptParams = [dId, dName, dId, dName];
   return { deptFilter, deptParams, deptInfo };
@@ -18,7 +28,7 @@ const getDeptFilterClause = async (department_id) => {
 export const getSummaryReport = async (req, res) => {
   try {
     const { department_id } = req.query;
-    const { deptFilter, deptParams, deptInfo } = await getDeptFilterClause(department_id);
+    const { deptFilter, deptParams, deptInfo } = await getDeptFilterClause(department_id, req.user);
 
     // Tổng nhân sự theo trạng thái
     const statusStats = await query.all(`
@@ -126,7 +136,7 @@ export const getPayrollReport = async (req, res) => {
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
-    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id, req.user);
 
     // Tổng quỹ lương theo từng tháng được chọn
     const monthlyPayroll = await query.all(`
@@ -254,7 +264,7 @@ export const getAttendanceReport = async (req, res) => {
     }
 
     const monthClauses = selectedMonths.map(m => `a.date LIKE '${targetYear}-${m}%'`).join(' OR ') || '1=0';
-    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id, req.user);
 
     // Tổng quan chấm công theo trạng thái
     const statusSummary = await query.all(`
@@ -330,11 +340,16 @@ export const getKpiReport = async (req, res) => {
       selectedMonths = [(now.getMonth() + 1).toString().padStart(2, '0')];
     }
 
+    // Nhân viên tuyệt đối không có quyền xem báo cáo KPI
+    if (req.user?.roleName === 'EMPLOYEE') {
+      return res.status(403).json({ message: 'Nhân viên không có quyền truy cập báo cáo KPI.' });
+    }
+
     const monthRawList = selectedMonths.map(m => parseInt(m, 10).toString());
     const allMatches = Array.from(new Set([...selectedMonths, ...monthRawList]));
     const placeholders = allMatches.map(() => '?').join(',');
 
-    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id, req.user);
 
     // Tổng nhân viên hoạt động
     const totalActive = await query.get(
@@ -553,7 +568,7 @@ export const exportReportExcel = async (req, res) => {
     const allMonthMatches = Array.from(new Set([...monthList, ...monthListRaw]));
     const placeholders = allMonthMatches.map(() => '?').join(',');
 
-    const { deptFilter, deptParams } = await getDeptFilterClause(department_id);
+    const { deptFilter, deptParams } = await getDeptFilterClause(department_id, req.user);
 
     const wb = XLSX.utils.book_new();
 

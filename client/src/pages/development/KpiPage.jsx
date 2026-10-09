@@ -49,7 +49,8 @@ const RESPONSIBILITY_RATE_OPTIONS = [
 const KpiPage = () => {
   const { user } = useAuth();
   const isAdminOrHR = user?.roleName === 'ADMIN' || user?.roleName === 'HR';
-  const canEdit = isAdminOrHR || user?.roleName === 'MANAGER';
+  const isManager = user?.roleName === 'MANAGER';
+  const canEdit = isAdminOrHR || isManager;
 
   const currentDate = new Date();
   const [month, setMonth] = useState((currentDate.getMonth() + 1).toString());
@@ -66,7 +67,7 @@ const KpiPage = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedDept, setSelectedDept] = useState(isManager ? (user?.departmentId || '') : '');
 
   // Unsaved modifications tracker: { [employee_id]: true }
   const [modifiedMap, setModifiedMap] = useState({});
@@ -100,7 +101,13 @@ const KpiPage = () => {
           api.get('/departments'),
           api.get(`/kpi/months?year=${year}`)
         ]);
-        setDepartments(deptRes.data || []);
+        const allDepts = deptRes.data || [];
+        if (isManager) {
+          const myDepts = allDepts.filter(d => String(d.id) === String(user?.departmentId) || d.name === user?.departmentName);
+          setDepartments(myDepts.length > 0 ? myDepts : allDepts);
+        } else {
+          setDepartments(allDepts);
+        }
         if (Array.isArray(monthsRes.data) && monthsRes.data.length > 0) {
           setAvailableMonths(monthsRes.data);
         }
@@ -109,7 +116,7 @@ const KpiPage = () => {
       }
     };
     fetchDepartments();
-  }, [year]);
+  }, [year, isManager, user?.departmentId]);
 
   // Fetch KPI Data
   const fetchKpiData = async () => {
@@ -423,6 +430,12 @@ const KpiPage = () => {
           </div>
         </div>
 
+        {isManager && (
+          <div className="rounded-xl bg-blue-50/90 border border-blue-200 p-3 text-xs text-blue-800 font-semibold flex items-center space-x-2">
+            <span>🛡️ <strong>Phân quyền Quản lý:</strong> Chỉ xem và đánh giá KPI cho nhân sự thuộc <strong>{user?.departmentName || 'phòng ban/kho/xưởng được phân công'}</strong>. Tuyệt đối không xem được KPI của các phòng ban khác.</span>
+          </div>
+        )}
+
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
               {isAdminOrHR && (
@@ -594,31 +607,38 @@ const KpiPage = () => {
         {/* Search & Department Filter */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Department Filter */}
-          <div className="flex items-center space-x-1.5 bg-brand-50/50 border border-brand-200 rounded-lg px-2.5 py-1.5">
-            <Layers size={14} className="text-brand-700 shrink-0" />
-            <select
-              value={selectedDept}
-              onChange={e => setSelectedDept(e.target.value)}
-              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer pr-1"
-            >
-              <option value="">🏢 Tất cả phòng ban ({kpiList.length} nhân sự)</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-            {selectedDept && (
-              <button
-                type="button"
-                onClick={() => setSelectedDept('')}
-                className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
-                title="Bỏ lọc phòng ban"
+          {isManager ? (
+            <div className="flex items-center space-x-1.5 bg-blue-50/70 border border-blue-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-900" title="Phòng ban trực thuộc quản lý của bạn">
+              <Layers size={14} className="text-blue-700 shrink-0" />
+              <span>🏢 {user?.departmentName || 'Phòng ban của tôi'}</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1.5 bg-brand-50/50 border border-brand-200 rounded-lg px-2.5 py-1.5">
+              <Layers size={14} className="text-brand-700 shrink-0" />
+              <select
+                value={selectedDept}
+                onChange={e => setSelectedDept(e.target.value)}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer pr-1"
               >
-                <X size={13} />
-              </button>
-            )}
-          </div>
+                <option value="">🏢 Tất cả phòng ban ({kpiList.length} nhân sự)</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+              {selectedDept && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDept('')}
+                  className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
+                  title="Bỏ lọc phòng ban"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Search Box */}
           <div className="relative flex-1 md:w-60">

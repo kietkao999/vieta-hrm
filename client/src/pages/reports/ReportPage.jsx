@@ -12,11 +12,12 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const ReportPage = () => {
   const { user } = useAuth();
+  const isManager = user?.roleName === 'MANAGER';
   const [activeTab, setActiveTab] = useState('summary');
   const [loading, setLoading] = useState(true);
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState(isManager ? (user?.departmentId || '') : '');
 
   const [summaryData, setSummaryData] = useState(null);
   const [payrollData, setPayrollData] = useState(null);
@@ -1540,30 +1541,38 @@ const ReportPage = () => {
             )}
 
             {/* Lọc theo Phòng Ban */}
-            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-              <Layers size={13} className="text-brand-700 shrink-0" />
-              <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Phòng ban:</span>
-              <select
-                value={selectedDepartment}
-                onChange={e => setSelectedDepartment(e.target.value)}
-                className="text-xs font-bold text-slate-900 bg-transparent outline-none cursor-pointer max-w-[190px] sm:max-w-[240px] truncate"
-              >
-                <option value="">🏢 Tất cả phòng ban (Toàn công ty)</option>
-                {departments.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              {selectedDepartment && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedDepartment('')}
-                  className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
-                  title="Xóa bộ lọc phòng ban"
+            {isManager ? (
+              <div className="flex items-center space-x-1.5 bg-blue-50/70 border border-blue-200 px-2.5 py-1 rounded-lg text-blue-900 font-bold text-xs" title="Phòng ban trực thuộc quản lý của bạn">
+                <Layers size={13} className="text-blue-700 shrink-0" />
+                <span className="text-blue-700 font-semibold whitespace-nowrap">Phòng ban:</span>
+                <span className="truncate max-w-[200px]">🏢 {user?.departmentName || 'Phòng ban của tôi'}</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+                <Layers size={13} className="text-brand-700 shrink-0" />
+                <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Phòng ban:</span>
+                <select
+                  value={selectedDepartment}
+                  onChange={e => setSelectedDepartment(e.target.value)}
+                  className="text-xs font-bold text-slate-900 bg-transparent outline-none cursor-pointer max-w-[190px] sm:max-w-[240px] truncate"
                 >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
+                  <option value="">🏢 Tất cả phòng ban (Toàn công ty)</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                {selectedDepartment && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDepartment('')}
+                    className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
+                    title="Xóa bộ lọc phòng ban"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Mốc chọn nhanh dạng Dropdown tinh gọn */}
             {activeTab !== 'summary' && (
