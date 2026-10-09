@@ -126,40 +126,72 @@ export default function DocumentPage() {
     return () => clearTimeout(timeout);
   }, [iframeLoading]);
 
-  // Load và preview DOCX local bằng mammoth
+  // Load và preview file trực tiếp từ server (DOCX bằng mammoth hoặc PDF)
   const loadDocxPreview = async (doc) => {
     const localUrl = doc.file_url;
-    if (!localUrl || !localUrl.startsWith('/uploads/')) return;
-    if (!localUrl.toLowerCase().endsWith('.docx')) return;
+    if (!localUrl) return;
+
+    if (localUrl.toLowerCase().endsWith('.pdf')) {
+      // PDF render qua iframe nhúng
+      setDocxLoading(false);
+      setDocxHtml('');
+      setDocxError('');
+      return;
+    }
+
+    if (!localUrl.toLowerCase().endsWith('.docx') && !localUrl.toLowerCase().endsWith('.doc')) {
+      return;
+    }
 
     setDocxLoading(true);
     setDocxHtml('');
     setDocxError('');
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-      const fullUrl = `${BASE_URL}${localUrl}`;
-      const response = await fetch(fullUrl, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (!response.ok) throw new Error('Không tải được file');
+      // Dùng relative path để trình duyệt tự request tới đúng host máy chủ hiện tại
+      const fullUrl = localUrl.startsWith('http') ? localUrl : localUrl;
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error(`Không tải được file (HTTP ${response.status})`);
       const arrayBuffer = await response.arrayBuffer();
       const result = await mammoth.convertToHtml({ arrayBuffer });
-      setDocxHtml(result.value);
+      if (result.value && result.value.trim()) {
+        setDocxHtml(result.value);
+      } else if (doc.content) {
+        setDocxHtml(`<div class="p-4 leading-relaxed font-sans">${doc.content}</div>`);
+      } else {
+        setDocxHtml('<p class="text-slate-500 italic">Văn bản không có nội dung chữ hoặc file rỗng.</p>');
+      }
     } catch (err) {
       console.error('Lỗi preview DOCX:', err);
-      setDocxError('Không thể hiển thị file. Bạn có thể tải về để xem.');
+      if (doc.content) {
+        setDocxHtml(`<div class="space-y-4 font-sans text-slate-800 leading-relaxed">${doc.content.replace(/\n/g, '<br/>')}</div>`);
+      } else {
+        setDocxError('Không thể hiển thị bản xem trước. Bạn vui lòng bấm nút "Tải Word (.docx)" để xem bản gốc.');
+      }
     } finally {
       setDocxLoading(false);
     }
   };
 
-  // Khi mở modal preview, tự động load DOCX nếu có file local
+  // Mở modal xem trước tài liệu: luôn ưu tiên file local trên hệ thống để xem ngay lập tức
+  const handleOpenDocPreview = (doc) => {
+    setSelectedDoc(doc);
+    if (doc.file_url) {
+      setPreviewTab('local');
+      loadDocxPreview(doc);
+    } else if (doc.google_drive_url || doc.doc_id) {
+      setPreviewTab('embed');
+      setIframeError(false);
+      setIframeLoading(true);
+    } else {
+      setPreviewTab('text');
+    }
+    setIsPreviewOpen(true);
+  };
+
+  // Khi mở modal preview, tự động load preview nếu chưa load
   useEffect(() => {
-    if (isPreviewOpen && selectedDoc) {
-      const isLocal = selectedDoc.file_url?.startsWith('/uploads/');
-      if (isLocal) {
-        loadDocxPreview(selectedDoc);
-      }
+    if (isPreviewOpen && selectedDoc && selectedDoc.file_url) {
+      loadDocxPreview(selectedDoc);
     }
   }, [isPreviewOpen, selectedDoc]);
 
@@ -296,10 +328,10 @@ export default function DocumentPage() {
 
   // Tải file - ưu tiên local file trên server, fallback sang Google Docs
   const handleDownloadFile = (doc, format = 'docx') => {
-    // Nếu có file local trên server → tải thẳng, không cần Google
-    if (doc.file_url && doc.file_url.startsWith('/uploads/')) {
-      const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-      window.open(`${BASE_URL}${doc.file_url}`, '_blank');
+    // Nếu có file local trên server → tải thẳng trực tiếp từ host hiện tại
+    if (doc.file_url) {
+      const fullUrl = doc.file_url.startsWith('http') ? doc.file_url : doc.file_url;
+      window.open(fullUrl, '_blank');
       return;
     }
     // Fallback: xuất từ Google Docs
@@ -594,13 +626,7 @@ export default function DocumentPage() {
                 <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        setSelectedDoc(doc);
-                        setPreviewTab('embed');
-                        setIframeError(false);
-                        setIframeLoading(true);
-                        setIsPreviewOpen(true);
-                      }}
+                      onClick={() => handleOpenDocPreview(doc)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 text-blue-600" />
@@ -710,13 +736,7 @@ export default function DocumentPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => {
-                              setSelectedDoc(doc);
-                              setPreviewTab('embed');
-                              setIframeError(false);
-                              setIframeLoading(true);
-                              setIsPreviewOpen(true);
-                            }}
+                            onClick={() => handleOpenDocPreview(doc)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                             title="Xem văn bản gốc"
                           >
@@ -793,27 +813,34 @@ export default function DocumentPage() {
               <div className="flex items-center gap-2 shrink-0">
                 {/* View Mode Toggle */}
                 <div className="flex items-center bg-slate-800 rounded-lg p-0.5 text-xs text-slate-300 border border-slate-700">
-                  {/* Tab Local DOCX - chỉ hiển thị khi có file trên server */}
-                  {selectedDoc.file_url?.startsWith('/uploads/') && (
+                  {/* Tab Xem trực tiếp (DOCX / PDF) trên server */}
+                  {selectedDoc.file_url && (
                     <button
                       onClick={() => setPreviewTab('local')}
-                      className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1 ${
+                      className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                         previewTab === 'local' ? 'bg-emerald-600 text-white font-bold' : 'hover:text-white'
                       }`}
-                      title="Xem file DOCX đã upload lên server"
+                      title="Xem trực tiếp văn bản không cần tài khoản Google"
                     >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
-                      File Local ✓
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Xem trực tiếp (Khuyên dùng)</span>
                     </button>
                   )}
-                  <button
-                    onClick={() => setPreviewTab('embed')}
-                    className={`px-3 py-1 rounded-md transition-colors ${
-                      previewTab === 'embed' ? 'bg-blue-600 text-white font-bold' : 'hover:text-white'
-                    }`}
-                  >
-                    Bản gốc Google Docs
-                  </button>
+                  {(selectedDoc.google_drive_url || selectedDoc.doc_id) && (
+                    <button
+                      onClick={() => {
+                        setPreviewTab('embed');
+                        setIframeError(false);
+                        setIframeLoading(true);
+                      }}
+                      className={`px-3 py-1 rounded-md transition-colors ${
+                        previewTab === 'embed' ? 'bg-blue-600 text-white font-bold' : 'hover:text-white'
+                      }`}
+                      title="Xem qua Google Docs"
+                    >
+                      Google Docs
+                    </button>
+                  )}
                   <button
                     onClick={() => setPreviewTab('text')}
                     className={`px-3 py-1 rounded-md transition-colors ${
@@ -824,14 +851,16 @@ export default function DocumentPage() {
                   </button>
                 </div>
 
-                <button
-                  onClick={() => handleOpenGoogleDocs(selectedDoc)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
-                  title="Mở trong Google Docs"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Mở Google Docs</span>
-                </button>
+                {(selectedDoc.google_drive_url || selectedDoc.doc_id) && (
+                  <button
+                    onClick={() => handleOpenGoogleDocs(selectedDoc)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
+                    title="Mở trong Google Docs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Mở Google Docs</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => handleDownloadFile(selectedDoc, 'docx')}
@@ -862,51 +891,95 @@ export default function DocumentPage() {
 
             {/* Document Viewer Area */}
             <div className="flex-1 bg-slate-100 overflow-hidden relative">
-              {/* === TAB LOCAL: Preview DOCX từ server bằng mammoth.js === */}
+              {/* === TAB LOCAL: Preview DOCX/PDF từ server trực tiếp === */}
               {previewTab === 'local' ? (
-                <div className="h-full overflow-y-auto p-6 sm:p-10 bg-slate-200/60">
-                  <div className="max-w-3xl mx-auto">
-                    {docxLoading && (
-                      <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
-                        <p className="text-sm text-slate-600 font-semibold">Đang tải và xử lý file DOCX...</p>
-                        <p className="text-xs text-slate-400 mt-1">Vui lòng chờ một chút</p>
-                      </div>
-                    )}
-                    {docxError && !docxLoading && (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                        <p className="text-red-700 font-semibold text-sm mb-3">{docxError}</p>
-                        <button
-                          onClick={() => loadDocxPreview(selectedDoc)}
-                          className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-bold"
-                        >
-                          Thử lại
-                        </button>
-                      </div>
-                    )}
-                    {docxHtml && !docxLoading && (
-                      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                        {/* Header document */}
-                        <div className="bg-emerald-700 text-white px-6 py-3 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
-                            <span className="text-xs font-bold">File DOCX đã lưu trên hệ thống</span>
-                          </div>
-                          <span className="text-[10px] text-emerald-200 font-mono">{selectedDoc.file_name}</span>
-                        </div>
-                        {/* Nội dung từ mammoth */}
-                        <div
-                          className="p-8 sm:p-12 prose max-w-none text-slate-800 text-sm leading-relaxed"
-                          style={{
-                            fontFamily: '"Times New Roman", serif',
-                            lineHeight: '1.8',
-                          }}
-                          dangerouslySetInnerHTML={{ __html: docxHtml }}
-                        />
-                      </div>
-                    )}
+                selectedDoc.file_url?.toLowerCase().endsWith('.pdf') ? (
+                  <div className="w-full h-full bg-slate-900 flex flex-col">
+                    <iframe
+                      src={selectedDoc.file_url}
+                      title={selectedDoc.title}
+                      className="w-full h-full border-0"
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="h-full overflow-y-auto p-4 sm:p-8 bg-slate-200/80">
+                    <div className="max-w-4xl mx-auto">
+                      {docxLoading && (
+                        <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-slate-200">
+                          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4" />
+                          <p className="text-sm text-slate-800 font-bold">Đang tải và xử lý văn bản trực tiếp...</p>
+                          <p className="text-xs text-slate-500 mt-1">Đang chuyển đổi định dạng Word chuẩn sang giao diện đọc trực tuyến</p>
+                        </div>
+                      )}
+                      {docxError && !docxLoading && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                          <p className="text-red-700 font-semibold text-sm mb-3">{docxError}</p>
+                          <div className="flex items-center justify-center gap-3">
+                            <button
+                              onClick={() => loadDocxPreview(selectedDoc)}
+                              className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-bold"
+                            >
+                              Thử lại
+                            </button>
+                            <button
+                              onClick={() => handleDownloadFile(selectedDoc, 'docx')}
+                              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"
+                            >
+                              Tải file về máy để xem
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {docxHtml && !docxLoading && (
+                        <div className="bg-white rounded-2xl shadow-xl border border-slate-300 overflow-hidden">
+                          {/* Header document */}
+                          <div className="bg-gradient-to-r from-emerald-800 to-teal-800 text-white px-6 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                              <span className="text-xs font-bold tracking-wide">VĂN BẢN NỘI BỘ — CÔNG TY TNHH TMSX VIỆT Á</span>
+                            </div>
+                            <span className="text-[11px] text-emerald-200 font-mono font-medium truncate max-w-xs">{selectedDoc.file_name}</span>
+                          </div>
+
+                          <style>{`
+                            .docx-preview-content {
+                              font-family: 'Times New Roman', Times, serif;
+                              font-size: 15.5px;
+                              line-height: 1.85;
+                              color: #0f172a;
+                            }
+                            .docx-preview-content table {
+                              width: 100% !important;
+                              border-collapse: collapse !important;
+                              margin: 1rem 0 !important;
+                            }
+                            .docx-preview-content table td, .docx-preview-content table th {
+                              border: 1px solid #cbd5e1;
+                              padding: 8px 12px;
+                              vertical-align: top;
+                            }
+                            .docx-preview-content p {
+                              margin-bottom: 0.75rem;
+                            }
+                            .docx-preview-content strong, .docx-preview-content b {
+                              font-weight: 700;
+                            }
+                            .docx-preview-content ul, .docx-preview-content ol {
+                              margin-left: 1.5rem;
+                              margin-bottom: 0.75rem;
+                            }
+                          `}</style>
+
+                          {/* Nội dung từ mammoth */}
+                          <div
+                            className="p-8 sm:p-14 prose max-w-none docx-preview-content bg-white"
+                            dangerouslySetInnerHTML={{ __html: docxHtml }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
               ) : previewTab === 'embed' ? (
                 iframeError || !getPreviewIframeUrl(selectedDoc) ? (
                   /* Fallback khi Google Docs bị private/tắt quyền truy cập */
