@@ -379,70 +379,141 @@ const ReportPage = () => {
 
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/60 p-5 shadow-sm">
-            <p className="text-xs font-bold text-amber-800 uppercase tracking-wide truncate" title="Tổng thu nhập thực tế trước các khoản giảm trừ">
-              TỔNG THU NHẬP CHƯA TRỪ ({sortedActiveMonths.length} THÁNG)
+        {/* Hàng thẻ thống kê chỉ số Quỹ Lương & Các khoản trích nộp */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-white to-amber-50/70 p-4 shadow-xs">
+            <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wide truncate" title="Tổng thu nhập thực tế trước các khoản giảm trừ">
+              THU NHẬP CHƯA TRỪ
             </p>
-            <p className="text-xl font-black text-amber-800 mt-1">
+            <p className="text-lg font-black text-amber-800 mt-1">
               {formatCurrency(yearTotal?.total_gross)} đ
             </p>
+            <p className="text-[10px] text-amber-600 mt-0.5">Tổng thu nhập gross</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
-              TỔNG THỰC LĨNH ({sortedActiveMonths.length} THÁNG)
+
+          <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50/70 p-4 shadow-xs">
+            <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide truncate">
+              TỔNG THỰC LĨNH
             </p>
-            <p className="text-xl font-bold text-brand-700 mt-1">
+            <p className="text-lg font-black text-emerald-700 mt-1">
               {formatCurrency(yearTotal?.total_net)} đ
             </p>
+            <p className="text-[10px] text-emerald-600 mt-0.5">{sortedActiveMonths.length} tháng được chọn</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
-              TỔNG LƯƠNG TẦNG & BẬC
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+              LƯƠNG TẦNG & BẬC
             </p>
-            <p className="text-xl font-bold text-slate-800 mt-1">
+            <p className="text-lg font-bold text-slate-800 mt-1">
               {formatCurrency(yearTotal?.total_base)} đ
             </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Lương vị trí cơ bản</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
-              TỔNG KPI & HIỆU QUẢ
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+              KPI & HIỆU QUẢ
             </p>
-            <p className="text-xl font-bold text-emerald-700 mt-1">
+            <p className="text-lg font-bold text-emerald-700 mt-1">
               {formatCurrency((yearTotal?.total_responsibility || 0) + (yearTotal?.total_performance || 0))} đ
             </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Trách nhiệm & Thưởng</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide truncate">
-              SỐ LƯỢT PHIẾU LƯƠNG
+
+          {/* Ô Thống kê Tổng BHXH toàn kỳ */}
+          <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50/60 to-white p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-blue-800 uppercase tracking-wide truncate">
+                TỔNG TRÍCH BHXH
+              </p>
+              <ShieldCheck size={16} className="text-blue-600 shrink-0" />
+            </div>
+            <p className="text-lg font-black text-blue-700 mt-1">
+              {formatCurrency(yearTotal?.total_social_insurance)} đ
             </p>
-            <p className="text-xl font-bold text-slate-800 mt-1">
-              {yearTotal?.total_records || 0}
+            <p className="text-[10px] text-blue-600 mt-0.5">Bảo hiểm trích lương</p>
+          </div>
+
+          {/* Ô Thống kê Tổng Phí Công Đoàn toàn kỳ */}
+          <div className="rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50/60 to-white p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide truncate">
+                TỔNG ĐOÀN PHÍ
+              </p>
+              <Users size={16} className="text-rose-600 shrink-0" />
+            </div>
+            <p className="text-lg font-black text-rose-700 mt-1">
+              {formatCurrency(yearTotal?.total_union_fee)} đ
             </p>
+            <p className="text-[10px] text-rose-600 mt-0.5">Kinh phí công đoàn</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+              PHIẾU LƯƠNG
+            </p>
+            <p className="text-lg font-bold text-slate-800 mt-1">
+              {yearTotal?.total_records || 0} lượt
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Quy mô chi trả</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quỹ lương theo tháng */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          {/* Quỹ lương theo từng tháng kèm ô tổng BHXH & Phí Công Đoàn */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Quỹ lương theo từng tháng</h3>
-              <span className="text-xs text-slate-500 font-semibold">{monthlyPayroll?.length || 0} tháng có dữ liệu</span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Quỹ Lương & Bảo Hiểm Từng Tháng</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Chi tiết thực lĩnh, trích đóng BHXH và đoàn phí từng tháng</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold bg-slate-100 px-2.5 py-1 rounded-full">{monthlyPayroll?.length || 0} tháng</span>
             </div>
+
             {monthlyPayroll?.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu lương trong các tháng đã chọn</p>
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu lương trong các tháng đã chọn</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(monthlyPayroll || []).map((m, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-lg border border-slate-100">
-                    <span className="text-sm font-bold text-slate-700">Tháng {m.month.toString().padStart(2, '0')}</span>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-xs text-slate-500">{m.employee_count} NV</span>
-                      <div className="text-right">
-                        <span className="text-sm font-bold text-brand-700 block">{formatCurrency(m.total_net_salary)} đ</span>
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-slate-50/80 rounded-xl border border-slate-100 bg-white transition gap-3 shadow-2xs">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center font-black text-xs text-slate-700 shrink-0">
+                        T{parseInt(m.month, 10)}
+                      </div>
+                      <div>
+                        <span className="text-sm font-bold text-slate-800 block">Tháng {m.month.toString().padStart(2, '0')}/{year}</span>
+                        <span className="text-[11px] text-slate-400 font-medium">{m.employee_count} nhân sự</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-2.5 justify-end">
+                      {/* Ô Tổng BHXH từng tháng */}
+                      <div className="bg-blue-50/80 border border-blue-200/70 rounded-lg px-2.5 py-1 text-right min-w-[95px]">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase block tracking-wider">
+                          BHXH
+                        </span>
+                        <span className="text-xs font-black text-blue-800 block">
+                          {formatCurrency(m.total_social_insurance)} đ
+                        </span>
+                      </div>
+
+                      {/* Ô Tổng Phí Công Đoàn từng tháng */}
+                      <div className="bg-rose-50/80 border border-rose-200/70 rounded-lg px-2.5 py-1 text-right min-w-[95px]">
+                        <span className="text-[10px] font-bold text-rose-700 uppercase block tracking-wider">
+                          Công Đoàn
+                        </span>
+                        <span className="text-xs font-black text-rose-800 block">
+                          {formatCurrency(m.total_union_fee)} đ
+                        </span>
+                      </div>
+
+                      {/* Thực Lĩnh */}
+                      <div className="text-right min-w-[110px] pl-1">
+                        <span className="text-sm font-bold text-emerald-700 block">{formatCurrency(m.total_net_salary)} đ</span>
                         {m.total_gross_salary > 0 && (
-                          <span className="text-[11px] text-amber-800 font-semibold block" title="Tổng thu nhập chưa trừ">
-                            Chưa trừ: {formatCurrency(m.total_gross_salary)} đ
+                          <span className="text-[10px] text-slate-400 font-medium block" title="Tổng thu nhập chưa trừ">
+                            Gross: {formatCurrency(m.total_gross_salary)} đ
                           </span>
                         )}
                       </div>
@@ -454,14 +525,14 @@ const ReportPage = () => {
           </div>
 
           {/* Top lương */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Top 5 Tổng Thu Nhập Cao Nhất Trong Kỳ</h3>
             {topSalaries?.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">Chưa có dữ liệu</p>
+              <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu</p>
             ) : (
               <div className="space-y-3">
                 {(topSalaries || []).map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
                     <div className="flex items-center space-x-3">
                       <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-200 text-slate-700' : 'bg-orange-100 text-orange-700'}`}>{i + 1}</span>
                       <div>
@@ -481,6 +552,110 @@ const ReportPage = () => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* BẢNG TỔNG HỢP CHI TIẾT TỪNG THÁNG (QUỸ LƯƠNG, BHXH & PHÍ CÔNG ĐOÀN) */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <FileSpreadsheet size={16} className="text-brand-600" />
+                <span>Bảng Thống Kê Chi Tiết Quỹ Lương, BHXH & Đoàn Phí Theo Từng Tháng</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">Bảng tổng hợp đối soát chi phí lương và các khoản trích theo lương của toàn bộ kỳ báo cáo</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/90 text-slate-600 border-b border-slate-200 font-bold uppercase tracking-wider">
+                  <th className="py-3 px-3">Kỳ Lương</th>
+                  <th className="py-3 px-3 text-center">Số NV</th>
+                  <th className="py-3 px-3 text-right">Lương Tầng + Bậc</th>
+                  <th className="py-3 px-3 text-right">Thu Nhập Chưa Trừ</th>
+                  <th className="py-3 px-3 text-right bg-blue-50/60 text-blue-900 border-x border-blue-100">
+                    Tổng Giảm Trừ BHXH
+                  </th>
+                  <th className="py-3 px-3 text-right bg-rose-50/60 text-rose-900 border-r border-rose-100">
+                    Tổng Phí Công Đoàn
+                  </th>
+                  <th className="py-3 px-3 text-right">Cắt Giờ / Trừ Khác</th>
+                  <th className="py-3 px-3 text-right">Tổng Giảm Trừ</th>
+                  <th className="py-3 px-3 text-right bg-emerald-50/60 text-emerald-900 font-extrabold">
+                    Thực Lĩnh
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(monthlyPayroll || []).map((m, i) => {
+                  const otherDeduct = Math.max(0, (m.total_deductions || 0) - (m.total_social_insurance || 0) - (m.total_union_fee || 0));
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/60 transition">
+                      <td className="py-3 px-3 font-bold text-slate-800">
+                        Tháng {m.month.toString().padStart(2, '0')}/{year}
+                      </td>
+                      <td className="py-3 px-3 text-center text-slate-600 font-medium">
+                        {m.employee_count}
+                      </td>
+                      <td className="py-3 px-3 text-right text-slate-700">
+                        {formatCurrency(m.total_base_salary)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-amber-800">
+                        {formatCurrency(m.total_gross_salary)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right font-black text-blue-700 bg-blue-50/30 border-x border-blue-50">
+                        {formatCurrency(m.total_social_insurance)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right font-black text-rose-700 bg-rose-50/30 border-r border-rose-50">
+                        {formatCurrency(m.total_union_fee)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right text-slate-500">
+                        {formatCurrency(otherDeduct)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-slate-800">
+                        {formatCurrency(m.total_deductions)} đ
+                      </td>
+                      <td className="py-3 px-3 text-right font-black text-emerald-700 bg-emerald-50/30">
+                        {formatCurrency(m.total_net_salary)} đ
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-100/90 font-black text-slate-900 border-t-2 border-slate-300">
+                  <td className="py-3.5 px-3 uppercase text-slate-900">
+                    TỔNG CỘNG TOÀN KỲ
+                  </td>
+                  <td className="py-3.5 px-3 text-center text-slate-700">
+                    {yearTotal?.total_records || (monthlyPayroll || []).reduce((acc, x) => acc + (x.employee_count || 0), 0)} lượt
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-slate-900">
+                    {formatCurrency(yearTotal?.total_base)} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-amber-900">
+                    {formatCurrency(yearTotal?.total_gross)} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-blue-800 bg-blue-100/50 border-x border-blue-200">
+                    {formatCurrency(yearTotal?.total_social_insurance)} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-rose-800 bg-rose-100/50 border-r border-rose-200">
+                    {formatCurrency(yearTotal?.total_union_fee)} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-slate-700">
+                    {formatCurrency(Math.max(0, (yearTotal?.total_deductions || 0) - (yearTotal?.total_social_insurance || 0) - (yearTotal?.total_union_fee || 0)))} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-slate-900">
+                    {formatCurrency(yearTotal?.total_deductions)} đ
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-emerald-800 bg-emerald-100/60 font-black text-sm">
+                    {formatCurrency(yearTotal?.total_net)} đ
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </div>

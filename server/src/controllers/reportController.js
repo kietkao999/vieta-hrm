@@ -135,7 +135,12 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.tier_salary + p.grade_salary) as total_base_salary,
              SUM(p.responsibility_net) as total_responsibility_kpi,
              SUM(p.performance_bonus) as total_performance_bonus,
-             SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             SUM(COALESCE(p.discipline_deduction, 0) + COALESCE(p.other_deductions, 0) + COALESCE(p.social_insurance, 0) + COALESCE(p.union_fee, 0) + COALESCE(p.hour_deduction, 0)) as total_deductions,
+             SUM(COALESCE(p.social_insurance, 0)) as total_social_insurance,
+             SUM(COALESCE(p.union_fee, 0)) as total_union_fee,
+             SUM(COALESCE(p.hour_deduction, 0)) as total_hour_deduction,
+             SUM(COALESCE(p.income_tax, 0)) as total_income_tax,
+             SUM(COALESCE(p.advance_payment, 0)) as total_advance_payment,
              SUM(
                CASE 
                  WHEN p.base_work_salary > 0 THEN p.base_work_salary 
@@ -154,7 +159,7 @@ export const getPayrollReport = async (req, res) => {
       LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.month
-      ORDER BY p.month ASC
+      ORDER BY CAST(p.month AS INTEGER) ASC
     `, [targetYear, ...allMatches, ...deptParams]);
 
     // Tổng quỹ lương toàn bộ giai đoạn được chọn
@@ -163,7 +168,12 @@ export const getPayrollReport = async (req, res) => {
              SUM(p.tier_salary + p.grade_salary) as total_base,
              SUM(p.responsibility_net) as total_responsibility,
              SUM(p.performance_bonus) as total_performance,
-             SUM(p.discipline_deduction + p.other_deductions) as total_deductions,
+             SUM(COALESCE(p.discipline_deduction, 0) + COALESCE(p.other_deductions, 0) + COALESCE(p.social_insurance, 0) + COALESCE(p.union_fee, 0) + COALESCE(p.hour_deduction, 0)) as total_deductions,
+             SUM(COALESCE(p.social_insurance, 0)) as total_social_insurance,
+             SUM(COALESCE(p.union_fee, 0)) as total_union_fee,
+             SUM(COALESCE(p.hour_deduction, 0)) as total_hour_deduction,
+             SUM(COALESCE(p.income_tax, 0)) as total_income_tax,
+             SUM(COALESCE(p.advance_payment, 0)) as total_advance_payment,
              SUM(
                CASE 
                  WHEN p.base_work_salary > 0 THEN p.base_work_salary 
@@ -643,6 +653,66 @@ export const exportReportExcel = async (req, res) => {
         { wch: 22 }, { wch: 24 }, { wch: 24 }, { wch: 14 }
       ];
       XLSX.utils.book_append_sheet(wb, wsPayroll, 'Bảng Lương Chi Tiết');
+
+      // Tạo thêm Sheet: Tổng Hợp Quỹ Lương & BHXH Theo Tháng
+      const monthMap = {};
+      payrollFormatted.forEach(item => {
+        const mKey = item['Kỳ Lương'];
+        if (!monthMap[mKey]) {
+          monthMap[mKey] = {
+            'Kỳ Lương': mKey,
+            'Số Lượng NV': 0,
+            'Tổng Lương Tầng + Bậc (đ)': 0,
+            'TỔNG THU NHẬP (đ)': 0,
+            'Tổng Giảm Trừ BHXH (đ)': 0,
+            'Tổng Giảm Trừ Công Đoàn (đ)': 0,
+            'Tổng Cắt Giờ (đ)': 0,
+            'TỔNG CÁC KHOẢN TRỪ (đ)': 0,
+            'THU NHẬP THỰC NHẬN (đ)': 0
+          };
+        }
+        monthMap[mKey]['Số Lượng NV'] += 1;
+        monthMap[mKey]['Tổng Lương Tầng + Bậc (đ)'] += (item['3. Tổng Lương Tầng + Bậc (đ)'] || 0);
+        monthMap[mKey]['TỔNG THU NHẬP (đ)'] += (item['13. TỔNG THU NHẬP (đ)'] || 0);
+        monthMap[mKey]['Tổng Giảm Trừ BHXH (đ)'] += (item['14. Giảm Trừ BHXH (đ)'] || 0);
+        monthMap[mKey]['Tổng Giảm Trừ Công Đoàn (đ)'] += (item['15. Giảm Trừ Công Đoàn (đ)'] || 0);
+        monthMap[mKey]['Tổng Cắt Giờ (đ)'] += (item['16. Cắt Giờ / Giảm Trừ (đ)'] || 0);
+        monthMap[mKey]['TỔNG CÁC KHOẢN TRỪ (đ)'] += (item['20. TỔNG CÁC KHOẢN TRỪ (đ)'] || 0);
+        monthMap[mKey]['THU NHẬP THỰC NHẬN (đ)'] += (item['22. THU NHẬP THỰC NHẬN (đ)'] || 0);
+      });
+
+      const summaryList = Object.values(monthMap);
+      if (summaryList.length > 0) {
+        // Dòng tổng cộng cả kỳ
+        const grandTotal = summaryList.reduce((acc, cur) => ({
+          'Kỳ Lương': 'TỔNG CỘNG TOÀN KỲ',
+          'Số Lượng NV': acc['Số Lượng NV'] + cur['Số Lượng NV'],
+          'Tổng Lương Tầng + Bậc (đ)': acc['Tổng Lương Tầng + Bậc (đ)'] + cur['Tổng Lương Tầng + Bậc (đ)'],
+          'TỔNG THU NHẬP (đ)': acc['TỔNG THU NHẬP (đ)'] + cur['TỔNG THU NHẬP (đ)'],
+          'Tổng Giảm Trừ BHXH (đ)': acc['Tổng Giảm Trừ BHXH (đ)'] + cur['Tổng Giảm Trừ BHXH (đ)'],
+          'Tổng Giảm Trừ Công Đoàn (đ)': acc['Tổng Giảm Trừ Công Đoàn (đ)'] + cur['Tổng Giảm Trừ Công Đoàn (đ)'],
+          'Tổng Cắt Giờ (đ)': acc['Tổng Cắt Giờ (đ)'] + cur['Tổng Cắt Giờ (đ)'],
+          'TỔNG CÁC KHOẢN TRỪ (đ)': acc['TỔNG CÁC KHOẢN TRỪ (đ)'] + cur['TỔNG CÁC KHOẢN TRỪ (đ)'],
+          'THU NHẬP THỰC NHẬN (đ)': acc['THU NHẬP THỰC NHẬN (đ)'] + cur['THU NHẬP THỰC NHẬN (đ)']
+        }), {
+          'Kỳ Lương': 'TỔNG CỘNG TOÀN KỲ',
+          'Số Lượng NV': 0,
+          'Tổng Lương Tầng + Bậc (đ)': 0,
+          'TỔNG THU NHẬP (đ)': 0,
+          'Tổng Giảm Trừ BHXH (đ)': 0,
+          'Tổng Giảm Trừ Công Đoàn (đ)': 0,
+          'Tổng Cắt Giờ (đ)': 0,
+          'TỔNG CÁC KHOẢN TRỪ (đ)': 0,
+          'THU NHẬP THỰC NHẬN (đ)': 0
+        });
+
+        const wsSummary = XLSX.utils.json_to_sheet([...summaryList, grandTotal]);
+        wsSummary['!cols'] = [
+          { wch: 22 }, { wch: 14 }, { wch: 24 }, { wch: 24 },
+          { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 24 }, { wch: 24 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Tổng Hợp Lương & BHXH');
+      }
     }
 
     // 2. KPI & HIỆU QUẢ
