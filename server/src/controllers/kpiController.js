@@ -1,13 +1,27 @@
 import { query } from '../config/database.js';
 
-// Helper lấy department_id của Quản lý
-const getManagerDeptId = async (user) => {
-  if (user.departmentId) return user.departmentId;
+// Helper kiểm tra quản lý Tuyết Hường (quản lý Kho Mỹ Tho + Xưởng sản xuất gối)
+export const isTuyetHuong = (user, employee) => {
+  if (!user && !employee) return false;
+  const username = (user?.username || '').toLowerCase().trim();
+  const code = (employee?.code || user?.employeeCode || '').toLowerCase().trim();
+  const fullname = (employee?.fullname || user?.fullname || '').toLowerCase().trim();
+  return username === 'vieta015' || code.includes('015') || fullname.includes('tuyết hường') || fullname.includes('tuyet huong');
+};
+
+// Helper lấy danh sách department_id của Quản lý
+const getManagerDeptIds = async (user) => {
+  let emp = null;
   if (user.employeeId) {
-    const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [user.employeeId]);
-    return emp?.department_id || null;
+    emp = await query.get('SELECT id, code, fullname, department_id FROM employees WHERE id = ?', [user.employeeId]);
   }
-  return null;
+  
+  if (isTuyetHuong(user, emp)) {
+    return [11, 14]; // Kho Mỹ Tho (11) và Xưởng sản xuất gối (14)
+  }
+
+  const deptId = user.departmentId || emp?.department_id || null;
+  return deptId ? [deptId] : [];
 };
 
 export const getAvailableKpiMonths = async (req, res) => {
@@ -82,16 +96,31 @@ export const getKpis = async (req, res) => {
       targetYear
     ];
 
-    // Phân quyền: Trưởng phòng CHỈ XEM KPI của phòng ban mình, tuyệt đối KHÔNG xem phòng ban khác
+    // Phân quyền: Trưởng phòng CHỈ XEM KPI của phòng ban mình phụ trách, tuyệt đối KHÔNG xem phòng ban khác
     if (req.user.roleName === 'MANAGER') {
-      const managerDeptId = await getManagerDeptId(req.user);
-      if (managerDeptId) {
-        sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
-        params.push(managerDeptId, managerDeptId);
+      const managerDeptIds = await getManagerDeptIds(req.user);
+      if (managerDeptIds.length > 0) {
+        if (department_id && department_id !== 'all') {
+          const selectedDept = parseInt(department_id, 10);
+          if (managerDeptIds.includes(selectedDept)) {
+            sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
+            params.push(selectedDept, selectedDept);
+          } else {
+            const placeholders = managerDeptIds.map(() => '?').join(',');
+            sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+            params.push(...managerDeptIds, ...managerDeptIds);
+          }
+        } else {
+          const placeholders = managerDeptIds.map(() => '?').join(',');
+          sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+          params.push(...managerDeptIds, ...managerDeptIds);
+        }
+      } else {
+        sql += ` AND 1=0`;
       }
     } else {
       // ADMIN / HR
-      if (department_id) {
+      if (department_id && department_id !== 'all') {
         sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
         params.push(department_id, department_id);
       }
@@ -241,10 +270,13 @@ export const initMonthlyKpis = async (req, res) => {
     const empParams = [];
 
     if (req.user.roleName === 'MANAGER') {
-      const managerDeptId = await getManagerDeptId(req.user);
-      if (managerDeptId) {
-        empSql += ` AND (department_id = ? OR department_id = (SELECT name FROM departments WHERE id = ?))`;
-        empParams.push(managerDeptId, managerDeptId);
+      const managerDeptIds = await getManagerDeptIds(req.user);
+      if (managerDeptIds.length > 0) {
+        const placeholders = managerDeptIds.map(() => '?').join(',');
+        empSql += ` AND (department_id IN (${placeholders}) OR department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+        empParams.push(...managerDeptIds, ...managerDeptIds);
+      } else {
+        empSql += ` AND 1=0`;
       }
     }
 
@@ -308,14 +340,15 @@ export const saveBulkKpis = async (req, res) => {
   const now = new Date().toISOString();
 
   try {
-    // Nếu là Manager: CHỈ cho phép lưu KPI của nhân sự thuộc phòng ban mình
+    // Nếu là Manager: CHỈ cho phép lưu KPI của nhân sự thuộc phòng ban mình phụ trách
     let safeItems = items;
     if (req.user.roleName === 'MANAGER') {
-      const managerDeptId = await getManagerDeptId(req.user);
-      if (managerDeptId) {
+      const managerDeptIds = await getManagerDeptIds(req.user);
+      if (managerDeptIds.length > 0) {
+        const placeholders = managerDeptIds.map(() => '?').join(',');
         const validEmps = await query.all(
-          'SELECT id FROM employees WHERE department_id = ? OR department_id = (SELECT name FROM departments WHERE id = ?)',
-          [managerDeptId, managerDeptId]
+          `SELECT id FROM employees WHERE department_id IN (${placeholders}) OR department_id IN (SELECT name FROM departments WHERE id IN (${placeholders}))`,
+          [...managerDeptIds, ...managerDeptIds]
         );
         const validSet = new Set(validEmps.map(e => e.id));
         safeItems = items.filter(it => validSet.has(it.employee_id));
@@ -387,12 +420,13 @@ export const createOrUpdateKpi = async (req, res) => {
     return res.status(403).json({ message: 'Nhân viên không có quyền chỉnh sửa KPI.' });
   }
 
-  // Quản lý: CHỈ được cập nhật cho nhân sự phòng ban của mình
+  // Quản lý: CHỈ được cập nhật cho nhân sự phòng ban của mình phụ trách
   if (req.user.roleName === 'MANAGER') {
-    const managerDeptId = await getManagerDeptId(req.user);
+    const managerDeptIds = await getManagerDeptIds(req.user);
     if (employee_id) {
       const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [employee_id]);
-      const isDeptMatch = emp && (emp.department_id === managerDeptId || emp.department_id === req.user.departmentName);
+      const empDept = emp ? parseInt(emp.department_id, 10) : null;
+      const isDeptMatch = emp && (managerDeptIds.includes(empDept) || managerDeptIds.includes(emp.department_id));
       if (!isDeptMatch) {
         return res.status(403).json({ message: 'Bạn không có quyền cập nhật KPI cho nhân sự thuộc phòng ban khác.' });
       }
@@ -494,11 +528,12 @@ export const getEmployeeKpiHistory = async (req, res) => {
       return res.status(403).json({ message: 'Nhân viên không có quyền truy cập module KPI.' });
     }
 
-    // Trưởng phòng CHỈ XEM KPI của nhân sự thuộc phòng ban mình
+    // Trưởng phòng CHỈ XEM KPI của nhân sự thuộc phòng ban mình phụ trách
     if (req.user.roleName === 'MANAGER') {
-      const managerDeptId = await getManagerDeptId(req.user);
+      const managerDeptIds = await getManagerDeptIds(req.user);
       const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [employee_id]);
-      const isDeptMatch = emp && (emp.department_id === managerDeptId || emp.department_id === req.user.departmentName);
+      const empDept = emp ? parseInt(emp.department_id, 10) : null;
+      const isDeptMatch = emp && (managerDeptIds.includes(empDept) || managerDeptIds.includes(emp.department_id));
       if (!isDeptMatch) {
         return res.status(403).json({ message: 'Bạn không có quyền xem KPI của nhân sự thuộc phòng ban khác.' });
       }
@@ -563,11 +598,12 @@ export const deleteKpi = async (req, res) => {
     const kpi = await query.get('SELECT * FROM employee_monthly_kpis WHERE id = ?', [id]);
     if (!kpi) return res.status(404).json({ message: 'Không tìm thấy bản ghi KPI.' });
 
-    // Quản lý: CHỈ được xóa KPI của nhân sự phòng ban của mình
+    // Quản lý: CHỈ được xóa KPI của nhân sự phòng ban của mình phụ trách
     if (req.user.roleName === 'MANAGER') {
-      const managerDeptId = await getManagerDeptId(req.user);
+      const managerDeptIds = await getManagerDeptIds(req.user);
       const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [kpi.employee_id]);
-      const isDeptMatch = emp && (emp.department_id === managerDeptId || emp.department_id === req.user.departmentName);
+      const empDept = emp ? parseInt(emp.department_id, 10) : null;
+      const isDeptMatch = emp && (managerDeptIds.includes(empDept) || managerDeptIds.includes(emp.department_id));
       if (!isDeptMatch) {
         return res.status(403).json({ message: 'Bạn không có quyền xóa KPI của nhân sự thuộc phòng ban khác.' });
       }

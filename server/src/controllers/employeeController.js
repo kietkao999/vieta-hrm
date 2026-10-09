@@ -1,14 +1,28 @@
 import { query } from '../config/database.js';
 import XLSX from 'xlsx';
 
-// Helper lấy department_id của Quản lý
-const getManagerDeptId = async (user) => {
-  if (user.departmentId) return user.departmentId;
+// Helper kiểm tra quản lý Tuyết Hường (quản lý Kho Mỹ Tho + Xưởng sản xuất gối)
+export const isTuyetHuong = (user, employee) => {
+  if (!user && !employee) return false;
+  const username = (user?.username || '').toLowerCase().trim();
+  const code = (employee?.code || user?.employeeCode || '').toLowerCase().trim();
+  const fullname = (employee?.fullname || user?.fullname || '').toLowerCase().trim();
+  return username === 'vieta015' || code.includes('015') || fullname.includes('tuyết hường') || fullname.includes('tuyet huong');
+};
+
+// Helper lấy danh sách department_id của Quản lý
+const getManagerDeptIds = async (user) => {
+  let emp = null;
   if (user.employeeId) {
-    const emp = await query.get('SELECT department_id FROM employees WHERE id = ?', [user.employeeId]);
-    return emp?.department_id || null;
+    emp = await query.get('SELECT id, code, fullname, department_id FROM employees WHERE id = ?', [user.employeeId]);
   }
-  return null;
+  
+  if (isTuyetHuong(user, emp)) {
+    return [11, 14]; // Kho Mỹ Tho (11) và Xưởng sản xuất gối (14)
+  }
+
+  const deptId = user.departmentId || emp?.department_id || null;
+  return deptId ? [deptId] : [];
 };
 
 // Lấy danh sách nhân viên với lọc, tìm kiếm, phân trang & bảo mật lương tuyệt đối
@@ -33,17 +47,33 @@ export const getEmployees = async (req, res) => {
     // Phân quyền bảo mật: Trưởng phòng KHÔNG ĐƯỢC xem nhân sự phòng ban khác
     const isFullAdmin = req.user.roleName === 'ADMIN' || req.user.roleName === 'HR';
     const isManager = req.user.roleName === 'MANAGER';
+    let managerDeptIds = [];
 
     if (isManager) {
-      const managerDeptId = await getManagerDeptId(req.user);
-      if (managerDeptId) {
-        sql += ' AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))';
-        params.push(managerDeptId, managerDeptId);
+      managerDeptIds = await getManagerDeptIds(req.user);
+      if (managerDeptIds.length > 0) {
+        if (department_id && department_id !== 'all') {
+          const selectedDept = parseInt(department_id, 10);
+          if (managerDeptIds.includes(selectedDept)) {
+            sql += ' AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))';
+            params.push(selectedDept, selectedDept);
+          } else {
+            const placeholders = managerDeptIds.map(() => '?').join(',');
+            sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+            params.push(...managerDeptIds, ...managerDeptIds);
+          }
+        } else {
+          const placeholders = managerDeptIds.map(() => '?').join(',');
+          sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+          params.push(...managerDeptIds, ...managerDeptIds);
+        }
+      } else {
+        sql += ' AND 1=0';
       }
     } else if (req.user.roleName === 'EMPLOYEE') {
       sql += ' AND e.id = ?';
       params.push(req.user.employeeId || -1);
-    } else if (department_id) {
+    } else if (department_id && department_id !== 'all') {
       // ADMIN/HR lọc theo phòng ban nếu được chọn
       sql += ' AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))';
       params.push(department_id, department_id);
@@ -85,7 +115,8 @@ export const getEmployees = async (req, res) => {
     // MANAGER & EMPLOYEE chỉ thấy mức lương của chính mình, các trường lương của người khác bị ẩn cứng trên Server.
     const safeEmployees = rawEmployees.map(e => {
       const isSelf = req.user.employeeId && e.id === req.user.employeeId;
-      const isDeptStaff = isManager && (e.department_id === req.user.departmentId);
+      const empDept = parseInt(e.department_id, 10);
+      const isDeptStaff = isManager && (managerDeptIds.includes(empDept) || managerDeptIds.includes(e.department_id));
 
       if (!isFullAdmin && !isSelf) {
         return {

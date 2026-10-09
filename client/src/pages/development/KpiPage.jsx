@@ -52,6 +52,14 @@ const KpiPage = () => {
   const isManager = user?.roleName === 'MANAGER';
   const canEdit = isAdminOrHR || isManager;
 
+  const isTuyetHuong = useMemo(() => {
+    if (!user) return false;
+    const u = (user.username || '').toLowerCase().trim();
+    const c = (user.employeeCode || '').toLowerCase().trim();
+    const f = (user.fullname || '').toLowerCase().trim();
+    return u === 'vieta015' || c.includes('015') || f.includes('tuyết hường') || f.includes('tuyet huong');
+  }, [user]);
+
   const currentDate = new Date();
   const [month, setMonth] = useState((currentDate.getMonth() + 1).toString());
   const [year, setYear] = useState(currentDate.getFullYear().toString());
@@ -67,7 +75,7 @@ const KpiPage = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDept, setSelectedDept] = useState(isManager ? (user?.departmentId || '') : '');
+  const [selectedDept, setSelectedDept] = useState(isManager ? (isTuyetHuong ? '' : (user?.departmentId || '')) : '');
 
   // Unsaved modifications tracker: { [employee_id]: true }
   const [modifiedMap, setModifiedMap] = useState({});
@@ -103,7 +111,12 @@ const KpiPage = () => {
         ]);
         const allDepts = deptRes.data || [];
         if (isManager) {
-          const myDepts = allDepts.filter(d => String(d.id) === String(user?.departmentId) || d.name === user?.departmentName);
+          let myDepts = [];
+          if (isTuyetHuong) {
+            myDepts = allDepts.filter(d => [11, 14].includes(Number(d.id)) || [11, 14].includes(d.id));
+          } else {
+            myDepts = allDepts.filter(d => String(d.id) === String(user?.departmentId) || d.name === user?.departmentName);
+          }
           setDepartments(myDepts.length > 0 ? myDepts : allDepts);
         } else {
           setDepartments(allDepts);
@@ -116,7 +129,7 @@ const KpiPage = () => {
       }
     };
     fetchDepartments();
-  }, [year, isManager, user?.departmentId]);
+  }, [year, isManager, user?.departmentId, isTuyetHuong]);
 
   // Fetch KPI Data
   const fetchKpiData = async () => {
@@ -432,7 +445,7 @@ const KpiPage = () => {
 
         {isManager && (
           <div className="rounded-xl bg-blue-50/90 border border-blue-200 p-3 text-xs text-blue-800 font-semibold flex items-center space-x-2">
-            <span>🛡️ <strong>Phân quyền Quản lý:</strong> Chỉ xem và đánh giá KPI cho nhân sự thuộc <strong>{user?.departmentName || 'phòng ban/kho/xưởng được phân công'}</strong>. Tuyệt đối không xem được KPI của các phòng ban khác.</span>
+            <span>🛡️ <strong>Phân quyền Quản lý:</strong> Chỉ xem và đánh giá KPI cho nhân sự thuộc <strong>{isTuyetHuong ? 'Kho Mỹ Tho & Xưởng sản xuất gối' : (user?.departmentName || 'phòng ban/kho/xưởng được phân công')}</strong>. Tuyệt đối không xem được KPI của các phòng ban khác.</span>
           </div>
         )}
 
@@ -607,7 +620,33 @@ const KpiPage = () => {
         {/* Search & Department Filter */}
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Department Filter */}
-          {isManager ? (
+          {isManager && isTuyetHuong ? (
+            <div className="flex items-center space-x-1.5 bg-blue-50/70 border border-blue-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-900">
+              <Layers size={14} className="text-blue-700 shrink-0" />
+              <select
+                value={selectedDept}
+                onChange={e => setSelectedDept(e.target.value)}
+                className="text-xs font-bold text-blue-900 bg-transparent outline-none cursor-pointer pr-1"
+              >
+                <option value="">🏢 Cả 2 bộ phận (Kho Mỹ Tho & Xưởng sản xuất gối)</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+              {selectedDept && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDept('')}
+                  className="text-slate-400 hover:text-red-600 p-0.5 rounded transition"
+                  title="Xem cả 2 bộ phận"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          ) : isManager ? (
             <div className="flex items-center space-x-1.5 bg-blue-50/70 border border-blue-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-900" title="Phòng ban trực thuộc quản lý của bạn">
               <Layers size={14} className="text-blue-700 shrink-0" />
               <span>🏢 {user?.departmentName || 'Phòng ban của tôi'}</span>

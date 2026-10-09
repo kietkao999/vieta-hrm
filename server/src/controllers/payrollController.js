@@ -48,15 +48,20 @@ export const getPayroll = async (req, res) => {
       params.push(year);
     }
 
-    // Lọc theo phòng ban (Backend SQL Filter 100% chính xác)
-    if (department_id && department_id !== 'all') {
-      sql += ` AND e.department_id = ?`;
-      params.push(department_id);
-    }
-
     // Phân quyền bảo mật lương 3 cấp độ chặt chẽ:
+    const isTuyetHuongUser = (user, empCode, empFullname) => {
+      const u = (user?.username || '').toLowerCase().trim();
+      const c = (empCode || user?.employeeCode || '').toLowerCase().trim();
+      const f = (empFullname || user?.fullname || '').toLowerCase().trim();
+      return u === 'vieta015' || c.includes('015') || f.includes('tuyết hường') || f.includes('tuyet huong');
+    };
+
     if (req.user.roleName === 'ADMIN' || req.user.roleName === 'HR') {
       // CẤP 1 - ADMIN / HR: Xem toàn bộ công ty hoặc lọc theo phòng ban / nhân viên
+      if (department_id && department_id !== 'all') {
+        sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
+        params.push(department_id, department_id);
+      }
       if (employee_id) {
         sql += ` AND p.employee_id = ?`;
         params.push(employee_id);
@@ -64,13 +69,29 @@ export const getPayroll = async (req, res) => {
     } else if (req.user.roleName === 'MANAGER') {
       // CẤP 2 - MANAGER: Xem được lương của chính mình VÀ các nhân viên trực thuộc phòng ban mình quản lý
       // Tuyệt đối KHÔNG xem được lương của cấp trên (Admin/Ban Giám Đốc) hoặc phòng ban khác
-      const currentManager = await query.get('SELECT department_id FROM employees WHERE id = ?', [req.user.employeeId]);
-      const deptId = currentManager?.department_id;
+      const currentManager = await query.get('SELECT code, fullname, department_id FROM employees WHERE id = ?', [req.user.employeeId]);
+      const isTH = isTuyetHuongUser(req.user, currentManager?.code, currentManager?.fullname);
       
-      if (deptId) {
-        sql += ` AND e.department_id = ? AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
-        params.push(deptId, req.user.employeeId);
-        
+      let managedDeptIds = [];
+      if (isTH) {
+        managedDeptIds = [11, 14]; // Kho Mỹ Tho (11) và Xưởng sản xuất gối (14)
+      } else if (currentManager?.department_id) {
+        managedDeptIds = [currentManager.department_id];
+      }
+
+      if (managedDeptIds.length > 0) {
+        const selectedDept = department_id && department_id !== 'all' ? parseInt(department_id, 10) : null;
+        if (selectedDept && managedDeptIds.includes(selectedDept)) {
+          // Lọc theo phòng ban cụ thể mà quản lý phụ trách
+          sql += ` AND (e.department_id = ? OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          params.push(selectedDept, req.user.employeeId, req.user.employeeId);
+        } else {
+          // Xem tất cả các phòng ban mà quản lý phụ trách
+          const placeholders = managedDeptIds.map(() => '?').join(',');
+          sql += ` AND (e.department_id IN (${placeholders}) OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          params.push(...managedDeptIds, req.user.employeeId, req.user.employeeId);
+        }
+
         if (employee_id) {
           sql += ` AND p.employee_id = ?`;
           params.push(employee_id);

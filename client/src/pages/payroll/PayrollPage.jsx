@@ -56,6 +56,14 @@ export const calculateEmployeeIncome = (p) => {
 
 const PayrollPage = () => {
   const { user } = useAuth();
+  const isTuyetHuong = React.useMemo(() => {
+    if (!user) return false;
+    const u = (user.username || '').toLowerCase().trim();
+    const c = (user.employeeCode || '').toLowerCase().trim();
+    const f = (user.fullname || '').toLowerCase().trim();
+    return u === 'vieta015' || c.includes('015') || f.includes('tuyết hường') || f.includes('tuyet huong');
+  }, [user]);
+
   const [payrolls, setPayrolls] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [departmentFilter, setDepartmentFilter] = useState('all');
@@ -83,13 +91,22 @@ const PayrollPage = () => {
     const fetchDepts = async () => {
       try {
         const res = await api.get('/departments');
-        setDepartments(Array.isArray(res.data) ? res.data : []);
+        const allDepts = Array.isArray(res.data) ? res.data : [];
+        if (user?.roleName === 'MANAGER') {
+          if (isTuyetHuong) {
+            setDepartments(allDepts.filter(d => [11, 14].includes(Number(d.id)) || [11, 14].includes(d.id)));
+          } else {
+            setDepartments(allDepts.filter(d => String(d.id) === String(user?.departmentId) || d.name === user?.departmentName));
+          }
+        } else {
+          setDepartments(allDepts);
+        }
       } catch (err) {
         console.error('Lỗi tải danh sách phòng ban:', err);
       }
     };
     fetchDepts();
-  }, []);
+  }, [user, isTuyetHuong]);
 
   // Edit Form State matching the full formula
   const [editForm, setEditForm] = useState({
@@ -971,14 +988,14 @@ const PayrollPage = () => {
             {isAdmin
               ? 'Quản Lý Bảng Lương Toàn Công Ty'
               : isManager
-              ? `Bảng Lương & Phiếu Lương - ${user?.departmentName || user?.department_name || 'Phòng Ban'}`
+              ? (isTuyetHuong ? 'Bảng Lương & Phiếu Lương - Kho Mỹ Tho & Xưởng sản xuất gối' : `Bảng Lương & Phiếu Lương - ${user?.departmentName || user?.department_name || 'Phòng Ban'}`)
               : 'Tra Cứu Phiếu Lương Cá Nhân'}
           </h2>
           <p className="text-xs text-slate-500">
             {isAdmin
               ? 'Quản lý bảng lương toàn công ty, tính toán tự động và duyệt chi trả'
               : isManager
-              ? 'Theo dõi bảng lương các nhân viên trực thuộc phòng ban và tra cứu phiếu lương cá nhân'
+              ? (isTuyetHuong ? 'Theo dõi bảng lương nhân viên trực thuộc Kho Mỹ Tho & Xưởng sản xuất gối và tra cứu phiếu lương cá nhân' : 'Theo dõi bảng lương các nhân viên trực thuộc phòng ban và tra cứu phiếu lương cá nhân')
               : 'Tra cứu chi tiết thu nhập, lương cơ sở, KPI và phụ cấp cá nhân theo từng tháng'}
           </p>
         </div>
@@ -1019,7 +1036,7 @@ const PayrollPage = () => {
             }`}
           >
             <Users size={16} />
-            <span>Bảng Lương Thành Viên Phòng Ban ({filteredPayrolls.length} nhân sự)</span>
+            <span>{isTuyetHuong ? 'Bảng Lương Thành Viên Kho Mỹ Tho & Xưởng Gối' : 'Bảng Lương Thành Viên Phòng Ban'} ({filteredPayrolls.length} nhân sự)</span>
           </button>
           <button
             onClick={() => setViewTab('personal')}
@@ -1115,7 +1132,11 @@ const PayrollPage = () => {
                   onChange={(e) => setDepartmentFilter(e.target.value)}
                   className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none font-bold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white focus:border-brand-500 transition cursor-pointer"
                 >
-                  <option value="all">-- Tất cả phòng ban ({payrolls.length} nhân sự) --</option>
+                  <option value="all">
+                    {isManager && isTuyetHuong
+                      ? `-- Cả 2 bộ phận (Kho Mỹ Tho & Xưởng Gối) (${payrolls.length} nhân sự) --`
+                      : `-- Tất cả phòng ban (${payrolls.length} nhân sự) --`}
+                  </option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
