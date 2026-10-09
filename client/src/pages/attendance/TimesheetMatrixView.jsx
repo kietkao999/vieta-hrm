@@ -48,6 +48,7 @@ export default function TimesheetMatrixView({
   const [matrixData, setMatrixData] = useState([]);
   const [days, setDays] = useState([]);
   const [canEdit, setCanEdit] = useState(false);
+  const [isTrucXinh, setIsTrucXinh] = useState(false);
   const [sheetInfo, setSheetInfo] = useState(null);
 
   // Lưu trữ các ô bị thay đổi trên client chưa save
@@ -62,7 +63,7 @@ export default function TimesheetMatrixView({
 
   const showNotice = (type, message) => {
     setNotification({ type, message });
-    setTimeout(() => setNotification({ type: '', message: '' }), 4000);
+    setTimeout(() => setNotification({ type: '', message: '' }), 4500);
   };
 
   // 1. Tải danh sách sheets cấu hình
@@ -71,6 +72,7 @@ export default function TimesheetMatrixView({
       .then(res => {
         const sheets = res.data?.sheets || [];
         setSheetsConfig(sheets);
+        setIsTrucXinh(Boolean(res.data?.isTrucXinh));
         // Chọn sheet đầu tiên mà user có quyền edit, nếu không thì lấy sheet đầu tiên
         const editable = sheets.find(s => s.canEdit);
         if (editable && !sheets.find(s => s.key === activeSheetKey)?.canEdit) {
@@ -97,6 +99,7 @@ export default function TimesheetMatrixView({
       setMatrixData(res.data?.matrix || []);
       setDays(res.data?.days || []);
       setCanEdit(Boolean(res.data?.canEdit));
+      setIsTrucXinh(Boolean(res.data?.isTrucXinh));
       setSheetInfo(res.data?.sheet || null);
     } catch (err) {
       showNotice('error', err.response?.data?.message || 'Lỗi tải dữ liệu bảng chấm công.');
@@ -115,10 +118,17 @@ export default function TimesheetMatrixView({
   const handleCellChange = (empId, day, newSymbol) => {
     if (!canEdit) return;
 
+    // Kiểm tra khóa bảo mật: sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới được sửa
+    const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
+    if (baseRow.isLocked && !isTrucXinh) {
+      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+      setEditingCell(null);
+      return;
+    }
+
     setDirtyChanges(prev => {
       const key = `${empId}_${day}`;
       const existing = prev[key] || {};
-      const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
       return {
         ...prev,
         [key]: {
@@ -138,12 +148,18 @@ export default function TimesheetMatrixView({
   // Cập nhật số giờ tăng ca của ô
   const handleOtChange = (empId, day, otHours) => {
     if (!canEdit) return;
+
+    const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
+    if (baseRow.isLocked && !isTrucXinh) {
+      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+      return;
+    }
+
     const parsed = parseFloat(otHours) || 0;
 
     setDirtyChanges(prev => {
       const key = `${empId}_${day}`;
       const existing = prev[key] || {};
-      const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
       const curSym = existing.symbol !== undefined ? existing.symbol : (baseRow.symbol || '');
       return {
         ...prev,
@@ -162,12 +178,18 @@ export default function TimesheetMatrixView({
   // Cập nhật số giờ cắt của ô
   const handleCutChange = (empId, day, cutHours) => {
     if (!canEdit) return;
+
+    const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
+    if (baseRow.isLocked && !isTrucXinh) {
+      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+      return;
+    }
+
     const parsed = parseFloat(cutHours) || 0;
 
     setDirtyChanges(prev => {
       const key = `${empId}_${day}`;
       const existing = prev[key] || {};
-      const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
       const curSym = existing.symbol !== undefined ? existing.symbol : (baseRow.symbol || '');
       return {
         ...prev,
@@ -263,33 +285,54 @@ export default function TimesheetMatrixView({
   // Điền nhanh T2 - T7 = X cho tất cả nhân viên trong sheet (trừ Chủ Nhật)
   const handleQuickFillWeekdays = () => {
     if (!canEdit) return;
-    if (!window.confirm('Tự động điền ký hiệu "X" (đi làm) cho tất cả các ngày Thứ 2 đến Thứ 7 trong tháng này? (Chủ Nhật giữ nguyên)')) {
+
+    const confirmMsg = isTrucXinh
+      ? 'Tự động điền ký hiệu "X" (đi làm) cho tất cả các ngày Thứ 2 đến Thứ 7 trong tháng này? (Chủ Nhật giữ nguyên)'
+      : 'Tự động điền ký hiệu "X" (đi làm) cho các ngày Thứ 2 đến Thứ 7 CHƯA ĐƯỢC CHẤM CÔNG? (Các ô đã chấm công sẽ được giữ nguyên theo quy định bảo mật)';
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 
     const newDirty = { ...dirtyChanges };
+    let filledCount = 0;
+
     computedMatrix.forEach(row => {
       days.forEach(d => {
         if (!d.isSunday) {
+          const baseCell = row.computedDays[d.day] || {};
+          // Nếu ô đã bị khóa (đã chấm công) và không phải Trúc Xinh -> bỏ qua không ghi đè
+          if (baseCell.isLocked && !isTrucXinh) {
+            return;
+          }
+
           const key = `${row.employee_id}_${d.day}`;
           newDirty[key] = {
             employee_id: row.employee_id,
             day: d.day,
             symbol: 'X',
-            ot_hours: newDirty[key]?.ot_hours || row.computedDays[d.day]?.ot_hours || 0,
-            late_minutes: newDirty[key]?.late_minutes || row.computedDays[d.day]?.late_minutes || 0
+            ot_hours: newDirty[key]?.ot_hours || baseCell.ot_hours || 0,
+            cut_hours: newDirty[key]?.cut_hours || baseCell.cut_hours || 0,
+            late_minutes: newDirty[key]?.late_minutes || baseCell.late_minutes || 0
           };
+          filledCount++;
         }
       });
     });
 
     setDirtyChanges(newDirty);
-    showNotice('info', `Đã điền nhanh toàn bộ ngày làm việc. Vui lòng bấm "Lưu Chấm Công" để cập nhật.`);
+    showNotice('info', `Đã điền nhanh ${filledCount} ô làm việc (T2-T7). Vui lòng bấm "Lưu Chấm Công" để cập nhật.`);
   };
 
   // Xóa trắng toàn bộ các ô trong tháng của sheet
   const handleClearMonth = () => {
     if (!canEdit) return;
+
+    if (!isTrucXinh) {
+      showNotice('error', 'Quy định bảo mật: Người chấm công không được xóa/sửa lại dữ liệu đã chấm công. Chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền này!');
+      return;
+    }
+
     if (!window.confirm('Bạn có chắc muốn XÓA TRẮNG tất cả các ô chấm công tháng này của bộ phận để chấm lại từ đầu?')) {
       return;
     }
@@ -303,6 +346,7 @@ export default function TimesheetMatrixView({
           day: d.day,
           symbol: '',
           ot_hours: 0,
+          cut_hours: 0,
           late_minutes: 0
         };
       });
@@ -420,6 +464,25 @@ export default function TimesheetMatrixView({
         </div>
       </div>
 
+      {/* ═══ BANNER QUY ĐỊNH PHÂN QUYỀN CHẤM CÔNG & KHÓA BẢO MẬT ═══ */}
+      <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-2xl p-3 shadow-2xs text-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          <div className="flex items-start lg:items-center space-x-2 text-slate-700">
+            <ShieldCheck size={18} className="text-emerald-600 shrink-0 mt-0.5 lg:mt-0" />
+            <div>
+              <span className="font-bold text-emerald-950">Phân quyền người chấm công: </span>
+              <span className="text-slate-600">
+                Kho Cần Thơ (<b className="text-slate-800">Nguyễn Thị Thu Tâm</b>) • Kho Mỹ Tho & Xưởng gối (<b className="text-slate-800">Nguyễn Thị Thanh Tú</b>) • Kinh doanh (<b className="text-slate-800">Nguyễn Thị Kim Hoàng</b>) • Xưởng nệm (<b className="text-slate-800">Võ Huỳnh Đông Nghi</b>) • Marketing & Văn phòng (<b className="text-slate-800">Huỳnh Thị Trúc Xinh</b>).
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-1.5 shrink-0 bg-white/90 border border-amber-300 px-3 py-1 rounded-xl text-[11px] text-amber-950 font-bold shadow-2xs">
+            <Lock size={13} className="text-amber-600 shrink-0" />
+            <span>Sau khi đã chấm công, người chấm không được sửa lại. Chỉ Admin <b>Huỳnh Thị Trúc Xinh</b> có quyền chỉnh sửa!</span>
+          </div>
+        </div>
+      </div>
+
       {/* ═══ BĂNG ĐIỀU HƯỚNG & PHÂN QUYỀN HIỆN TẠI ═══ */}
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Bên trái: Thông tin người phụ trách & quyền */}
@@ -454,10 +517,15 @@ export default function TimesheetMatrixView({
             <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
               <span className="text-slate-500 font-medium">Người chấm được giao:</span>
               <span className="font-bold text-slate-900">{sheetInfo.managerName}</span>
-              {canEdit ? (
+              {isTrucXinh ? (
+                <span className="inline-flex items-center space-x-1 bg-purple-100 text-purple-900 text-[11px] font-bold px-2 py-0.5 rounded-full border border-purple-300">
+                  <ShieldCheck size={12} className="text-purple-700" />
+                  <span>Admin Trúc Xinh (Toàn quyền sửa đổi)</span>
+                </span>
+              ) : canEdit ? (
                 <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
                   <ShieldCheck size={12} />
-                  <span>Bạn có quyền chấm</span>
+                  <span>Bạn có quyền chấm (Chấm lần đầu)</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center space-x-1 bg-slate-200 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded-full">
@@ -487,21 +555,23 @@ export default function TimesheetMatrixView({
               {/* Nút điền nhanh */}
               <button
                 onClick={handleQuickFillWeekdays}
-                title="Tự động điền X cho các ngày làm việc T2 - T7"
+                title={isTrucXinh ? "Tự động điền X cho T2 - T7" : "Tự động điền X cho các ngày làm việc T2 - T7 chưa chấm"}
                 className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-all cursor-pointer"
               >
                 <Sparkles size={14} className="text-amber-600" />
                 <span>Điền nhanh T2-T7 = X</span>
               </button>
 
-              {/* Nút xóa trắng */}
-              <button
-                onClick={handleClearMonth}
-                title="Xóa trắng toàn bộ ô tháng này"
-                className="p-1.5 rounded-xl text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition-all cursor-pointer"
-              >
-                <RotateCcw size={14} />
-              </button>
+              {/* Nút xóa trắng (Chỉ Admin Huỳnh Thị Trúc Xinh mới được xóa trắng) */}
+              {isTrucXinh && (
+                <button
+                  onClick={handleClearMonth}
+                  title="Xóa trắng toàn bộ ô tháng này (Chỉ Admin Trúc Xinh)"
+                  className="p-1.5 rounded-xl text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition-all cursor-pointer"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              )}
 
               {/* Nút Lưu chấm công (Primary) */}
               <button
@@ -622,6 +692,7 @@ export default function TimesheetMatrixView({
                           const cell = row.computedDays[d.day] || {};
                           const sym = cell.symbol;
                           const isDirty = cell.isDirty;
+                          const isCellLocked = Boolean(cell.isLocked && !isTrucXinh);
 
                           // Màu sắc ký hiệu
                           let badgeClass = 'text-slate-300';
@@ -639,6 +710,10 @@ export default function TimesheetMatrixView({
                               key={d.day}
                               onClick={e => {
                                 if (!canEdit) return;
+                                if (isCellLocked) {
+                                  showNotice('warning', `Ô ngày ${d.day} của nhân sự "${row.fullname}" đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!`);
+                                  return;
+                                }
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setEditingCell({
                                   empId: row.employee_id,
@@ -649,10 +724,21 @@ export default function TimesheetMatrixView({
                                   rect
                                 });
                               }}
+                              title={
+                                isCellLocked
+                                  ? `Ngày ${d.day} (${d.dow}): Đã chấm [${sym || 'công'}] — Đã khóa (Chỉ Admin Huỳnh Thị Trúc Xinh được chỉnh sửa)`
+                                  : canEdit
+                                    ? `Ngày ${d.day} (${d.dow}): Nhấp để chọn ký hiệu chấm công`
+                                    : ''
+                              }
                               className={`p-0 text-center w-[25px] min-w-[25px] max-w-[25px] border-r border-slate-200 relative select-none ${
                                 d.isSunday ? 'bg-amber-50/40' : ''
                               } ${
-                                canEdit ? 'cursor-pointer hover:bg-brand-50' : ''
+                                isCellLocked
+                                  ? 'cursor-not-allowed bg-slate-50/70 hover:bg-slate-100'
+                                  : canEdit
+                                    ? 'cursor-pointer hover:bg-brand-50'
+                                    : ''
                               } ${
                                 isDirty ? 'bg-blue-50/70 ring-1 ring-blue-400' : ''
                               }`}
@@ -660,6 +746,11 @@ export default function TimesheetMatrixView({
                               <div className={`w-[22px] h-[22px] mx-auto rounded flex items-center justify-center text-[10px] transition-transform ${badgeClass}`}>
                                 {sym || '·'}
                               </div>
+                              {isCellLocked && (
+                                <span className="absolute top-0 left-0 text-[7px] text-slate-400 leading-none p-0.2 pointer-events-none" title="Đã khóa">
+                                  🔒
+                                </span>
+                              )}
                               {isDirty && (
                                 <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
                               )}
@@ -709,9 +800,10 @@ export default function TimesheetMatrixView({
 
                           {days.map(d => {
                             const curOt = row.computedDays[d.day]?.ot_hours || 0;
+                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
                             return (
                               <td key={d.day} className="p-0 text-center border-r border-slate-200 w-[25px]">
-                                {canEdit ? (
+                                {canEdit && !isCellLocked ? (
                                   <input
                                     type="number"
                                     step="0.5"
@@ -723,7 +815,12 @@ export default function TimesheetMatrixView({
                                     className="w-[23px] h-[18px] text-center text-[9px] font-bold text-indigo-900 bg-white border border-indigo-200 rounded outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 p-0"
                                   />
                                 ) : (
-                                  <span className="font-bold text-indigo-800 text-[9px]">{curOt > 0 ? curOt : '-'}</span>
+                                  <span
+                                    title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
+                                    className={`font-bold text-[9px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-indigo-800'}`}
+                                  >
+                                    {curOt > 0 ? curOt : '-'}
+                                  </span>
                                 )}
                               </td>
                             );
@@ -750,9 +847,10 @@ export default function TimesheetMatrixView({
 
                           {days.map(d => {
                             const curCut = row.computedDays[d.day]?.cut_hours || 0;
+                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
                             return (
                               <td key={d.day} className="p-0 text-center border-r border-slate-200 w-[25px]">
-                                {canEdit ? (
+                                {canEdit && !isCellLocked ? (
                                   <input
                                     type="number"
                                     step="0.5"
@@ -764,7 +862,12 @@ export default function TimesheetMatrixView({
                                     className="w-[23px] h-[18px] text-center text-[9px] font-bold text-rose-900 bg-white border border-rose-200 rounded outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 p-0"
                                   />
                                 ) : (
-                                  <span className="font-bold text-rose-800 text-[9px]">{curCut > 0 ? `-${curCut}` : '-'}</span>
+                                  <span
+                                    title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
+                                    className={`font-bold text-[9px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-rose-800'}`}
+                                  >
+                                    {curCut > 0 ? `-${curCut}` : '-'}
+                                  </span>
                                 )}
                               </td>
                             );

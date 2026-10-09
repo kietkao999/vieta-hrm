@@ -46,16 +46,33 @@ export const getAttendance = async (req, res) => {
       params.push(term, term);
     }
 
-    // Phân quyền
-    if (req.user.roleName === 'EMPLOYEE') {
-      sql += ` AND a.employee_id = ?`;
-      params.push(req.user.employeeId);
-    } else if (req.user.roleName === 'MANAGER') {
-      const currentManager = await query.get('SELECT department_id FROM employees WHERE id = ?', [req.user.employeeId]);
-      const deptId = currentManager?.department_id;
-      if (deptId) {
-        sql += ` AND (e.department_id = ? OR e.id = ?)`;
-        params.push(deptId, req.user.employeeId);
+    // Phân quyền dữ liệu chấm công
+    let currentEmp = null;
+    if (req.user?.employeeId) {
+      currentEmp = await query.get('SELECT id, code, fullname, department_id FROM employees WHERE id = ?', [req.user.employeeId]);
+    }
+
+    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
+
+    if (req.user.roleName === 'EMPLOYEE' && !isXinh) {
+      const managedDepts = getTimekeeperDeptIds(req.user, currentEmp);
+      if (managedDepts && managedDepts.length > 0) {
+        // Người được phân công chấm công phòng ban -> được xem nhân sự các phòng ban mình quản lý + bản thân
+        const placeholders = managedDepts.map(() => '?').join(',');
+        sql += ` AND (e.department_id IN (${placeholders}) OR a.employee_id = ?)`;
+        params.push(...managedDepts, req.user.employeeId);
+      } else {
+        sql += ` AND a.employee_id = ?`;
+        params.push(req.user.employeeId);
+      }
+    } else if (req.user.roleName === 'MANAGER' && !isXinh) {
+      const deptId = currentEmp?.department_id;
+      const managedDepts = getTimekeeperDeptIds(req.user, currentEmp);
+      const allDepts = Array.from(new Set([...(managedDepts || []), ...(deptId ? [deptId] : [])]));
+      if (allDepts.length > 0) {
+        const placeholders = allDepts.map(() => '?').join(',');
+        sql += ` AND (e.department_id IN (${placeholders}) OR e.id = ?)`;
+        params.push(...allDepts, req.user.employeeId);
       } else {
         sql += ` AND a.employee_id = ?`;
         params.push(req.user.employeeId);
@@ -84,8 +101,28 @@ export const markAttendance = async (req, res) => {
   }
 
   try {
-    const exist = await query.get('SELECT id FROM attendance WHERE employee_id = ? AND date = ?', [empId, date]);
+    let currentEmp = null;
+    if (req.user?.employeeId) {
+      currentEmp = await query.get('SELECT id, code, fullname FROM employees WHERE id = ?', [req.user.employeeId]);
+    }
+    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
+
+    const exist = await query.get('SELECT id, status, ot_hours, cut_hours FROM attendance WHERE employee_id = ? AND date = ?', [empId, date]);
     
+    const hasPreviousAttendance = Boolean(
+      exist && (
+        (exist.status && exist.status.trim() !== '') ||
+        Number(exist.ot_hours) > 0 ||
+        Number(exist.cut_hours) > 0
+      )
+    );
+
+    if (hasPreviousAttendance && !isXinh) {
+      return res.status(403).json({
+        message: 'Ngày này đã được chấm công trước đó. Quy định: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại. Mọi điều chỉnh chỉ có Admin Huỳnh Thị Trúc Xinh mới được thực hiện!'
+      });
+    }
+
     if (exist) {
       // Cập nhật
       await query.run(`
@@ -126,12 +163,12 @@ export const markAttendance = async (req, res) => {
 export const SHEETS_CONFIG = [
   {
     key: 'van_phong',
-    name: 'Khối Văn Phòng',
+    name: 'Khối Văn Phòng & Ban Giám Đốc',
     sheetName: 'VĂN PHÒNG',
     managerName: 'Huỳnh Thị Trúc Xinh',
     managerCode: 'VietA 032',
     deptIds: [9, 7], // Khối văn phòng + Ban giám đốc
-    description: 'Chấm công bởi Huỳnh Thị Trúc Xinh (Trưởng phòng HCNS)'
+    description: 'Chấm công bởi Huỳnh Thị Trúc Xinh'
   },
   {
     key: 'marketing',
@@ -140,7 +177,7 @@ export const SHEETS_CONFIG = [
     managerName: 'Huỳnh Thị Trúc Xinh',
     managerCode: 'VietA 032',
     deptIds: [13],
-    description: 'Chấm công bởi Huỳnh Thị Trúc Xinh (Trưởng phòng HCNS)'
+    description: 'Chấm công bởi Huỳnh Thị Trúc Xinh'
   },
   {
     key: 'can_tho',
@@ -149,68 +186,120 @@ export const SHEETS_CONFIG = [
     managerName: 'Nguyễn Thị Thu Tâm',
     managerCode: 'VietA 003',
     deptIds: [8],
-    description: 'Chấm công bởi Nguyễn Thị Thu Tâm (Quản lý Kho Cần Thơ)'
+    description: 'Chấm công bởi Nguyễn Thị Thu Tâm (Kho Cần Thơ)'
   },
   {
     key: 'xuong_sx',
     name: 'Xưởng Sản Xuất Nệm',
     sheetName: 'XƯỞNG SẢN XUẤT',
-    managerName: 'Trần Minh Lý',
-    managerCode: 'VietA 050',
+    managerName: 'Võ Huỳnh Đông Nghi',
+    managerCode: 'VietA 012',
     deptIds: [10],
-    description: 'Chấm công bởi Trần Minh Lý (Quản đốc Xưởng sản xuất nệm)'
+    description: 'Chấm công bởi Võ Huỳnh Đông Nghi (Xưởng sản xuất nệm)'
   },
   {
     key: 'my_tho',
     name: 'Kho Mỹ Tho',
     sheetName: 'MỸ THO',
-    managerName: 'Dương Thị Tuyết Hường',
-    managerCode: 'VietA 015',
+    managerName: 'Nguyễn Thị Thanh Tú',
+    managerCode: 'VietA 029',
     deptIds: [11],
-    description: 'Chấm công bởi Dương Thị Tuyết Hường (Quản lý Kho Mỹ Tho)'
+    description: 'Chấm công bởi Nguyễn Thị Thanh Tú (Kho Mỹ Tho)'
   },
   {
     key: 'kho_goi',
     name: 'Xưởng Sản Xuất Gối',
     sheetName: 'KHO GỐI',
-    managerName: 'Dương Thị Tuyết Hường',
-    managerCode: 'VietA 015',
+    managerName: 'Nguyễn Thị Thanh Tú',
+    managerCode: 'VietA 029',
     deptIds: [14],
-    description: 'Chấm công bởi Dương Thị Tuyết Hường (Quản lý Kho Gối)'
+    description: 'Chấm công bởi Nguyễn Thị Thanh Tú (Xưởng sản xuất gối)'
   },
   {
     key: 'kinh_doanh',
     name: 'Phòng Kinh Doanh',
     sheetName: 'KINH DOANH',
-    managerName: 'Phạm Tấn Hưng',
-    managerCode: 'VietA 036',
+    managerName: 'Nguyễn Thị Kim Hoàng',
+    managerCode: 'VietA 037',
     deptIds: [12],
-    description: 'Chấm công bởi Phạm Tấn Hưng (Trưởng phòng Kinh doanh)'
+    description: 'Chấm công bởi Nguyễn Thị Kim Hoàng (Phòng kinh doanh)'
   }
 ];
 
-export const canUserEditSheet = (user, employee, sheetKey) => {
+// Kiểm tra xem user có phải Admin Huỳnh Thị Trúc Xinh hay không
+export const isTrucXinhAdmin = (user, employee) => {
   if (!user) return false;
-  if (user.roleName === 'ADMIN') return true;
+  const username = (user.username || '').toLowerCase().trim();
+  const code = (employee?.code || user.employeeCode || '').toLowerCase().trim();
+  const fullname = (employee?.fullname || user.fullname || '').toLowerCase().trim();
 
-  const empCode = (employee?.code || '').toLowerCase().trim();
-  const empName = (employee?.fullname || '').toLowerCase().trim();
+  return username === 'vieta032' || code.includes('032') || fullname.includes('trúc xinh') || fullname.includes('truc xinh');
+};
+
+// Lấy danh sách ID phòng ban mà người chấm công phụ trách
+export const getTimekeeperDeptIds = (user, employee) => {
+  if (!user) return [];
+  // Huỳnh Thị Trúc Xinh quản lý toàn bộ
+  if (isTrucXinhAdmin(user, employee)) return null;
+
+  const empCode = (employee?.code || user.employeeCode || '').toLowerCase().trim();
+  const empName = (employee?.fullname || user.fullname || '').toLowerCase().trim();
   const username = (user.username || '').toLowerCase().trim();
 
-  if (sheetKey === 'van_phong' || sheetKey === 'marketing') {
-    return username === 'vieta032' || empCode.includes('032') || empName.includes('trúc xinh');
+  const depts = [];
+  // Kho Mỹ Tho (11) & Xưởng sản xuất gối (14): Nguyễn Thị Thanh Tú
+  if (username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu')) {
+    depts.push(11, 14);
   }
-  if (sheetKey === 'can_tho') {
-    return username === 'vieta003' || empCode.includes('003') || empName.includes('thu tâm');
+  // Kho Cần Thơ (8): Nguyễn Thị Thu Tâm
+  if (username === 'vieta003' || empCode.includes('003') || empName.includes('thu tâm') || empName.includes('thu tam')) {
+    depts.push(8);
   }
-  if (sheetKey === 'xuong_sx') {
-    return username === 'vieta050' || empCode.includes('050') || empName.includes('minh lý');
+  // Phòng kinh doanh (12): Nguyễn Thị Kim Hoàng
+  if (username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang')) {
+    depts.push(12);
   }
+  // Xưởng sản xuất nệm (10): Võ Huỳnh Đông Nghi
+  if (username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi')) {
+    depts.push(10);
+  }
+
+  return depts;
+};
+
+export const canUserEditSheet = (user, employee, sheetKey) => {
+  if (!user) return false;
+
+  // Huỳnh Thị Trúc Xinh là Admin phụ trách chấm công cao nhất, có toàn quyền trên mọi sheet
+  if (isTrucXinhAdmin(user, employee)) return true;
+
+  const empCode = (employee?.code || user.employeeCode || '').toLowerCase().trim();
+  const empName = (employee?.fullname || user.fullname || '').toLowerCase().trim();
+  const username = (user.username || '').toLowerCase().trim();
+
+  // 1. Kho Mỹ Tho & Xưởng sản xuất gối: Nguyễn Thị Thanh Tú
   if (sheetKey === 'my_tho' || sheetKey === 'kho_goi') {
-    return username === 'vieta015' || empCode.includes('015') || empName.includes('tuyết hường');
+    return username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu');
   }
+
+  // 2. Kho Cần Thơ: Nguyễn Thị Thu Tâm
+  if (sheetKey === 'can_tho') {
+    return username === 'vieta003' || empCode.includes('003') || empName.includes('thu tâm') || empName.includes('thu tam');
+  }
+
+  // 3. Phòng kinh doanh: Nguyễn Thị Kim Hoàng
   if (sheetKey === 'kinh_doanh') {
-    return username === 'vieta036' || empCode.includes('036') || empName.includes('tấn hưng');
+    return username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang');
+  }
+
+  // 4. Marketing, ban giám đốc, văn phòng: Huỳnh Thị Trúc Xinh
+  if (sheetKey === 'van_phong' || sheetKey === 'marketing') {
+    return username === 'vieta032' || empCode.includes('032') || empName.includes('trúc xinh') || empName.includes('truc xinh');
+  }
+
+  // 5. Xưởng sản xuất nệm: Võ Huỳnh Đông Nghi
+  if (sheetKey === 'xuong_sx') {
+    return username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi');
   }
 
   return false;
@@ -279,6 +368,8 @@ export const getSheetsConfig = async (req, res) => {
       currentEmp = await query.get('SELECT id, code, fullname FROM employees WHERE id = ?', [req.user.employeeId]);
     }
 
+    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
+
     const configs = SHEETS_CONFIG.map(sc => ({
       ...sc,
       canEdit: canUserEditSheet(req.user, currentEmp, sc.key)
@@ -286,6 +377,7 @@ export const getSheetsConfig = async (req, res) => {
 
     return res.json({
       isAdmin: req.user?.roleName === 'ADMIN',
+      isTrucXinh: isXinh,
       userFullName: currentEmp?.fullname || req.user?.username,
       sheets: configs
     });
@@ -308,6 +400,7 @@ export const getSheetMatrix = async (req, res) => {
       currentEmp = await query.get('SELECT id, code, fullname FROM employees WHERE id = ?', [req.user.employeeId]);
     }
     const canEdit = canUserEditSheet(req.user, currentEmp, sheetCfg.key);
+    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
 
     const days = getDaysInMonth(yNum, mNum);
     const startDate = `${yNum}-${mNum.toString().padStart(2, '0')}-01`;
@@ -334,6 +427,7 @@ export const getSheetMatrix = async (req, res) => {
       return res.json({
         sheet: sheetCfg,
         canEdit,
+        isTrucXinh: isXinh,
         days,
         matrix: []
       });
@@ -369,12 +463,17 @@ export const getSheetMatrix = async (req, res) => {
           const sym = statusToSymbol(rec.status);
           const ot = Number(rec.ot_hours) || 0;
           const cut = Number(rec.cut_hours) || 0;
+          const isAttended = Boolean((sym && sym.trim() !== '') || ot > 0 || cut > 0);
+          const isLocked = isAttended && !isXinh;
+
           dayData[d.day] = {
             symbol: sym,
             ot_hours: ot,
             cut_hours: cut,
             late_minutes: Number(rec.late_minutes) || 0,
-            note: rec.note || ''
+            note: rec.note || '',
+            isAttended,
+            isLocked
           };
 
           if (sym === 'X' || sym === 'CT' || sym === 'L') {
@@ -393,7 +492,9 @@ export const getSheetMatrix = async (req, res) => {
             ot_hours: 0,
             cut_hours: 0,
             late_minutes: 0,
-            note: ''
+            note: '',
+            isAttended: false,
+            isLocked: false
           };
         }
       }
@@ -418,6 +519,7 @@ export const getSheetMatrix = async (req, res) => {
     return res.json({
       sheet: sheetCfg,
       canEdit,
+      isTrucXinh: isXinh,
       days,
       matrix
     });
@@ -455,7 +557,40 @@ export const saveSheetMatrix = async (req, res) => {
       return res.json({ message: 'Không có dữ liệu thay đổi để lưu.', affected: 0 });
     }
 
-    const updater = currentEmp?.fullname || req.user?.username || 'Quản lý';
+    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
+
+    // 🔒 QUY TẮC CỐT LÕI: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại.
+    // Mọi chỉnh sửa chỉ duy nhất Admin Huỳnh Thị Trúc Xinh mới có quyền thực hiện.
+    if (!isXinh) {
+      for (const item of updates) {
+        const { employee_id, day } = item;
+        const dayStr = day.toString().padStart(2, '0');
+        const mStr = mNum.toString().padStart(2, '0');
+        const dateStr = `${yNum}-${mStr}-${dayStr}`;
+
+        const exist = await query.get(
+          'SELECT id, status, ot_hours, cut_hours FROM attendance WHERE employee_id = ? AND date = ?',
+          [employee_id, dateStr]
+        );
+
+        const hasPreviousAttendance = Boolean(
+          exist && (
+            (exist.status && exist.status.trim() !== '') ||
+            Number(exist.ot_hours) > 0 ||
+            Number(exist.cut_hours) > 0
+          )
+        );
+
+        if (hasPreviousAttendance) {
+          const targetEmp = await query.get('SELECT fullname FROM employees WHERE id = ?', [employee_id]);
+          return res.status(403).json({
+            message: `Ô ngày ${day}/${mNum} của nhân viên "${targetEmp?.fullname || 'nhân viên'}" đã được chấm công trước đó. Quy định: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại. Mọi điều chỉnh chỉ có Admin Huỳnh Thị Trúc Xinh mới được thực hiện!`
+          });
+        }
+      }
+    }
+
+    const updater = currentEmp?.fullname || req.user?.username || 'Người chấm công';
     const now = new Date().toISOString();
     let savedCount = 0;
 
@@ -471,7 +606,7 @@ export const saveSheetMatrix = async (req, res) => {
       const late = parseInt(late_minutes, 10) || 0;
 
       if (!sym && ot === 0 && cut === 0 && late === 0) {
-        // Xóa bản ghi nếu xóa trắng
+        // Xóa bản ghi nếu xóa trắng (chỉ Trúc Xinh mới qua được bước kiểm tra bên trên nếu ô đã có dữ liệu)
         await query.run('DELETE FROM attendance WHERE employee_id = ? AND date = ?', [employee_id, dateStr]);
         savedCount++;
         continue;
