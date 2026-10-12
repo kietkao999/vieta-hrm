@@ -45,6 +45,20 @@ body {
   background: #64748b;
 }
 
+/* Ẩn mũi tên lên/xuống (spinners) của ô nhập số */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button,
+input[type="number"].no-spinner::-webkit-inner-spin-button,
+input[type="number"].no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+.no-spinner,
+input[type="number"].no-spinner {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 /* Custom Scroll Helper Classes */
 .custom-scroll-x {
   overflow-x: auto;

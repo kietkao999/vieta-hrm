@@ -640,12 +640,12 @@ export default function TimesheetMatrixView({
                   {days.map(d => (
                     <th
                       key={d.day}
-                      className={`p-0.5 text-center w-[25px] min-w-[25px] max-w-[25px] border-r border-slate-200 ${
+                      className={`p-0.5 text-center w-[32px] min-w-[32px] max-w-[32px] border-r border-slate-200 ${
                         d.isSunday ? 'bg-amber-100/90 text-amber-900 font-black' : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       <div className="text-[9px] uppercase leading-none">{d.dow}</div>
-                      <div className="text-[10px] font-black leading-tight mt-0.5">{d.day}</div>
+                      <div className="text-[11px] font-black leading-tight mt-0.5">{d.day}</div>
                     </th>
                   ))}
 
@@ -731,7 +731,7 @@ export default function TimesheetMatrixView({
                                     ? `Ngày ${d.day} (${d.dow}): Nhấp để chọn ký hiệu chấm công`
                                     : ''
                               }
-                              className={`p-0 text-center w-[25px] min-w-[25px] max-w-[25px] border-r border-slate-200 relative select-none ${
+                              className={`p-0 text-center w-[32px] min-w-[32px] max-w-[32px] border-r border-slate-200 relative select-none ${
                                 d.isSunday ? 'bg-amber-50/40' : ''
                               } ${
                                 isCellLocked
@@ -743,16 +743,16 @@ export default function TimesheetMatrixView({
                                 isDirty ? 'bg-blue-50/70 ring-1 ring-blue-400' : ''
                               }`}
                             >
-                              <div className={`w-[22px] h-[22px] mx-auto rounded flex items-center justify-center text-[10px] transition-transform ${badgeClass}`}>
+                              <div className={`w-[26px] h-[26px] mx-auto rounded flex items-center justify-center text-[11px] font-bold transition-transform ${badgeClass}`}>
                                 {sym || '·'}
                               </div>
                               {isCellLocked && (
-                                <span className="absolute top-0 left-0 text-[7px] text-slate-400 leading-none p-0.2 pointer-events-none" title="Đã khóa">
+                                <span className="absolute top-0.5 left-0.5 text-[8px] text-slate-400 leading-none pointer-events-none" title="Đã khóa">
                                   🔒
                                 </span>
                               )}
                               {isDirty && (
-                                <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
                               )}
                             </td>
                           );
@@ -802,7 +802,7 @@ export default function TimesheetMatrixView({
                             const curOt = row.computedDays[d.day]?.ot_hours || 0;
                             const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
                             return (
-                              <td key={d.day} className="p-0 text-center border-r border-slate-200 w-[25px]">
+                              <td key={d.day} className="p-0.5 text-center border-r border-slate-200 w-[32px] min-w-[32px] max-w-[32px]">
                                 {canEdit && !isCellLocked ? (
                                   <input
                                     type="number"
@@ -812,12 +812,12 @@ export default function TimesheetMatrixView({
                                     value={curOt > 0 ? curOt : ''}
                                     placeholder="-"
                                     onChange={e => handleOtChange(row.employee_id, d.day, e.target.value)}
-                                    className="w-[23px] h-[18px] text-center text-[9px] font-bold text-indigo-900 bg-white border border-indigo-200 rounded outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 p-0"
+                                    className="no-spinner w-[28px] h-[24px] text-center text-[11px] font-bold text-indigo-900 bg-white border border-indigo-200 rounded outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500 p-0 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   />
                                 ) : (
                                   <span
                                     title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
-                                    className={`font-bold text-[9px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-indigo-800'}`}
+                                    className={`font-bold text-[11px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-indigo-800'}`}
                                   >
                                     {curOt > 0 ? curOt : '-'}
                                   </span>
@@ -849,7 +849,7 @@ export default function TimesheetMatrixView({
                             const curCut = row.computedDays[d.day]?.cut_hours || 0;
                             const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
                             return (
-                              <td key={d.day} className="p-0 text-center border-r border-slate-200 w-[25px]">
+                              <td key={d.day} className="p-0.5 text-center border-r border-slate-200 w-[32px] min-w-[32px] max-w-[32px]">
                                 {canEdit && !isCellLocked ? (
                                   <input
                                     type="number"
@@ -859,12 +859,12 @@ export default function TimesheetMatrixView({
                                     value={curCut > 0 ? curCut : ''}
                                     placeholder="-"
                                     onChange={e => handleCutChange(row.employee_id, d.day, e.target.value)}
-                                    className="w-[23px] h-[18px] text-center text-[9px] font-bold text-rose-900 bg-white border border-rose-200 rounded outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 p-0"
+                                    className="no-spinner w-[28px] h-[24px] text-center text-[11px] font-bold text-rose-900 bg-white border border-rose-200 rounded outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 p-0 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   />
                                 ) : (
                                   <span
                                     title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
-                                    className={`font-bold text-[9px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-rose-800'}`}
+                                    className={`font-bold text-[11px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-rose-800'}`}
                                   >
                                     {curCut > 0 ? `-${curCut}` : '-'}
                                   </span>
