@@ -26,7 +26,7 @@ const STATUS_OPTIONS = [
   { symbol: 'KL', label: 'Nghỉ không lương (0 công)', color: 'bg-rose-600 text-white hover:bg-rose-700' },
   { symbol: 'CT', label: 'Công tác (1 công)', color: 'bg-sky-600 text-white hover:bg-sky-700' },
   { symbol: 'L', label: 'Nghỉ lễ (1 công)', color: 'bg-orange-600 text-white hover:bg-orange-700' },
-  { symbol: 'OFF', label: 'Nghỉ tuần (0 công)', color: 'bg-slate-500 text-white hover:bg-slate-600' },
+  { symbol: 'OFF', label: 'Nghỉ', color: 'bg-slate-500 text-white hover:bg-slate-600' },
   { symbol: 'TS', label: 'Thai sản (0 công)', color: 'bg-pink-600 text-white hover:bg-pink-700' },
   { symbol: '', label: 'Xóa trắng ô', color: 'bg-slate-200 text-slate-700 hover:bg-slate-300' }
 ];
@@ -973,7 +973,7 @@ export default function TimesheetMatrixView({
           </div>
           <div className="flex items-center space-x-2 bg-white p-2 rounded-xl border border-slate-200/80">
             <span className="w-5 h-5 bg-slate-500 text-white rounded font-black flex items-center justify-center">OFF</span>
-            <span><strong>Nghỉ tuần</strong> (0 công)</span>
+            <span><strong>Nghỉ</strong></span>
           </div>
           <div className="flex items-center space-x-2 bg-white p-2 rounded-xl border border-slate-200/80">
             <span className="w-5 h-5 bg-pink-600 text-white rounded font-black flex items-center justify-center">TS</span>
