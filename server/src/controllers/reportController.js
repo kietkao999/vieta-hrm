@@ -166,7 +166,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(DISTINCT p.employee_id) as employee_count
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      LEFT JOIN departments d ON (COALESCE(p.department_id, e.department_id) = d.id OR COALESCE(p.department_id, e.department_id) = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.month
       ORDER BY CAST(p.month AS INTEGER) ASC
@@ -199,7 +199,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(p.id) as total_records
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      LEFT JOIN departments d ON (COALESCE(p.department_id, e.department_id) = d.id OR COALESCE(p.department_id, e.department_id) = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
     `, [targetYear, ...allMatches, ...deptParams]);
 
@@ -223,7 +223,7 @@ export const getPayrollReport = async (req, res) => {
              COUNT(p.id) as months_counted
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      LEFT JOIN departments d ON (COALESCE(p.department_id, e.department_id) = d.id OR COALESCE(p.department_id, e.department_id) = d.name)
       WHERE p.year = ? AND p.month IN (${placeholders}) ${deptFilter}
       GROUP BY p.employee_id
       ORDER BY net_salary DESC

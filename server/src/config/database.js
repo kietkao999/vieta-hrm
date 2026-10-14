@@ -228,6 +228,9 @@ export const initDatabase = async () => {
       if (!attColNames.includes('cut_hours')) {
         await query.exec('ALTER TABLE attendance ADD COLUMN cut_hours REAL DEFAULT 0');
       }
+      if (!attColNames.includes('department_id')) {
+        await query.exec('ALTER TABLE attendance ADD COLUMN department_id INTEGER');
+      }
     } catch (e) {
       // Bỏ qua nếu đã tồn tại
     }
@@ -369,7 +372,9 @@ export const initDatabase = async () => {
       'hour_deduction REAL DEFAULT 0',
       'cut_hours REAL DEFAULT 0',
       'other_deductions REAL DEFAULT 0',
-      'uniform_refund REAL DEFAULT 0'
+      'uniform_refund REAL DEFAULT 0',
+      'department_id INTEGER',
+      'position_id INTEGER'
     ];
 
     for (const colDef of payrollNewCols) {
@@ -385,6 +390,37 @@ export const initDatabase = async () => {
     try {
       await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN responsibility_amount REAL DEFAULT 0');
     } catch (e) {}
+
+    try {
+      await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN department_id INTEGER');
+    } catch (e) {}
+
+    try {
+      await query.run('ALTER TABLE employee_monthly_kpis ADD COLUMN position_id INTEGER');
+    } catch (e) {}
+
+    // Backfill snapshot phòng ban và vị trí cho các bản ghi cũ
+    try {
+      await query.run(`
+        UPDATE payrolls 
+        SET department_id = (SELECT department_id FROM employees WHERE employees.id = payrolls.employee_id),
+            position_id = (SELECT position_id FROM employees WHERE employees.id = payrolls.employee_id)
+        WHERE department_id IS NULL;
+      `);
+      await query.run(`
+        UPDATE employee_monthly_kpis 
+        SET department_id = (SELECT department_id FROM employees WHERE employees.id = employee_monthly_kpis.employee_id),
+            position_id = (SELECT position_id FROM employees WHERE employees.id = employee_monthly_kpis.employee_id)
+        WHERE department_id IS NULL;
+      `);
+      await query.run(`
+        UPDATE attendance 
+        SET department_id = (SELECT department_id FROM employees WHERE employees.id = attendance.employee_id)
+        WHERE department_id IS NULL;
+      `);
+    } catch (e) {
+      console.warn('Lỗi backfill snapshot phòng ban:', e.message);
+    }
 
     // 12. Training Courses
     await query.exec(`

@@ -290,7 +290,7 @@ export const updateEmployee = async (req, res) => {
   } = req.body;
 
   try {
-    const emp = await query.get('SELECT id FROM employees WHERE id = ?', [req.params.id]);
+    const emp = await query.get('SELECT id, department_id, position_id, tier, grade, tier_salary, grade_salary, base_salary FROM employees WHERE id = ?', [req.params.id]);
     if (!emp) return res.status(404).json({ message: 'Nhân viên không tồn tại.' });
 
     if (!code || !fullname) {
@@ -304,7 +304,39 @@ export const updateEmployee = async (req, res) => {
     const gSalary = grade_salary !== undefined ? (parseFloat(grade_salary) || 0) : (emp.grade_salary || 0);
     const bSalary = base_salary !== undefined ? (parseFloat(base_salary) || 0) : (tSalary + gSalary || emp.base_salary || 0);
 
+    const newDeptId = department_id ? parseInt(department_id, 10) : null;
+    const newPosId = position_id ? parseInt(position_id, 10) : null;
+    const oldDeptId = emp.department_id ? parseInt(emp.department_id, 10) : null;
+    const oldPosId = emp.position_id ? parseInt(emp.position_id, 10) : null;
+
     const now = new Date().toISOString();
+
+    // Tự động ghi nhận lịch sử điều chuyển công tác vào work_history nếu có thay đổi phòng ban hoặc chức vụ
+    if (newDeptId !== oldDeptId || newPosId !== oldPosId) {
+      const todayStr = now.split('T')[0];
+      try {
+        await query.run(`
+          UPDATE work_history 
+          SET end_date = ? 
+          WHERE employee_id = ? AND (end_date IS NULL OR end_date = '')
+        `, [todayStr, req.params.id]);
+
+        await query.run(`
+          INSERT INTO work_history (employee_id, department_id, position_id, start_date, notes, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+          req.params.id,
+          newDeptId,
+          newPosId,
+          todayStr,
+          `Điều chuyển công tác (Phòng ban mới: ID ${newDeptId}, Vị trí mới: ID ${newPosId})`,
+          now
+        ]);
+      } catch (whErr) {
+        console.warn('Lỗi tự động ghi nhận work_history:', whErr.message);
+      }
+    }
+
     await query.run(`
       UPDATE employees SET
         code = ?, fullname = ?, avatar = ?, dob = ?, gender = ?,

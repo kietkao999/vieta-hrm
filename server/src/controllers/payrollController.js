@@ -12,7 +12,9 @@ export const getPayroll = async (req, res) => {
     
     let sql = `
       SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, 
-             e.join_date, e.department_id, d.name as department_name, pos.name as position_name,
+             e.join_date, COALESCE(p.department_id, e.department_id) as department_id, 
+             COALESCE(d.name, 'Chưa phân bổ') as department_name, 
+             COALESCE(pos.name, 'Chưa xếp vị trí') as position_name,
              k.responsibility_bonus as kpi_responsibility_bonus,
              k.responsibility_rate as kpi_responsibility_rate,
              k.responsibility_amount as kpi_responsibility_amount,
@@ -29,8 +31,8 @@ export const getPayroll = async (req, res) => {
              (SELECT SUM(COALESCE(att3.cut_hours, 0)) FROM attendance att3 WHERE att3.employee_id = p.employee_id AND att3.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_cut_hours
       FROM payrolls p
       JOIN employees e ON p.employee_id = e.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      LEFT JOIN positions pos ON e.position_id = pos.id
+      LEFT JOIN departments d ON COALESCE(p.department_id, e.department_id) = d.id
+      LEFT JOIN positions pos ON COALESCE(p.position_id, e.position_id) = pos.id
       LEFT JOIN employee_monthly_kpis k ON k.employee_id = p.employee_id
         AND (k.month = p.month OR CAST(k.month AS INTEGER) = CAST(p.month AS INTEGER))
         AND k.year = p.year
@@ -59,7 +61,7 @@ export const getPayroll = async (req, res) => {
     if (req.user.roleName === 'ADMIN' || req.user.roleName === 'HR') {
       // CẤP 1 - ADMIN / HR: Xem toàn bộ công ty hoặc lọc theo phòng ban / nhân viên
       if (department_id && department_id !== 'all') {
-        sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
+        sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR COALESCE(p.department_id, e.department_id) = (SELECT name FROM departments WHERE id = ?))`;
         params.push(department_id, department_id);
       }
       if (employee_id) {
@@ -67,7 +69,7 @@ export const getPayroll = async (req, res) => {
         params.push(employee_id);
       }
     } else if (req.user.roleName === 'MANAGER') {
-      // CẤP 2 - MANAGER: Xem được lương của chính mình VÀ các nhân viên trực thuộc phòng ban mình quản lý
+      // CẤP 2 - MANAGER: Xem được lương của chính mình VÀ các nhân viên trực thuộc phòng ban mình quản lý tại thời điểm đó
       // Tuyệt đối KHÔNG xem được lương của cấp trên (Admin/Ban Giám Đốc) hoặc phòng ban khác
       const currentManager = await query.get('SELECT code, fullname, department_id FROM employees WHERE id = ?', [req.user.employeeId]);
       const isTH = isTuyetHuongUser(req.user, currentManager?.code, currentManager?.fullname);
@@ -83,12 +85,12 @@ export const getPayroll = async (req, res) => {
         const selectedDept = department_id && department_id !== 'all' ? parseInt(department_id, 10) : null;
         if (selectedDept && managedDeptIds.includes(selectedDept)) {
           // Lọc theo phòng ban cụ thể mà quản lý phụ trách
-          sql += ` AND (e.department_id = ? OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
           params.push(selectedDept, req.user.employeeId, req.user.employeeId);
         } else {
           // Xem tất cả các phòng ban mà quản lý phụ trách
           const placeholders = managedDeptIds.map(() => '?').join(',');
-          sql += ` AND (e.department_id IN (${placeholders}) OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          sql += ` AND (COALESCE(p.department_id, e.department_id) IN (${placeholders}) OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
           params.push(...managedDeptIds, req.user.employeeId, req.user.employeeId);
         }
 
@@ -180,9 +182,9 @@ export const generatePayroll = async (req, res) => {
   }
 
   try {
-    // 1. Lấy danh sách nhân viên đang làm việc kèm chức danh và ngày vào làm
+    // 1. Lấy danh sách nhân viên đang làm việc kèm chức danh, phòng ban và ngày vào làm
     const employees = await query.all(`
-      SELECT e.id, e.code, e.fullname, e.join_date as start_date, e.tier, e.tier_salary, e.grade, e.grade_salary,
+      SELECT e.id, e.code, e.fullname, e.department_id, e.position_id, e.join_date as start_date, e.tier, e.tier_salary, e.grade, e.grade_salary,
              pos.name as position_name
       FROM employees e
       LEFT JOIN positions pos ON e.position_id = pos.id
@@ -291,7 +293,9 @@ export const generatePayroll = async (req, res) => {
       if (exist) {
         await query.run(`
           UPDATE payrolls 
-          SET tier_salary = ?, grade_salary = ?, 
+          SET department_id = COALESCE(department_id, ?),
+              position_id = COALESCE(position_id, ?),
+              tier_salary = ?, grade_salary = ?, 
               work_days = ?, base_work_salary = ?,
               ot_hours = ?, ot_salary = ?,
               responsibility_quota = ?, responsibility_deduction_rate = ?, responsibility_net = ?, responsibility_kpi = ?,
@@ -301,6 +305,7 @@ export const generatePayroll = async (req, res) => {
               other_deductions = ?, uniform_refund = ?, net_salary = ?, updated_at = ?
           WHERE id = ?
         `, [
+          emp.department_id || null, emp.position_id || null,
           tierSalary, gradeSalary,
           workDays, fullPayroll.baseWorkSalary,
           otHours, fullPayroll.otSalary,
@@ -314,7 +319,7 @@ export const generatePayroll = async (req, res) => {
       } else {
         await query.run(`
           INSERT INTO payrolls (
-            employee_id, month, year,
+            employee_id, department_id, position_id, month, year,
             tier_salary, grade_salary,
             work_days, base_work_salary,
             ot_hours, ot_salary,
@@ -323,9 +328,9 @@ export const generatePayroll = async (req, res) => {
             other_bonus, meal_phone_allowance, other_allowance,
             social_insurance, union_fee, income_tax, advance_payment, cut_hours, hour_deduction,
             other_deductions, uniform_refund, net_salary, status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Dự thảo', ?, ?)
         `, [
-          emp.id, padMonth, year,
+          emp.id, emp.department_id || null, emp.position_id || null, padMonth, year,
           tierSalary, gradeSalary,
           workDays, fullPayroll.baseWorkSalary,
           otHours, fullPayroll.otSalary,

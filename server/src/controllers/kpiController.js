@@ -65,9 +65,9 @@ export const getKpis = async (req, res) => {
         e.avatar,
         e.status as employee_status,
         e.kpi_bonus as default_responsibility_bonus,
-        COALESCE(p.name, 'Nhân viên') as position_name,
+        COALESCE(pos.name, 'Nhân viên') as position_name,
         COALESCE(d.name, 'Chưa phân bổ') as department_name,
-        d.id as department_id,
+        COALESCE(k.department_id, e.department_id) as department_id,
         ? as month,
         ? as year,
         COALESCE(k.responsibility_bonus, e.kpi_bonus, 0) as responsibility_bonus,
@@ -80,11 +80,11 @@ export const getKpis = async (req, res) => {
         k.created_at,
         k.updated_at
       FROM employees e
-      LEFT JOIN positions p ON e.position_id = p.id
-      LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN employee_monthly_kpis k ON k.employee_id = e.id 
         AND (k.month = ? OR k.month = ?) 
         AND k.year = ?
+      LEFT JOIN positions pos ON pos.id = COALESCE(k.position_id, e.position_id)
+      LEFT JOIN departments d ON d.id = COALESCE(k.department_id, e.department_id)
       WHERE e.status != 'Đã nghỉ việc'
     `;
 
@@ -96,23 +96,23 @@ export const getKpis = async (req, res) => {
       targetYear
     ];
 
-    // Phân quyền: Trưởng phòng CHỈ XEM KPI của phòng ban mình phụ trách, tuyệt đối KHÔNG xem phòng ban khác
+    // Phân quyền: Trưởng phòng CHỈ XEM KPI của phòng ban mình phụ trách tại kỳ đó
     if (req.user.roleName === 'MANAGER') {
       const managerDeptIds = await getManagerDeptIds(req.user);
       if (managerDeptIds.length > 0) {
         if (department_id && department_id !== 'all') {
           const selectedDept = parseInt(department_id, 10);
           if (managerDeptIds.includes(selectedDept)) {
-            sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
+            sql += ` AND (COALESCE(k.department_id, e.department_id) = ? OR COALESCE(k.department_id, e.department_id) = (SELECT name FROM departments WHERE id = ?))`;
             params.push(selectedDept, selectedDept);
           } else {
             const placeholders = managerDeptIds.map(() => '?').join(',');
-            sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+            sql += ` AND (COALESCE(k.department_id, e.department_id) IN (${placeholders}) OR COALESCE(k.department_id, e.department_id) IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
             params.push(...managerDeptIds, ...managerDeptIds);
           }
         } else {
           const placeholders = managerDeptIds.map(() => '?').join(',');
-          sql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+          sql += ` AND (COALESCE(k.department_id, e.department_id) IN (${placeholders}) OR COALESCE(k.department_id, e.department_id) IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
           params.push(...managerDeptIds, ...managerDeptIds);
         }
       } else {
@@ -121,7 +121,7 @@ export const getKpis = async (req, res) => {
     } else {
       // ADMIN / HR
       if (department_id && department_id !== 'all') {
-        sql += ` AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))`;
+        sql += ` AND (COALESCE(k.department_id, e.department_id) = ? OR COALESCE(k.department_id, e.department_id) = (SELECT name FROM departments WHERE id = ?))`;
         params.push(department_id, department_id);
       }
       if (employee_id) {
@@ -266,7 +266,7 @@ export const initMonthlyKpis = async (req, res) => {
 
   try {
     // Lấy nhân viên đang hoạt động (nếu là Manager thì CHỈ lấy nhân sự thuộc phòng ban của mình)
-    let empSql = `SELECT id, kpi_bonus FROM employees WHERE status != 'Đã nghỉ việc'`;
+    let empSql = `SELECT id, department_id, position_id, kpi_bonus FROM employees WHERE status != 'Đã nghỉ việc'`;
     const empParams = [];
 
     if (req.user.roleName === 'MANAGER') {
@@ -294,9 +294,9 @@ export const initMonthlyKpis = async (req, res) => {
       if (!existing) {
         await query.run(
           `INSERT INTO employee_monthly_kpis (
-            employee_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, 0, 1.0, ?, 0, 0, '', ?, ?)`,
-          [emp.id, targetMonth, targetYear, defaultBonus, defaultBonus, now, now]
+            employee_id, department_id, position_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, 0, 1.0, ?, 0, 0, '', ?, ?)`,
+          [emp.id, emp.department_id || null, emp.position_id || null, targetMonth, targetYear, defaultBonus, defaultBonus, now, now]
         );
         createdCount++;
         
@@ -379,16 +379,18 @@ export const saveBulkKpis = async (req, res) => {
       if (existing) {
         await query.run(
           `UPDATE employee_monthly_kpis
-           SET responsibility_bonus = ?, responsibility_rate = ?, responsibility_amount = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
+           SET department_id = COALESCE(department_id, (SELECT department_id FROM employees WHERE id = ?)),
+               position_id = COALESCE(position_id, (SELECT position_id FROM employees WHERE id = ?)),
+               responsibility_bonus = ?, responsibility_rate = ?, responsibility_amount = ?, performance_bonus = ?, discipline_deduction = ?, note = ?, updated_at = ?
            WHERE id = ?`,
-          [respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, existing.id]
+          [empId, empId, respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, existing.id]
         );
       } else {
         await query.run(
           `INSERT INTO employee_monthly_kpis (
-            employee_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
-          [empId, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, now]
+            employee_id, department_id, position_id, month, year, responsibility_bonus, responsibility_penalty, responsibility_rate, responsibility_amount, performance_bonus, discipline_deduction, note, created_at, updated_at
+          ) VALUES (?, (SELECT department_id FROM employees WHERE id = ?), (SELECT position_id FROM employees WHERE id = ?), ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+          [empId, empId, empId, targetMonth, targetYear, respBonus, respRate, respAmount, perfBonus, discDeduction, note, now, now]
         );
       }
 

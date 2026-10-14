@@ -6,10 +6,13 @@ export const getAttendance = async (req, res) => {
     const { month, year, employee_id, department_id, status, search, from_date, to_date } = req.query;
     
     let sql = `
-      SELECT a.*, e.fullname, e.code as employee_code, d.name as department_name, pos.name as position_name
+      SELECT a.*, e.fullname, e.code as employee_code, 
+             COALESCE(d.name, 'Chưa phân bổ') as department_name, 
+             COALESCE(a.department_id, e.department_id) as department_id,
+             pos.name as position_name
       FROM attendance a
       JOIN employees e ON a.employee_id = e.id
-      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      LEFT JOIN departments d ON (COALESCE(a.department_id, e.department_id) = d.id OR COALESCE(a.department_id, e.department_id) = d.name)
       LEFT JOIN positions pos ON e.position_id = pos.id
       WHERE 1=1
     `;
@@ -31,7 +34,7 @@ export const getAttendance = async (req, res) => {
     }
 
     if (department_id && department_id !== 'all') {
-      sql += ` AND (e.department_id = ? OR d.name = ?)`;
+      sql += ` AND (COALESCE(a.department_id, e.department_id) = ? OR d.name = ?)`;
       params.push(department_id, department_id);
     }
 
@@ -59,7 +62,7 @@ export const getAttendance = async (req, res) => {
       if (managedDepts && managedDepts.length > 0) {
         // Người được phân công chấm công phòng ban -> được xem nhân sự các phòng ban mình quản lý + bản thân
         const placeholders = managedDepts.map(() => '?').join(',');
-        sql += ` AND (e.department_id IN (${placeholders}) OR a.employee_id = ?)`;
+        sql += ` AND (COALESCE(a.department_id, e.department_id) IN (${placeholders}) OR a.employee_id = ?)`;
         params.push(...managedDepts, req.user.employeeId);
       } else {
         sql += ` AND a.employee_id = ?`;
@@ -71,7 +74,7 @@ export const getAttendance = async (req, res) => {
       const allDepts = Array.from(new Set([...(managedDepts || []), ...(deptId ? [deptId] : [])]));
       if (allDepts.length > 0) {
         const placeholders = allDepts.map(() => '?').join(',');
-        sql += ` AND (e.department_id IN (${placeholders}) OR e.id = ?)`;
+        sql += ` AND (COALESCE(a.department_id, e.department_id) IN (${placeholders}) OR e.id = ?)`;
         params.push(...allDepts, req.user.employeeId);
       } else {
         sql += ` AND a.employee_id = ?`;
@@ -127,15 +130,16 @@ export const markAttendance = async (req, res) => {
       // Cập nhật
       await query.run(`
         UPDATE attendance 
-        SET check_in = ?, check_out = ?, status = ?, note = ?
+        SET department_id = COALESCE(department_id, (SELECT department_id FROM employees WHERE id = ?)),
+            check_in = ?, check_out = ?, status = ?, note = ?
         WHERE id = ?
-      `, [check_in || null, check_out || null, status || 'Có mặt', note || '', exist.id]);
+      `, [empId, check_in || null, check_out || null, status || 'Có mặt', note || '', exist.id]);
     } else {
       // Thêm mới
       await query.run(`
-        INSERT INTO attendance (employee_id, date, check_in, check_out, status, note)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `, [empId, date, check_in || null, check_out || null, status || 'Có mặt', note || '']);
+        INSERT INTO attendance (employee_id, department_id, date, check_in, check_out, status, note)
+        VALUES (?, (SELECT department_id FROM employees WHERE id = ?), ?, ?, ?, ?, ?)
+      `, [empId, empId, date, check_in || null, check_out || null, status || 'Có mặt', note || '']);
     }
 
     // Tự động đồng bộ số ngày công sang Bảng Lương tháng trực tuyến
