@@ -561,6 +561,7 @@ export const saveSheetMatrix = async (req, res) => {
     let savedCount = 0;
 
     for (const item of updates) {
+      const { employee_id, day, symbol, ot_hours, cut_hours, late_minutes, note } = item;
       const dayNum = parseInt(day, 10);
       const dayStr = dayNum.toString().padStart(2, '0');
       const mStr = mNum.toString().padStart(2, '0');
