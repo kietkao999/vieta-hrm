@@ -12,7 +12,8 @@ export const getPayroll = async (req, res) => {
     
     let sql = `
       SELECT p.*, e.fullname, e.code as employee_code, e.grade as employee_grade, e.tier as employee_tier, 
-             e.join_date, COALESCE(p.department_id, e.department_id) as department_id, 
+             e.join_date, e.status as employee_status, e.resignation_date as employee_resignation_date,
+             COALESCE(p.department_id, e.department_id) as department_id, 
              COALESCE(d.name, 'Chưa phân bổ') as department_name, 
              COALESCE(pos.name, 'Chưa xếp vị trí') as position_name,
              k.responsibility_bonus as kpi_responsibility_bonus,
@@ -24,7 +25,7 @@ export const getPayroll = async (req, res) => {
              (SELECT COUNT(*) FROM attendance att WHERE att.employee_id = p.employee_id AND att.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_count,
              (SELECT SUM(CASE 
                            WHEN UPPER(att2.status) = 'NN' OR att2.status LIKE '%nửa ngày%' OR att2.status LIKE '%1/2%' THEN 0.5
-                           WHEN UPPER(att2.status) IN ('KL', 'OFF', 'TS') OR att2.status LIKE '%không lương%' OR att2.status LIKE '%nghỉ tuần%' OR att2.status LIKE '%thai sản%' THEN 0
+                           WHEN UPPER(att2.status) IN ('KL', 'OFF', 'TS') OR att2.status LIKE '%không lương%' OR att2.status LIKE '%nghỉ tuần%' OR att2.status LIKE '%thai sản%' OR att2.status LIKE '%tăng ca%' OR att2.status LIKE '%làm thêm%' OR (strftime('%w', att2.date) = '0' AND COALESCE(att2.ot_hours, 0) > 0) THEN 0
                            ELSE 1
                          END)
               FROM attendance att2 WHERE att2.employee_id = p.employee_id AND att2.date LIKE (p.year || '-' || CASE WHEN length(p.month)=1 THEN '0' || p.month ELSE p.month END || '-%')) as attendance_work_days,
@@ -59,10 +60,16 @@ export const getPayroll = async (req, res) => {
     };
 
     if (req.user.roleName === 'ADMIN' || req.user.roleName === 'HR') {
-      // CẤP 1 - ADMIN / HR: Xem toàn bộ công ty hoặc lọc theo phòng ban / nhân viên
+      // CẤP 1 - ADMIN / HR: Xem toàn bộ công ty hoặc lọc theo phòng ban / chi nhánh / nhân viên
       if (department_id && department_id !== 'all') {
-        sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR COALESCE(p.department_id, e.department_id) = (SELECT name FROM departments WHERE id = ?))`;
-        params.push(department_id, department_id);
+        const dept = await query.get('SELECT id, name FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+        if (dept) {
+          sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR d.id = ? OR d.name = ?)`;
+          params.push(dept.id, dept.id, dept.name);
+        } else {
+          sql += ` AND (CAST(COALESCE(p.department_id, e.department_id) AS TEXT) = ? OR d.name LIKE ?)`;
+          params.push(String(department_id), `%${department_id}%`);
+        }
       }
       if (employee_id) {
         sql += ` AND p.employee_id = ?`;
@@ -82,16 +89,23 @@ export const getPayroll = async (req, res) => {
       }
 
       if (managedDeptIds.length > 0) {
-        const selectedDept = department_id && department_id !== 'all' ? parseInt(department_id, 10) : null;
-        if (selectedDept && managedDeptIds.includes(selectedDept)) {
+        let selectedDept = null;
+        if (department_id && department_id !== 'all') {
+          const dept = await query.get('SELECT id FROM departments WHERE id = ? OR name = ?', [department_id, department_id]);
+          if (dept && managedDeptIds.includes(dept.id)) {
+            selectedDept = dept.id;
+          }
+        }
+
+        if (selectedDept) {
           // Lọc theo phòng ban cụ thể mà quản lý phụ trách
-          sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
-          params.push(selectedDept, req.user.employeeId, req.user.employeeId);
+          sql += ` AND (COALESCE(p.department_id, e.department_id) = ? OR d.id = ? OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          params.push(selectedDept, selectedDept, req.user.employeeId, req.user.employeeId);
         } else {
           // Xem tất cả các phòng ban mà quản lý phụ trách
           const placeholders = managedDeptIds.map(() => '?').join(',');
-          sql += ` AND (COALESCE(p.department_id, e.department_id) IN (${placeholders}) OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
-          params.push(...managedDeptIds, req.user.employeeId, req.user.employeeId);
+          sql += ` AND (COALESCE(p.department_id, e.department_id) IN (${placeholders}) OR d.id IN (${placeholders}) OR p.employee_id = ?) AND (p.employee_id = ? OR e.id NOT IN (SELECT employee_id FROM users WHERE role_id = 1 AND employee_id IS NOT NULL))`;
+          params.push(...managedDeptIds, ...managedDeptIds, req.user.employeeId, req.user.employeeId);
         }
 
         if (employee_id) {
@@ -182,22 +196,33 @@ export const generatePayroll = async (req, res) => {
   }
 
   try {
+    const padMonth = month.toString().padStart(2, '0');
+    const daysInTargetMonth = new Date(parseInt(year, 10), parseInt(month, 10), 0).getDate();
+    const startDateTarget = `${year}-${padMonth}-01`;
+    const endDateTarget = `${year}-${padMonth}-${daysInTargetMonth.toString().padStart(2, '0')}`;
+
     // 1. Lấy danh sách nhân viên đang làm việc kèm chức danh, phòng ban và ngày vào làm
+    // Bao gồm: Đang làm việc, Thử việc, HOẶC nhân sự đã nghỉ việc nhưng có ngày công thực tế trong tháng này
     const employees = await query.all(`
       SELECT e.id, e.code, e.fullname, e.department_id, e.position_id, e.join_date as start_date, e.tier, e.tier_salary, e.grade, e.grade_salary,
+             e.status, e.resignation_date,
              pos.name as position_name
       FROM employees e
       LEFT JOIN positions pos ON e.position_id = pos.id
-      WHERE e.status = 'Đang làm việc' OR e.status = 'Thử việc'
-    `);
+      WHERE e.status = 'Đang làm việc' 
+         OR e.status = 'Thử việc'
+         OR (e.status = 'Đã nghỉ việc' AND (
+             (e.resignation_date IS NOT NULL AND e.resignation_date >= ?) OR
+             EXISTS (SELECT 1 FROM attendance att WHERE att.employee_id = e.id AND att.date >= ? AND att.date <= ?)
+         ))
+    `, [startDateTarget, startDateTarget, endDateTarget]);
 
     if (!employees || employees.length === 0) {
-      return res.status(400).json({ message: 'Không có nhân viên nào đang làm việc.' });
+      return res.status(400).json({ message: 'Không có nhân viên nào thỏa điều kiện tính lương trong tháng này.' });
     }
 
     let successCount = 0;
     const now = new Date().toISOString();
-    const padMonth = month.toString().padStart(2, '0');
 
     // 2. Tính lương theo cơ chế Tầng - Bậc - Thâm niên (Thông báo số 18)
     for (const emp of employees) {
@@ -293,8 +318,8 @@ export const generatePayroll = async (req, res) => {
       if (exist) {
         await query.run(`
           UPDATE payrolls 
-          SET department_id = COALESCE(department_id, ?),
-              position_id = COALESCE(position_id, ?),
+          SET department_id = ?,
+              position_id = ?,
               tier_salary = ?, grade_salary = ?, 
               work_days = ?, base_work_salary = ?,
               ot_hours = ?, ot_salary = ?,
@@ -553,7 +578,7 @@ export const syncAttendanceToPayrollForMonth = async (month, year, employeeId = 
     SELECT employee_id,
            SUM(CASE 
                  WHEN UPPER(status) = 'NN' OR status LIKE '%nửa ngày%' OR status LIKE '%1/2%' THEN 0.5
-                 WHEN UPPER(status) IN ('KL', 'OFF', 'TS') OR status LIKE '%không lương%' OR status LIKE '%nghỉ tuần%' OR status LIKE '%thai sản%' THEN 0
+                 WHEN UPPER(status) IN ('KL', 'OFF', 'TS') OR status LIKE '%không lương%' OR status LIKE '%nghỉ tuần%' OR status LIKE '%thai sản%' OR status LIKE '%tăng ca%' OR status LIKE '%làm thêm%' OR (strftime('%w', date) = '0' AND COALESCE(ot_hours, 0) > 0) THEN 0
                  ELSE 1
                END) as actual_work_days,
            SUM(COALESCE(ot_hours, 0)) as actual_ot_hours,

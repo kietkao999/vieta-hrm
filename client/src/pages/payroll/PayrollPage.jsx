@@ -1126,7 +1126,7 @@ const PayrollPage = () => {
               {/* Bộ lọc theo Phòng Ban */}
               <div className="flex items-center space-x-2">
                 <Building2 size={16} className="text-brand-600" />
-                <span className="text-sm font-semibold text-slate-700">Phòng ban:</span>
+                <span className="text-sm font-semibold text-slate-700">Chi nhánh / Phòng ban:</span>
                 <select
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -1134,8 +1134,8 @@ const PayrollPage = () => {
                 >
                   <option value="all">
                     {isManager && isTuyetHuong
-                      ? `-- Cả 2 bộ phận (Kho Mỹ Tho & Xưởng Gối) (${payrolls.length} nhân sự) --`
-                      : `-- Tất cả phòng ban (${payrolls.length} nhân sự) --`}
+                      ? '-- Cả 2 bộ phận (Kho Mỹ Tho & Xưởng Gối) --'
+                      : '-- Tất cả chi nhánh / phòng ban --'}
                   </option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -1286,12 +1286,19 @@ const PayrollPage = () => {
                       return (
                         <tr key={p.id} className="hover:bg-slate-50 transition">
                           <td className="px-3 py-3">
-                            <div
-                              className="font-bold text-brand-700 hover:underline cursor-pointer"
-                              onClick={() => openPayslip(p)}
-                              title="Xem chi tiết Phiếu lương"
-                            >
-                              {p.fullname}
+                            <div className="flex items-center space-x-1.5">
+                              <div
+                                className="font-bold text-brand-700 hover:underline cursor-pointer"
+                                onClick={() => openPayslip(p)}
+                                title="Xem chi tiết Phiếu lương"
+                              >
+                                {p.fullname}
+                              </div>
+                              {p.employee_status === 'Đã nghỉ việc' && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200" title="Nhân sự đã nghỉ việc, bảo toàn lịch sử lương">
+                                  Đã nghỉ việc
+                                </span>
+                              )}
                             </div>
                             <div className="text-[10px] text-slate-400 font-mono">{p.employee_code}</div>
                           </td>

@@ -103,6 +103,41 @@ export const getEmployees = async (req, res) => {
     const countResult = await query.get(countSql, params);
     const total = countResult ? countResult.total : 0;
 
+    // Thống kê nhanh số lượng nhân sự theo trạng thái (chính xác theo phạm vi phòng ban/quản lý)
+    let statsSql = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN e.status IN ('Đang làm việc', 'Thử việc') THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN e.status = 'Đang làm việc' THEN 1 ELSE 0 END) as working,
+        SUM(CASE WHEN e.status = 'Thử việc' THEN 1 ELSE 0 END) as probation,
+        SUM(CASE WHEN e.status = 'Đã nghỉ việc' THEN 1 ELSE 0 END) as resigned,
+        SUM(CASE WHEN e.status = 'Nghỉ thai sản' THEN 1 ELSE 0 END) as maternity
+      FROM employees e
+      WHERE 1=1
+    `;
+    const statsParams = [];
+    if (isManager && managerDeptIds.length > 0) {
+      const placeholders = managerDeptIds.map(() => '?').join(',');
+      statsSql += ` AND (e.department_id IN (${placeholders}) OR e.department_id IN (SELECT name FROM departments WHERE id IN (${placeholders})))`;
+      statsParams.push(...managerDeptIds, ...managerDeptIds);
+    } else if (req.user.roleName === 'EMPLOYEE') {
+      statsSql += ' AND e.id = ?';
+      statsParams.push(req.user.employeeId || -1);
+    } else if (department_id && department_id !== 'all') {
+      statsSql += ' AND (e.department_id = ? OR e.department_id = (SELECT name FROM departments WHERE id = ?))';
+      statsParams.push(department_id, department_id);
+    }
+
+    const summaryStatsRow = await query.get(statsSql, statsParams);
+    const summaryStats = {
+      total: summaryStatsRow?.total || 0,
+      active: summaryStatsRow?.active || 0,
+      working: summaryStatsRow?.working || 0,
+      probation: summaryStatsRow?.probation || 0,
+      resigned: summaryStatsRow?.resigned || 0,
+      maternity: summaryStatsRow?.maternity || 0
+    };
+
     // Phân trang
     const offset = (parseInt(page) - 1) * parseInt(limit);
     sql += ' ORDER BY e.code ASC LIMIT ? OFFSET ?';
@@ -137,6 +172,7 @@ export const getEmployees = async (req, res) => {
 
     return res.json({
       data: safeEmployees,
+      summaryStats,
       pagination: {
         total,
         page: parseInt(page),
@@ -238,7 +274,8 @@ export const createEmployee = async (req, res) => {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
     status, contract_type, base_salary, allowance, kpi_bonus, notes,
-    tier, grade, tier_salary, grade_salary
+    tier, grade, tier_salary, grade_salary,
+    resignation_date, resignation_reason
   } = req.body;
 
   try {
@@ -261,8 +298,8 @@ export const createEmployee = async (req, res) => {
         code, fullname, avatar, dob, gender, phone, email, cccd, address,
         join_date, branch_id, department_id, position_id, manager_id,
         status, contract_type, base_salary, allowance, kpi_bonus, notes,
-        tier, grade, tier_salary, grade_salary, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        tier, grade, tier_salary, grade_salary, resignation_date, resignation_reason, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
       phone || '', email || '', cccd || '', address || '',
@@ -270,7 +307,8 @@ export const createEmployee = async (req, res) => {
       position_id || null, manager_id || null,
       status || 'Thử việc', contract_type || '', bSalary, allowance || 0,
       kpi_bonus || 0, notes || '',
-      tier || '', grade || '', tSalary, gSalary, now, now
+      tier || '', grade || '', tSalary, gSalary,
+      resignation_date || null, resignation_reason || null, now, now
     ]);
 
     return res.status(201).json({ message: 'Tạo hồ sơ nhân viên thành công.', id: result.lastID });
@@ -286,11 +324,12 @@ export const updateEmployee = async (req, res) => {
     code, fullname, avatar, dob, gender, phone, email, cccd, address,
     join_date, branch_id, department_id, position_id, manager_id,
     status, contract_type, base_salary, allowance, kpi_bonus, notes,
-    tier, grade, tier_salary, grade_salary
+    tier, grade, tier_salary, grade_salary,
+    resignation_date, resignation_reason
   } = req.body;
 
   try {
-    const emp = await query.get('SELECT id, department_id, position_id, tier, grade, tier_salary, grade_salary, base_salary FROM employees WHERE id = ?', [req.params.id]);
+    const emp = await query.get('SELECT id, department_id, position_id, tier, grade, tier_salary, grade_salary, base_salary, status FROM employees WHERE id = ?', [req.params.id]);
     if (!emp) return res.status(404).json({ message: 'Nhân viên không tồn tại.' });
 
     if (!code || !fullname) {
@@ -337,6 +376,14 @@ export const updateEmployee = async (req, res) => {
       }
     }
 
+    // Nếu trạng thái chuyển sang Đã nghỉ việc, tự động khóa tài khoản đăng nhập để bảo mật
+    if (status === 'Đã nghỉ việc') {
+      await query.run('UPDATE users SET is_active = 0, updated_at = ? WHERE employee_id = ?', [now, req.params.id]);
+    } else if (emp.status === 'Đã nghỉ việc' && (status === 'Đang làm việc' || status === 'Thử việc')) {
+      // Nếu kích hoạt đi làm lại, mở khóa tài khoản
+      await query.run('UPDATE users SET is_active = 1, updated_at = ? WHERE employee_id = ?', [now, req.params.id]);
+    }
+
     await query.run(`
       UPDATE employees SET
         code = ?, fullname = ?, avatar = ?, dob = ?, gender = ?,
@@ -344,7 +391,8 @@ export const updateEmployee = async (req, res) => {
         join_date = ?, branch_id = ?, department_id = ?, position_id = ?,
         manager_id = ?, status = ?, contract_type = ?,
         base_salary = ?, allowance = ?, kpi_bonus = ?, notes = ?,
-        tier = ?, grade = ?, tier_salary = ?, grade_salary = ?, updated_at = ?
+        tier = ?, grade = ?, tier_salary = ?, grade_salary = ?,
+        resignation_date = ?, resignation_reason = ?, updated_at = ?
       WHERE id = ?
     `, [
       code.trim(), fullname.trim(), avatar || '', dob || null, gender || '',
@@ -355,7 +403,10 @@ export const updateEmployee = async (req, res) => {
       bSalary, allowance || 0, kpi_bonus || 0, notes || '',
       tier !== undefined ? tier : (emp.tier || ''),
       grade !== undefined ? grade : (emp.grade || ''),
-      tSalary, gSalary, now, req.params.id
+      tSalary, gSalary,
+      resignation_date !== undefined ? resignation_date : null,
+      resignation_reason !== undefined ? resignation_reason : null,
+      now, req.params.id
     ]);
 
     return res.json({ message: 'Cập nhật hồ sơ nhân viên thành công.' });
@@ -365,11 +416,77 @@ export const updateEmployee = async (req, res) => {
   }
 };
 
-// Xóa nhân viên
+// Ghi nhận nhân sự nghỉ việc (giữ nguyên 100% hồ sơ, khóa tài khoản, bảo toàn bảng lương cũ)
+export const markEmployeeResigned = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { resignation_date, resignation_reason, handover_notes } = req.body;
+
+    const emp = await query.get('SELECT id, fullname, code, status, notes FROM employees WHERE id = ?', [id]);
+    if (!emp) return res.status(404).json({ message: 'Nhân viên không tồn tại.' });
+
+    const resignDate = resignation_date || new Date().toISOString().split('T')[0];
+    const reasonText = resignation_reason || 'Nghỉ việc theo nguyện vọng cá nhân';
+    const now = new Date().toISOString();
+
+    let combinedNotes = emp.notes || '';
+    const resignLog = `[Nghỉ việc ngày ${resignDate}]: Lý do: ${reasonText}${handover_notes ? ` | Bàn giao: ${handover_notes}` : ''}`;
+    combinedNotes = combinedNotes ? `${combinedNotes}\n${resignLog}` : resignLog;
+
+    await query.run(`
+      UPDATE employees 
+      SET status = 'Đã nghỉ việc',
+          resignation_date = ?,
+          resignation_reason = ?,
+          notes = ?,
+          updated_at = ?
+      WHERE id = ?
+    `, [
+      resignDate,
+      reasonText,
+      combinedNotes,
+      now,
+      id
+    ]);
+
+    // Khóa tài khoản đăng nhập để bảo mật thông tin nội bộ
+    await query.run('UPDATE users SET is_active = 0, updated_at = ? WHERE employee_id = ?', [now, id]);
+
+    return res.json({
+      message: `Đã cập nhật nhân sự "${emp.fullname}" (${emp.code}) sang trạng thái "Đã nghỉ việc". Toàn bộ hồ sơ lương tháng cũ, hợp đồng và dữ liệu chấm công được bảo toàn nguyên vẹn 100%.`,
+      employee: {
+        id: emp.id,
+        fullname: emp.fullname,
+        code: emp.code,
+        status: 'Đã nghỉ việc',
+        resignation_date: resignDate,
+        resignation_reason: reasonText
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi ghi nhận nghỉ việc:', error);
+    return res.status(500).json({ message: 'Không thể cập nhật trạng thái nghỉ việc.' });
+  }
+};
+
+// Xóa nhân viên (Bảo vệ dữ liệu lịch sử tài chính & bảng lương)
 export const deleteEmployee = async (req, res) => {
   try {
-    const emp = await query.get('SELECT id, fullname FROM employees WHERE id = ?', [req.params.id]);
+    const emp = await query.get('SELECT id, fullname, code FROM employees WHERE id = ?', [req.params.id]);
     if (!emp) return res.status(404).json({ message: 'Nhân viên không tồn tại.' });
+
+    // Kiểm tra dữ liệu lịch sử quan trọng: bảng lương, chấm công, hợp đồng
+    const hasPayrolls = await query.get('SELECT COUNT(*) as c FROM payrolls WHERE employee_id = ?', [req.params.id]);
+    const hasAttendance = await query.get('SELECT COUNT(*) as c FROM attendance WHERE employee_id = ?', [req.params.id]);
+    const hasContracts = await query.get('SELECT COUNT(*) as c FROM contracts WHERE employee_id = ?', [req.params.id]);
+
+    const totalRecords = (hasPayrolls?.c || 0) + (hasAttendance?.c || 0) + (hasContracts?.c || 0);
+
+    if (totalRecords > 0) {
+      return res.status(400).json({
+        message: `Nhân viên "${emp.fullname}" (${emp.code}) đã có ${hasPayrolls?.c || 0} kỳ lương và ${hasAttendance?.c || 0} bản ghi chấm công lịch sử. Để bảo toàn số liệu tài chính & pháp lý, bạn không thể xóa vĩnh viễn nhân sự này. Vui lòng sử dụng tính năng "Báo nghỉ việc" (Chuyển trạng thái 'Đã nghỉ việc') để giữ nguyên vẹn toàn bộ hồ sơ lương tháng cũ.`
+      });
+    }
 
     // Kiểm tra ràng buộc: có user liên kết không?
     const linkedUser = await query.get('SELECT id FROM users WHERE employee_id = ?', [req.params.id]);
@@ -377,16 +494,12 @@ export const deleteEmployee = async (req, res) => {
       return res.status(400).json({ message: 'Không thể xóa. Nhân viên này đang có tài khoản đăng nhập liên kết. Vui lòng xóa tài khoản trước.' });
     }
 
-    // Xóa các dữ liệu phụ thuộc để tránh lỗi FOREIGN KEY constraint
-    await query.run('DELETE FROM attendance WHERE employee_id = ?', [req.params.id]);
+    // Xóa các dữ liệu phụ thuộc không quan trọng nếu có
     await query.run('DELETE FROM leave_requests WHERE employee_id = ?', [req.params.id]);
-    await query.run('DELETE FROM contracts WHERE employee_id = ?', [req.params.id]);
-    await query.run('DELETE FROM payroll WHERE employee_id = ?', [req.params.id]);
-    await query.run('DELETE FROM kpi WHERE employee_id = ?', [req.params.id]);
     await query.run('DELETE FROM notifications WHERE employee_id = ?', [req.params.id]);
     await query.run('DELETE FROM rewards WHERE employee_id = ?', [req.params.id]);
-
     await query.run('DELETE FROM employees WHERE id = ?', [req.params.id]);
+
     return res.json({ message: `Đã xóa nhân viên "${emp.fullname}" thành công.` });
   } catch (error) {
     console.error('Lỗi xóa nhân viên:', error);

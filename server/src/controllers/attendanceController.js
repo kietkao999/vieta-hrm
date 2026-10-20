@@ -96,7 +96,7 @@ export const getAttendance = async (req, res) => {
 };
 
 export const markAttendance = async (req, res) => {
-  const { date, check_in, check_out, status, note, employee_id } = req.body;
+  const { date, check_in, check_out, status, note, employee_id, ot_hours, cut_hours } = req.body;
   const empId = employee_id || req.user.employeeId;
   
   if (!empId) {
@@ -104,42 +104,25 @@ export const markAttendance = async (req, res) => {
   }
 
   try {
-    let currentEmp = null;
-    if (req.user?.employeeId) {
-      currentEmp = await query.get('SELECT id, code, fullname FROM employees WHERE id = ?', [req.user.employeeId]);
-    }
-    const isXinh = isTrucXinhAdmin(req.user, currentEmp);
+    const ot = parseFloat(ot_hours) || 0;
+    const cut = parseFloat(cut_hours) || 0;
 
     const exist = await query.get('SELECT id, status, ot_hours, cut_hours FROM attendance WHERE employee_id = ? AND date = ?', [empId, date]);
-    
-    const hasPreviousAttendance = Boolean(
-      exist && (
-        (exist.status && exist.status.trim() !== '') ||
-        Number(exist.ot_hours) > 0 ||
-        Number(exist.cut_hours) > 0
-      )
-    );
-
-    if (hasPreviousAttendance && !isXinh) {
-      return res.status(403).json({
-        message: 'Ngày này đã được chấm công trước đó. Quy định: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại. Mọi điều chỉnh chỉ có Admin Huỳnh Thị Trúc Xinh mới được thực hiện!'
-      });
-    }
 
     if (exist) {
       // Cập nhật
       await query.run(`
         UPDATE attendance 
         SET department_id = COALESCE(department_id, (SELECT department_id FROM employees WHERE id = ?)),
-            check_in = ?, check_out = ?, status = ?, note = ?
+            check_in = ?, check_out = ?, status = ?, ot_hours = ?, cut_hours = ?, note = ?
         WHERE id = ?
-      `, [empId, check_in || null, check_out || null, status || 'Có mặt', note || '', exist.id]);
+      `, [empId, check_in || null, check_out || null, status || 'Có mặt', ot, cut, note || '', exist.id]);
     } else {
       // Thêm mới
       await query.run(`
-        INSERT INTO attendance (employee_id, department_id, date, check_in, check_out, status, note)
-        VALUES (?, (SELECT department_id FROM employees WHERE id = ?), ?, ?, ?, ?, ?)
-      `, [empId, empId, date, check_in || null, check_out || null, status || 'Có mặt', note || '']);
+        INSERT INTO attendance (employee_id, department_id, date, check_in, check_out, status, ot_hours, cut_hours, note)
+        VALUES (?, (SELECT department_id FROM employees WHERE id = ?), ?, ?, ?, ?, ?, ?, ?)
+      `, [empId, empId, date, check_in || null, check_out || null, status || 'Có mặt', ot, cut, note || '']);
     }
 
     // Tự động đồng bộ số ngày công sang Bảng Lương tháng trực tuyến
@@ -312,6 +295,8 @@ export const canUserEditSheet = (user, employee, sheetKey) => {
 export const statusToSymbol = (status) => {
   if (!status) return '';
   const s = status.trim().toLowerCase();
+  if (s === 'tăng ca' || s === 'làm thêm' || s === 'chỉ tăng ca' || s.includes('tăng ca')) return '';
+  if (s === 'cắt giờ' || s === 'trừ giờ') return '';
   if (s === 'x' || s.includes('có mặt') || s.includes('đi làm')) return 'X';
   if (s === 'nn' || s.includes('nửa ngày') || s.includes('1/2')) return 'NN';
   if (s === 'p' || s.includes('phép')) return 'P';
@@ -320,7 +305,7 @@ export const statusToSymbol = (status) => {
   if (s === 'l' || s.includes('lễ')) return 'L';
   if (s === 'off' || s.includes('tuần') || s.includes('nghỉ hàng tuần')) return 'OFF';
   if (s === 'ts' || s.includes('thai sản')) return 'TS';
-  return s.toUpperCase();
+  return '';
 };
 
 export const symbolToStatus = (symbol) => {
@@ -464,11 +449,18 @@ export const getSheetMatrix = async (req, res) => {
       for (const d of days) {
         const rec = attMap[`${emp.id}_${d.dateStr}`];
         if (rec) {
-          const sym = statusToSymbol(rec.status);
+          let sym = statusToSymbol(rec.status);
           const ot = Number(rec.ot_hours) || 0;
           const cut = Number(rec.cut_hours) || 0;
+
+          // Nếu là ngày Chủ Nhật và có giờ tăng ca (> 0) thì không tự động hiện ngày làm 'X'
+          // vì ngày làm đã tính vào cột tăng ca
+          if (d.isSunday && ot > 0 && sym === 'X') {
+            sym = '';
+          }
+
           const isAttended = Boolean((sym && sym.trim() !== '') || ot > 0 || cut > 0);
-          const isLocked = isAttended && !isXinh;
+          const isLocked = !canEdit;
 
           dayData[d.day] = {
             symbol: sym,
@@ -480,7 +472,7 @@ export const getSheetMatrix = async (req, res) => {
             isLocked
           };
 
-          if (sym === 'X' || sym === 'CT' || sym === 'L') {
+          if ((sym === 'X' || sym === 'CT' || sym === 'L') && !(d.isSunday && ot > 0)) {
             workDays += 1;
           } else if (sym === 'NN') {
             workDays += 0.5;
@@ -563,51 +555,30 @@ export const saveSheetMatrix = async (req, res) => {
 
     const isXinh = isTrucXinhAdmin(req.user, currentEmp);
 
-    // 🔒 QUY TẮC CỐT LÕI: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại.
-    // Mọi chỉnh sửa chỉ duy nhất Admin Huỳnh Thị Trúc Xinh mới có quyền thực hiện.
-    if (!isXinh) {
-      for (const item of updates) {
-        const { employee_id, day } = item;
-        const dayStr = day.toString().padStart(2, '0');
-        const mStr = mNum.toString().padStart(2, '0');
-        const dateStr = `${yNum}-${mStr}-${dayStr}`;
-
-        const exist = await query.get(
-          'SELECT id, status, ot_hours, cut_hours FROM attendance WHERE employee_id = ? AND date = ?',
-          [employee_id, dateStr]
-        );
-
-        const hasPreviousAttendance = Boolean(
-          exist && (
-            (exist.status && exist.status.trim() !== '') ||
-            Number(exist.ot_hours) > 0 ||
-            Number(exist.cut_hours) > 0
-          )
-        );
-
-        if (hasPreviousAttendance) {
-          const targetEmp = await query.get('SELECT fullname FROM employees WHERE id = ?', [employee_id]);
-          return res.status(403).json({
-            message: `Ô ngày ${day}/${mNum} của nhân viên "${targetEmp?.fullname || 'nhân viên'}" đã được chấm công trước đó. Quy định: Sau khi đã chấm công, người chấm công không có quyền chỉnh sửa lại. Mọi điều chỉnh chỉ có Admin Huỳnh Thị Trúc Xinh mới được thực hiện!`
-          });
-        }
-      }
-    }
 
     const updater = currentEmp?.fullname || req.user?.username || 'Người chấm công';
     const now = new Date().toISOString();
     let savedCount = 0;
 
     for (const item of updates) {
-      const { employee_id, day, symbol, ot_hours, cut_hours, late_minutes, note } = item;
-      const dayStr = day.toString().padStart(2, '0');
+      const dayNum = parseInt(day, 10);
+      const dayStr = dayNum.toString().padStart(2, '0');
       const mStr = mNum.toString().padStart(2, '0');
       const dateStr = `${yNum}-${mStr}-${dayStr}`;
 
-      const sym = (symbol || '').trim().toUpperCase();
+      const dateObj = new Date(yNum, mNum - 1, dayNum);
+      const isSunday = dateObj.getDay() === 0;
+
+      let sym = (symbol || '').trim().toUpperCase();
       const ot = parseFloat(ot_hours) || 0;
       const cut = parseFloat(cut_hours) || 0;
       const late = parseInt(late_minutes, 10) || 0;
+
+      // Nếu là ngày Chủ Nhật và có giờ tăng ca (> 0) thì không tự động ghi nhận ngày làm 'X'
+      // vì ngày làm đã được tính trọn vẹn vào cột tăng ca
+      if (isSunday && ot > 0 && sym === 'X') {
+        sym = '';
+      }
 
       if (!sym && ot === 0 && cut === 0 && late === 0) {
         // Xóa bản ghi nếu xóa trắng (chỉ Trúc Xinh mới qua được bước kiểm tra bên trên nếu ô đã có dữ liệu)
@@ -616,7 +587,23 @@ export const saveSheetMatrix = async (req, res) => {
         continue;
       }
 
-      const stInfo = symbolToStatus(sym) || { status: 'Có mặt', check_in: '08:00', check_out: '17:00', note: sym };
+      let stInfo = symbolToStatus(sym);
+      if (!stInfo) {
+        if (ot > 0) {
+          stInfo = {
+            status: isSunday ? 'Tăng ca Chủ Nhật' : 'Tăng ca',
+            check_in: null,
+            check_out: null,
+            note: isSunday ? 'Tăng ca Chủ Nhật (đã tính vào cột tăng ca)' : 'Làm thêm / Tăng ca'
+          };
+        } else if (cut > 0) {
+          stInfo = { status: 'Cắt giờ', check_in: null, check_out: null, note: 'Trừ giờ / Cắt giờ' };
+        } else if (late > 0) {
+          stInfo = { status: 'Đi trễ', check_in: null, check_out: null, note: 'Đi trễ' };
+        } else {
+          stInfo = { status: isSunday ? 'Nghỉ tuần' : 'Có mặt', check_in: null, check_out: null, note: sym || '' };
+        }
+      }
 
       await query.run(`
         INSERT INTO attendance (employee_id, date, check_in, check_out, status, ot_hours, cut_hours, late_minutes, note, updated_by, created_at)
@@ -752,15 +739,19 @@ export const exportSheetExcel = async (req, res) => {
         for (const d of days) {
           const rec = attMap[`${emp.id}_${d.dateStr}`];
           if (rec) {
-            const sym = statusToSymbol(rec.status);
+            let sym = statusToSymbol(rec.status);
             const ot = Number(rec.ot_hours) || 0;
             const cut = Number(rec.cut_hours) || 0;
+
+            if (d.isSunday && ot > 0 && sym === 'X') {
+              sym = '';
+            }
 
             mainRow.push(sym || null);
             otRow.push(ot > 0 ? ot : null);
             lateRow.push(cut > 0 ? cut : null);
 
-            if (sym === 'X' || sym === 'CT' || sym === 'L') workDays += 1;
+            if ((sym === 'X' || sym === 'CT' || sym === 'L') && !(d.isSunday && ot > 0)) workDays += 1;
             else if (sym === 'NN') workDays += 0.5;
             if (sym === 'P') paidLeaves += 1;
             totalOt += ot;

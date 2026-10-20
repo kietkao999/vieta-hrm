@@ -284,6 +284,24 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
           )}
         </div>
 
+        {/* Banner Nhân sự đã nghỉ việc */}
+        {employee.status === 'Đã nghỉ việc' && (
+          <div className="mx-8 my-3 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex items-start space-x-3 shadow-xs">
+            <span className="text-xl">🛑</span>
+            <div className="flex-1">
+              <p className="font-black text-sm text-rose-900">
+                Nhân sự đã thôi việc / nghỉ việc {employee.resignation_date ? `từ ngày ${employee.resignation_date}` : ''}
+              </p>
+              {employee.resignation_reason && (
+                <p className="text-slate-700 mt-1 font-medium">Lý do: <span className="font-semibold text-rose-800">{employee.resignation_reason}</span></p>
+              )}
+              <p className="text-slate-500 text-[11px] mt-1 font-medium">
+                🔒 Toàn bộ hồ sơ nhân sự, dữ liệu chấm công, hợp đồng và lịch sử phiếu lương các tháng trước được bảo toàn nguyên vẹn 100%.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Tab Navigation Bar */}
         <div className="flex items-center px-8 bg-slate-100/90 border-b border-slate-200 space-x-2 flex-shrink-0 overflow-x-auto">
           <button

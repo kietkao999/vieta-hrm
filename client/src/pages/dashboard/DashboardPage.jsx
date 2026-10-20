@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { 
   Users, 
+  UserX,
   Calendar, 
   Clock, 
   Shield, 
@@ -25,6 +26,9 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     totalEmployees: 0,
+    activeEmployees: 0,
+    resignedEmployees: 0,
+    probationEmployees: 0,
     activeContracts: 0,
     pendingLeaves: 0,
     deptEmployees: [],
@@ -42,7 +46,7 @@ const DashboardPage = () => {
 
         // Tải đồng thời tất cả dữ liệu qua Promise.allSettled (siêu tốc, không bị nghẽn dây chuyền)
         const [empResult, leaveResult, contractResult, logResult, payrollResult] = await Promise.allSettled([
-          api.get('/employees?limit=100'),
+          api.get('/employees?limit=1000'),
           api.get('/leave-requests?status=Chờ duyệt'),
           isAdminOrHR ? api.get('/contracts?status=Có hiệu lực') : Promise.resolve({ data: [] }),
           isAdminOrHR ? api.get('/system/audit-logs') : Promise.resolve({ data: [] }),
@@ -50,10 +54,17 @@ const DashboardPage = () => {
         ]);
 
         let totalEmployees = 0;
+        let activeEmployees = 0;
+        let resignedEmployees = 0;
+        let probationEmployees = 0;
         let deptEmployees = [];
         if (empResult.status === 'fulfilled' && empResult.value?.data) {
           deptEmployees = empResult.value.data.data || (Array.isArray(empResult.value.data) ? empResult.value.data : []);
-          totalEmployees = empResult.value.data.pagination?.total || deptEmployees.length;
+          const sStats = empResult.value.data.summaryStats;
+          totalEmployees = sStats?.total || empResult.value.data.pagination?.total || deptEmployees.length;
+          activeEmployees = sStats?.active !== undefined ? sStats.active : deptEmployees.filter(e => e.status !== 'Đã nghỉ việc').length;
+          resignedEmployees = sStats?.resigned !== undefined ? sStats.resigned : deptEmployees.filter(e => e.status === 'Đã nghỉ việc').length;
+          probationEmployees = sStats?.probation !== undefined ? sStats.probation : deptEmployees.filter(e => e.status === 'Thử việc').length;
         }
 
         let pendingLeaves = 0;
@@ -78,6 +89,9 @@ const DashboardPage = () => {
 
         setStats({
           totalEmployees,
+          activeEmployees,
+          resignedEmployees,
+          probationEmployees,
           activeContracts,
           pendingLeaves,
           deptEmployees,
@@ -136,6 +150,7 @@ const DashboardPage = () => {
     const currentDay = new Date().getDate();
 
     const birthdayEmployees = (stats.deptEmployees || []).filter(e => {
+      if (e.status === 'Đã nghỉ việc') return false;
       if (!e.dob) return false;
       const parts = e.dob.split('-');
       if (parts.length === 3) {
@@ -221,25 +236,38 @@ const DashboardPage = () => {
     <div className="space-y-6">
       {renderUserWelcomeBanner('from-slate-900 via-slate-800 to-brand-700', 'bg-red-500/20 text-red-200 border border-red-400/30')}
 
-      {/* Grid Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-xl bg-blue-50 p-3 text-blue-600 shrink-0">
+      {/* Grid Stats 4 Thẻ Trực Quan - Cập Nhật Đúng Số Lượng Thật & Nhân Sự Nghỉ Việc */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link to="/employees" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4 hover:border-blue-400 hover:shadow-md transition-all group">
+          <div className="rounded-xl bg-blue-50 p-3 text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
             <Users size={24} />
           </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">TỔNG NHÂN SỰ TOÀN CÔNG TY</p>
-            <p className="text-2xl font-black text-slate-900">{stats.totalEmployees} nhân sự</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ĐANG LÀM VIỆC (SỐ THẬT)</p>
+            <p className="text-2xl font-black text-slate-900">{stats.activeEmployees} <span className="text-xs font-semibold text-slate-500">nhân sự</span></p>
+            <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Tổng hồ sơ lưu: {stats.totalEmployees}</p>
           </div>
-        </div>
+        </Link>
+
+        <Link to="/employees" className="rounded-xl border border-rose-200 bg-rose-50/30 p-5 shadow-sm flex items-center space-x-4 hover:border-rose-400 hover:shadow-md transition-all group">
+          <div className="rounded-xl bg-rose-100 p-3 text-rose-600 shrink-0 group-hover:scale-105 transition-transform">
+            <UserX size={24} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-rose-700 uppercase tracking-wider truncate">NHÂN SỰ ĐÃ NGHỈ VIỆC</p>
+            <p className="text-2xl font-black text-rose-900">{stats.resignedEmployees} <span className="text-xs font-semibold text-rose-600">nhân sự</span></p>
+            <p className="text-[10px] text-rose-600 mt-0.5 font-medium">Bảo toàn 100% lịch sử lương</p>
+          </div>
+        </Link>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
           <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 shrink-0">
             <FileText size={24} />
           </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">HỢP ĐỒNG HIỆU LỰC</p>
-            <p className="text-2xl font-black text-slate-900">{stats.activeContracts} hợp đồng</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">HỢP ĐỒNG HIỆU LỰC</p>
+            <p className="text-2xl font-black text-slate-900">{stats.activeContracts} <span className="text-xs font-semibold text-slate-500">hợp đồng</span></p>
+            <p className="text-[10px] text-emerald-600 mt-0.5 font-medium">Đang hiệu lực</p>
           </div>
         </div>
 
@@ -247,9 +275,10 @@ const DashboardPage = () => {
           <div className="rounded-xl bg-amber-50 p-3 text-amber-600 shrink-0">
             <Clock size={24} />
           </div>
-          <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">ĐƠN NGHỈ PHÉP CHỜ DUYỆT</p>
-            <p className="text-2xl font-black text-slate-900">{stats.pendingLeaves} đơn</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">ĐƠN NGHỈ PHÉP CHỜ DUYỆT</p>
+            <p className="text-2xl font-black text-slate-900">{stats.pendingLeaves} <span className="text-xs font-semibold text-slate-500">đơn</span></p>
+            <p className="text-[10px] text-amber-600 mt-0.5 font-medium">Chờ xét duyệt</p>
           </div>
         </div>
       </div>
@@ -428,17 +457,18 @@ const DashboardPage = () => {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-blue-50 p-3 text-blue-600">
+          <div className="rounded-lg bg-blue-50 p-3 text-blue-600 shrink-0">
             <Users size={24} />
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">NHÂN SỰ TRỰC THUỘC BỘ PHẬN</p>
-            <p className="text-xl font-bold text-slate-800">{stats.deptEmployees.length} Nhân sự</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase">NHÂN SỰ BỘ PHẬN ĐANG LÀM VIỆC</p>
+            <p className="text-xl font-bold text-slate-800">{stats.activeEmployees} Nhân sự</p>
+            <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Đã nghỉ: {stats.resignedEmployees} nhân sự</p>
           </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-          <div className="rounded-lg bg-amber-50 p-3 text-amber-600">
+          <div className="rounded-lg bg-amber-50 p-3 text-amber-600 shrink-0">
             <Clock size={24} />
           </div>
           <div>

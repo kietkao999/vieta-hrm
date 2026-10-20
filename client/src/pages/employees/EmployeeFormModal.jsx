@@ -43,6 +43,8 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
     manager_id: '',
     status: 'Đang làm việc',
     contract_type: 'Không xác định thời hạn',
+    resignation_date: '',
+    resignation_reason: '',
     tier: '',
     grade: 'Bậc 1',
     tier_salary: '',
@@ -110,6 +112,8 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
         manager_id: employee.manager_id || '',
         status: employee.status || 'Đang làm việc',
         contract_type: employee.contract_type || 'Không xác định thời hạn',
+        resignation_date: employee.resignation_date || '',
+        resignation_reason: employee.resignation_reason || '',
         tier: employee.tier || '',
         grade: employee.grade || 'Bậc 1',
         tier_salary: employee.tier_salary ?? '',
@@ -324,6 +328,31 @@ const EmployeeFormModal = ({ employee, onClose, onSuccess }) => {
                   <option value="Thời vụ">Thời vụ</option>
                 </select>
               </div>
+              {formData.status === 'Đã nghỉ việc' && (
+                <>
+                  <div>
+                    <label className="text-xs font-bold text-rose-700">Ngày nghỉ việc</label>
+                    <input 
+                      type="date" 
+                      name="resignation_date" 
+                      value={formData.resignation_date} 
+                      onChange={handleChange} 
+                      className="w-full border border-rose-300 rounded-lg p-2 text-xs mt-1 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 outline-none font-semibold" 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-rose-700">Lý do nghỉ việc</label>
+                    <input 
+                      type="text" 
+                      name="resignation_reason" 
+                      placeholder="Lý do nghỉ việc..." 
+                      value={formData.resignation_reason} 
+                      onChange={handleChange} 
+                      className="w-full border border-rose-300 rounded-lg p-2 text-xs mt-1 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 outline-none" 
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

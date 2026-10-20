@@ -77,12 +77,28 @@ export const getSummaryReport = async (req, res) => {
       WHERE e.status = 'Đang làm việc' AND e.join_date IS NOT NULL ${deptFilter}
     `, deptParams);
 
-    // Tổng nhân sự đang làm việc
+    // Tổng nhân sự đang làm việc thực tế (Active + Probation)
     const totalActive = await query.get(`
       SELECT COUNT(*) as count 
       FROM employees e 
       LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
-      WHERE e.status = 'Đang làm việc' ${deptFilter}
+      WHERE e.status IN ('Đang làm việc', 'Thử việc') ${deptFilter}
+    `, deptParams);
+
+    // Tổng nhân sự đã nghỉ việc
+    const totalResigned = await query.get(`
+      SELECT COUNT(*) as count 
+      FROM employees e 
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      WHERE e.status = 'Đã nghỉ việc' ${deptFilter}
+    `, deptParams);
+
+    // Tổng tất cả hồ sơ lưu trữ
+    const totalAll = await query.get(`
+      SELECT COUNT(*) as count 
+      FROM employees e 
+      LEFT JOIN departments d ON (e.department_id = d.id OR e.department_id = d.name)
+      WHERE 1=1 ${deptFilter}
     `, deptParams);
 
     // Hợp đồng sắp hết hạn (30 ngày tới)
@@ -100,6 +116,8 @@ export const getSummaryReport = async (req, res) => {
 
     return res.json({
       totalActive: totalActive?.count || 0,
+      totalResigned: totalResigned?.count || 0,
+      totalAll: totalAll?.count || 0,
       statusStats,
       deptStats,
       branchStats,

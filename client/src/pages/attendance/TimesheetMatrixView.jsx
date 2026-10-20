@@ -31,6 +31,212 @@ const STATUS_OPTIONS = [
   { symbol: '', label: 'Xóa trắng ô', color: 'bg-slate-200 text-slate-700 hover:bg-slate-300' }
 ];
 
+function EditingCellModal({ editingCell, onClose, onSave, month, year }) {
+  const [selectedSymbol, setSelectedSymbol] = useState(
+    editingCell.isSunday && editingCell.currentOt > 0 && editingCell.currentSymbol === 'X'
+      ? ''
+      : (editingCell.currentSymbol || '')
+  );
+  const [otHours, setOtHours] = useState(editingCell.currentOt > 0 ? editingCell.currentOt : '');
+  const [cutHours, setCutHours] = useState(editingCell.currentCut > 0 ? editingCell.currentCut : '');
+
+  const handleConfirm = () => {
+    let finalSymbol = selectedSymbol;
+    // Nếu là ngày Chủ Nhật và có nhập tăng ca, không tự động điền/chọn ngày làm (X)
+    // vì ngày làm đã tính vào cột tăng ca
+    if (editingCell.isSunday && parseFloat(otHours) > 0 && finalSymbol === 'X') {
+      finalSymbol = '';
+    }
+    onSave(editingCell.empId, editingCell.day, finalSymbol, otHours, cutHours);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs animate-fadeIn p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 max-w-md w-full overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">{editingCell.empName}</h4>
+            <p className="text-xs text-slate-500 font-semibold">
+              Chấm công Ngày {editingCell.day} ({editingCell.dow}) — Tháng {month}/{year}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Thông báo nếu là ngày Chủ Nhật */}
+        {editingCell.isSunday && (
+          <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center space-x-2">
+            <span className="text-base shrink-0">ℹ️</span>
+            <span>
+              <b>Ngày Chủ Nhật:</b> Số giờ làm việc sẽ tính trọn vào cột <b>Tăng ca (OT)</b>. Không chọn ngày làm "X" để tránh bị tính trùng công.
+            </span>
+          </div>
+        )}
+
+        {/* 1. Chọn trạng thái / Ký hiệu công */}
+        <div className="mb-3">
+          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            1. Trạng thái công làm việc:
+          </label>
+          <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
+            {STATUS_OPTIONS.map(opt => {
+              const isSelected = selectedSymbol === opt.symbol;
+              return (
+                <button
+                  type="button"
+                  key={opt.symbol || 'empty'}
+                  onClick={() => setSelectedSymbol(opt.symbol)}
+                  className={`flex items-center space-x-2 p-1.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer border ${
+                    isSelected
+                      ? 'border-brand-600 bg-brand-50 text-brand-900 ring-2 ring-brand-500/30 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] shrink-0 font-black shadow-xs ${opt.color}`}>
+                    {opt.symbol || '✕'}
+                  </span>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Tăng ca (OT) */}
+        <div className="mb-3 p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold text-indigo-900 flex items-center space-x-1.5">
+              <span>⏱️ Số giờ làm thêm / Tăng ca (OT):</span>
+            </label>
+            {parseFloat(otHours) > 0 && (
+              <span className="text-[11px] font-black text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                +{otHours} giờ
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              max="16"
+              value={otHours}
+              onChange={e => setOtHours(e.target.value)}
+              placeholder="Nhập giờ OT (VD: 2.0)"
+              className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-1.5 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          {/* Quick OT chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {[1, 1.5, 2, 2.5, 3, 4].map(val => (
+              <button
+                type="button"
+                key={val}
+                onClick={() => setOtHours(val)}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                  parseFloat(otHours) === val
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                }`}
+              >
+                +{val}h
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setOtHours('')}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 cursor-pointer"
+            >
+              0h (Xóa)
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Cắt giờ / Trừ giờ */}
+        <div className="mb-4 p-3 bg-rose-50/40 border border-rose-100 rounded-xl">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold text-rose-900 flex items-center space-x-1.5">
+              <span>✂️ Số giờ cắt / Trừ giờ:</span>
+            </label>
+            {parseFloat(cutHours) > 0 && (
+              <span className="text-[11px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                -{cutHours} giờ
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              max="8"
+              value={cutHours}
+              onChange={e => setCutHours(e.target.value)}
+              placeholder="Nhập giờ trừ (VD: 1.0)"
+              className="w-full bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-sm font-bold text-rose-900 outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500"
+            />
+          </div>
+          {/* Quick Cut chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {[1, 2, 4].map(val => (
+              <button
+                type="button"
+                key={val}
+                onClick={() => setCutHours(val)}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
+                  parseFloat(cutHours) === val
+                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                    : 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50'
+                }`}
+              >
+                -{val}h
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCutHours('')}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 cursor-pointer"
+            >
+              0h (Xóa)
+            </button>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="px-5 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow transition-all flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Check size={14} />
+            <span>Xác nhận & Cập nhật ô</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TimesheetMatrixView({
   month,
   year,
@@ -114,29 +320,41 @@ export default function TimesheetMatrixView({
     }
   }, [activeSheetKey, month, year]);
 
-  // Cập nhật ô dữ liệu (local state)
-  const handleCellChange = (empId, day, newSymbol) => {
+  // Cập nhật ô dữ liệu (local state) - Hỗ trợ cả Ký hiệu công, Giờ tăng ca (OT) và Giờ cắt
+  const handleCellChange = (empId, day, newSymbol, newOt = undefined, newCut = undefined) => {
     if (!canEdit) return;
 
-    // Kiểm tra khóa bảo mật: sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới được sửa
     const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
-    if (baseRow.isLocked && !isTrucXinh) {
-      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+    if (baseRow.isLocked && !isTrucXinh && !canEdit) {
+      showNotice('warning', 'Ô này đã bị khóa!');
       setEditingCell(null);
       return;
     }
 
+    const dayObj = days.find(d => d.day === day);
+    const isSunday = dayObj ? dayObj.isSunday : false;
+
     setDirtyChanges(prev => {
       const key = `${empId}_${day}`;
       const existing = prev[key] || {};
+      let curSym = newSymbol !== undefined ? newSymbol : (existing.symbol !== undefined ? existing.symbol : (baseRow.symbol || ''));
+      const otVal = newOt !== undefined ? (parseFloat(newOt) || 0) : (existing.ot_hours !== undefined ? existing.ot_hours : (baseRow.ot_hours || 0));
+      const cutVal = newCut !== undefined ? (parseFloat(newCut) || 0) : (existing.cut_hours !== undefined ? existing.cut_hours : (baseRow.cut_hours || 0));
+
+      // Ngày Chủ Nhật: nếu có giờ tăng ca (> 0) thì không tự động hiện ngày làm 'X'
+      // vì ngày làm đã tính vào cột tăng ca
+      if (isSunday && otVal > 0 && curSym === 'X') {
+        curSym = '';
+      }
+
       return {
         ...prev,
         [key]: {
           employee_id: empId,
           day,
-          symbol: newSymbol,
-          ot_hours: existing.ot_hours !== undefined ? existing.ot_hours : (baseRow.ot_hours || 0),
-          cut_hours: existing.cut_hours !== undefined ? existing.cut_hours : (baseRow.cut_hours || 0),
+          symbol: curSym,
+          ot_hours: otVal,
+          cut_hours: cutVal,
           late_minutes: existing.late_minutes !== undefined ? existing.late_minutes : (baseRow.late_minutes || 0)
         }
       };
@@ -150,17 +368,26 @@ export default function TimesheetMatrixView({
     if (!canEdit) return;
 
     const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
-    if (baseRow.isLocked && !isTrucXinh) {
-      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+    if (baseRow.isLocked && !isTrucXinh && !canEdit) {
+      showNotice('warning', 'Ô này đã bị khóa!');
       return;
     }
 
     const parsed = parseFloat(otHours) || 0;
+    const dayObj = days.find(d => d.day === day);
+    const isSunday = dayObj ? dayObj.isSunday : false;
 
     setDirtyChanges(prev => {
       const key = `${empId}_${day}`;
       const existing = prev[key] || {};
-      const curSym = existing.symbol !== undefined ? existing.symbol : (baseRow.symbol || '');
+      let curSym = existing.symbol !== undefined ? existing.symbol : (baseRow.symbol || '');
+
+      // Nếu là ngày Chủ Nhật và có nhập tăng ca (> 0) thì KHÔNG hiện ngày làm (X),
+      // tự động chuyển 'X' về '' vì ngày làm Chủ Nhật đã tính trọn vào cột tăng ca
+      if (isSunday && parsed > 0 && curSym === 'X') {
+        curSym = '';
+      }
+
       return {
         ...prev,
         [key]: {
@@ -180,8 +407,8 @@ export default function TimesheetMatrixView({
     if (!canEdit) return;
 
     const baseRow = matrixData.find(m => m.employee_id === empId)?.days[day] || {};
-    if (baseRow.isLocked && !isTrucXinh) {
-      showNotice('warning', 'Ô này đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!');
+    if (baseRow.isLocked && !isTrucXinh && !canEdit) {
+      showNotice('warning', 'Ô này đã bị khóa!');
       return;
     }
 
@@ -217,10 +444,15 @@ export default function TimesheetMatrixView({
       days.forEach(d => {
         const dirty = dirtyChanges[`${row.employee_id}_${d.day}`];
         const base = row.days[d.day] || { symbol: '', ot_hours: 0, cut_hours: 0, late_minutes: 0 };
-        const sym = dirty && dirty.symbol !== undefined ? dirty.symbol : base.symbol;
+        let sym = dirty && dirty.symbol !== undefined ? dirty.symbol : base.symbol;
         const ot = dirty && dirty.ot_hours !== undefined ? dirty.ot_hours : (base.ot_hours || 0);
         const cut = dirty && dirty.cut_hours !== undefined ? dirty.cut_hours : (base.cut_hours || 0);
         const late = dirty && dirty.late_minutes !== undefined ? dirty.late_minutes : (base.late_minutes || 0);
+
+        // Quy tắc: Ngày Chủ Nhật có tăng ca (> 0) thì không tự động hiện ngày làm 'X' và không cộng vào CÔNG TT
+        if (d.isSunday && (Number(ot) || 0) > 0 && sym === 'X') {
+          sym = '';
+        }
 
         mergedDays[d.day] = {
           symbol: sym,
@@ -230,7 +462,7 @@ export default function TimesheetMatrixView({
           isDirty: Boolean(dirty)
         };
 
-        if (sym === 'X' || sym === 'CT' || sym === 'L') {
+        if ((sym === 'X' || sym === 'CT' || sym === 'L') && !(d.isSunday && (Number(ot) || 0) > 0)) {
           workDays += 1;
         } else if (sym === 'NN') {
           workDays += 0.5;
@@ -692,7 +924,7 @@ export default function TimesheetMatrixView({
                           const cell = row.computedDays[d.day] || {};
                           const sym = cell.symbol;
                           const isDirty = cell.isDirty;
-                          const isCellLocked = Boolean(cell.isLocked && !isTrucXinh);
+                          const isCellLocked = Boolean(cell.isLocked && !isTrucXinh && !canEdit);
 
                           // Màu sắc ký hiệu
                           let badgeClass = 'text-slate-300';
@@ -711,7 +943,7 @@ export default function TimesheetMatrixView({
                               onClick={e => {
                                 if (!canEdit) return;
                                 if (isCellLocked) {
-                                  showNotice('warning', `Ô ngày ${d.day} của nhân sự "${row.fullname}" đã được chấm công. Sau khi đã chấm công, chỉ Admin Huỳnh Thị Trúc Xinh mới có quyền chỉnh sửa lại!`);
+                                  showNotice('warning', `Ô ngày ${d.day} của nhân sự "${row.fullname}" đã bị khóa!`);
                                   return;
                                 }
                                 const rect = e.currentTarget.getBoundingClientRect();
@@ -720,15 +952,18 @@ export default function TimesheetMatrixView({
                                   empName: row.fullname,
                                   day: d.day,
                                   dow: d.dow,
+                                  isSunday: d.isSunday,
                                   currentSymbol: sym,
+                                  currentOt: cell.ot_hours || 0,
+                                  currentCut: cell.cut_hours || 0,
                                   rect
                                 });
                               }}
                               title={
                                 isCellLocked
-                                  ? `Ngày ${d.day} (${d.dow}): Đã chấm [${sym || 'công'}] — Đã khóa (Chỉ Admin Huỳnh Thị Trúc Xinh được chỉnh sửa)`
+                                  ? `Ngày ${d.day} (${d.dow}): Đã khóa`
                                   : canEdit
-                                    ? `Ngày ${d.day} (${d.dow}): Nhấp để chọn ký hiệu chấm công`
+                                    ? `Ngày ${d.day} (${d.dow}): Nhấp để chấm công / tăng ca (OT)`
                                     : ''
                               }
                               className={`p-0 text-center w-[32px] min-w-[32px] max-w-[32px] border-r border-slate-200 relative select-none ${
@@ -743,8 +978,13 @@ export default function TimesheetMatrixView({
                                 isDirty ? 'bg-blue-50/70 ring-1 ring-blue-400' : ''
                               }`}
                             >
-                              <div className={`w-[26px] h-[26px] mx-auto rounded flex items-center justify-center text-[11px] font-bold transition-transform ${badgeClass}`}>
-                                {sym || '·'}
+                              <div className={`w-[26px] h-[26px] mx-auto rounded flex flex-col items-center justify-center text-[11px] font-bold transition-transform ${badgeClass} relative`}>
+                                <span>{sym || '·'}</span>
+                                {cell.ot_hours > 0 && (
+                                  <span className="text-[7.5px] font-black text-indigo-700 bg-indigo-100/90 px-0.5 rounded leading-none absolute -bottom-1">
+                                    +{cell.ot_hours}h
+                                  </span>
+                                )}
                               </div>
                               {isCellLocked && (
                                 <span className="absolute top-0.5 left-0.5 text-[8px] text-slate-400 leading-none pointer-events-none" title="Đã khóa">
@@ -800,7 +1040,7 @@ export default function TimesheetMatrixView({
 
                           {days.map(d => {
                             const curOt = row.computedDays[d.day]?.ot_hours || 0;
-                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
+                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh && !canEdit);
                             return (
                               <td key={d.day} className="p-0.5 text-center border-r border-slate-200 w-[32px] min-w-[32px] max-w-[32px]">
                                 {canEdit && !isCellLocked ? (
@@ -816,7 +1056,7 @@ export default function TimesheetMatrixView({
                                   />
                                 ) : (
                                   <span
-                                    title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
+                                    title={isCellLocked ? "Đã khóa" : ""}
                                     className={`font-bold text-[11px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-indigo-800'}`}
                                   >
                                     {curOt > 0 ? curOt : '-'}
@@ -847,7 +1087,7 @@ export default function TimesheetMatrixView({
 
                           {days.map(d => {
                             const curCut = row.computedDays[d.day]?.cut_hours || 0;
-                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh);
+                            const isCellLocked = Boolean(row.computedDays[d.day]?.isLocked && !isTrucXinh && !canEdit);
                             return (
                               <td key={d.day} className="p-0.5 text-center border-r border-slate-200 w-[32px] min-w-[32px] max-w-[32px]">
                                 {canEdit && !isCellLocked ? (
@@ -863,7 +1103,7 @@ export default function TimesheetMatrixView({
                                   />
                                 ) : (
                                   <span
-                                    title={isCellLocked ? "Đã khóa (Chỉ Admin Trúc Xinh được sửa)" : ""}
+                                    title={isCellLocked ? "Đã khóa" : ""}
                                     className={`font-bold text-[11px] ${isCellLocked ? 'text-slate-400 cursor-not-allowed' : 'text-rose-800'}`}
                                   >
                                     {curCut > 0 ? `-${curCut}` : '-'}
@@ -890,54 +1130,15 @@ export default function TimesheetMatrixView({
         )}
       </div>
 
-      {/* ═══ POPOVER CHỌN KÝ HIỆU CHẤM CÔNG NHANH ═══ */}
+      {/* ═══ MODAL CHẤM CÔNG & NHẬP GIỜ TĂNG CA (OT) ═══ */}
       {editingCell && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs animate-fadeIn"
-          onClick={() => setEditingCell(null)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 max-w-sm w-full mx-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">{editingCell.empName}</h4>
-                <p className="text-[11px] text-slate-500 font-semibold">
-                  Chấm công Ngày {editingCell.day} ({editingCell.dow}) - Tháng {month}/{year}
-                </p>
-              </div>
-              <button
-                onClick={() => setEditingCell(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {STATUS_OPTIONS.map(opt => {
-                const isSelected = editingCell.currentSymbol === opt.symbol;
-                return (
-                  <button
-                    key={opt.symbol || 'empty'}
-                    onClick={() => handleCellChange(editingCell.empId, editingCell.day, opt.symbol)}
-                    className={`flex items-center space-x-2 p-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer border ${
-                      isSelected
-                        ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className={`w-6 h-6 rounded flex items-center justify-center text-xs shrink-0 font-black shadow-xs ${opt.color}`}>
-                      {opt.symbol || '✕'}
-                    </span>
-                    <span className="truncate">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <EditingCellModal
+          editingCell={editingCell}
+          onClose={() => setEditingCell(null)}
+          onSave={handleCellChange}
+          month={month}
+          year={year}
+        />
       )}
 
       {/* ═══ BẢNG CHÚ GIẢI KÝ HIỆU CHẤM CÔNG CHUẨN NỆM VIỆT Á ═══ */}

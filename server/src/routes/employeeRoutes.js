@@ -1,7 +1,8 @@
 import express from 'express';
 import {
   getEmployees, getAllEmployeesSimple, getEmployeeById,
-  createEmployee, updateEmployee, deleteEmployee, exportEmployeesExcel
+  createEmployee, updateEmployee, deleteEmployee, exportEmployeesExcel,
+  markEmployeeResigned
 } from '../controllers/employeeController.js';
 import { authMiddleware, requireRoles } from '../middleware/auth.js';
 
@@ -19,6 +20,7 @@ router.get('/', requireRoles(['ADMIN', 'HR', 'MANAGER']), getEmployees);
 router.get('/:id', getEmployeeById);
 router.post('/', requireRoles(['ADMIN', 'HR']), createEmployee);
 router.put('/:id', requireRoles(['ADMIN', 'HR']), updateEmployee);
+router.post('/:id/resign', requireRoles(['ADMIN', 'HR', 'MANAGER']), markEmployeeResigned);
 router.delete('/:id', requireRoles(['ADMIN']), deleteEmployee);
 
 export default router;

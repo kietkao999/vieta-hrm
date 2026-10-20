@@ -218,10 +218,14 @@ const ReportPage = () => {
     : employees;
 
   // Tính toán số liệu tổng quan động
-  const activeEmps = filteredEmployees.filter(e => e.status === 'Đang làm việc' || !e.status);
+  const activeEmps = filteredEmployees.filter(e => e.status === 'Đang làm việc' || e.status === 'Thử việc' || !e.status);
+  const resignedEmps = filteredEmployees.filter(e => e.status === 'Đã nghỉ việc');
   const displayTotalActive = selectedDepartment
     ? activeEmps.length
     : (summaryData?.totalActive ?? activeEmps.length);
+  const displayTotalResigned = selectedDepartment
+    ? resignedEmps.length
+    : (summaryData?.totalResigned ?? resignedEmps.length);
 
   const displaySeniority = (() => {
     const withJoin = activeEmps.filter(e => e.join_date);
@@ -290,33 +294,40 @@ const ReportPage = () => {
     return (
       <div className="space-y-6">
         {/* Top Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-xl bg-blue-50 p-3 text-blue-600 shrink-0"><Users size={24} /></div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">NHÂN SỰ ĐANG LÀM VIỆC</p>
-              <p className="text-2xl font-black text-slate-900">{displayTotalActive}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm flex items-center space-x-3.5">
+            <div className="rounded-xl bg-blue-50 p-2.5 sm:p-3 text-blue-600 shrink-0"><Users size={22} /></div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">ĐANG LÀM VIỆC (THỰC TẾ)</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{displayTotalActive}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 shrink-0"><TrendingUp size={24} /></div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">THÂM NIÊN TRUNG BÌNH</p>
-              <p className="text-2xl font-black text-slate-900">{displaySeniority} năm</p>
+          <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-4 sm:p-5 shadow-sm flex items-center space-x-3.5">
+            <div className="rounded-xl bg-rose-100 p-2.5 sm:p-3 text-rose-600 shrink-0"><AlertTriangle size={22} /></div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-rose-700 uppercase tracking-wider truncate">ĐÃ NGHỈ VIỆC</p>
+              <p className="text-xl sm:text-2xl font-black text-rose-900">{displayTotalResigned}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-xl bg-purple-50 p-3 text-purple-600 shrink-0"><PieChart size={24} /></div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">SỐ PHÒNG BAN</p>
-              <p className="text-2xl font-black text-slate-900">{selectedDepartment ? 1 : (displayDeptStats?.length || 0)}</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm flex items-center space-x-3.5">
+            <div className="rounded-xl bg-emerald-50 p-2.5 sm:p-3 text-emerald-600 shrink-0"><TrendingUp size={22} /></div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">THÂM NIÊN TRUNG BÌNH</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{displaySeniority} năm</p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center space-x-4">
-            <div className="rounded-xl bg-amber-50 p-3 text-amber-600 shrink-0"><AlertTriangle size={24} /></div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">HĐ SẮP HẾT HẠN</p>
-              <p className="text-2xl font-black text-slate-900">{summaryData?.expiringContracts?.length || 0}</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm flex items-center space-x-3.5">
+            <div className="rounded-xl bg-purple-50 p-2.5 sm:p-3 text-purple-600 shrink-0"><PieChart size={22} /></div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">SỐ PHÒNG BAN</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{selectedDepartment ? 1 : (displayDeptStats?.length || 0)}</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm flex items-center space-x-3.5">
+            <div className="rounded-xl bg-amber-50 p-2.5 sm:p-3 text-amber-600 shrink-0"><AlertTriangle size={22} /></div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">HĐ SẮP HẾT HẠN</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900">{summaryData?.expiringContracts?.length || 0}</p>
             </div>
           </div>
         </div>

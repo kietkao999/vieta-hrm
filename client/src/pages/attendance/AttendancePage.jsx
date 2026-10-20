@@ -67,6 +67,8 @@ const AttendancePage = () => {
     check_in: '',
     check_out: '',
     status: 'Có mặt',
+    ot_hours: '',
+    cut_hours: '',
     note: ''
   });
 
@@ -461,7 +463,7 @@ const AttendancePage = () => {
               )}
               <button
                 onClick={() => {
-                  setAttFormData({ date: new Date().toISOString().slice(0, 10), check_in: '', check_out: '', status: 'Có mặt', note: '' });
+                  setAttFormData({ date: new Date().toISOString().slice(0, 10), check_in: '', check_out: '', status: 'Có mặt', ot_hours: '', cut_hours: '', note: '' });
                   setAttModalOpen(true);
                 }}
                 className="inline-flex items-center space-x-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 shadow"
@@ -939,6 +941,34 @@ const AttendancePage = () => {
                       <option value="Vắng mặt">Vắng mặt</option>
                       <option value="Nghỉ phép">Nghỉ phép</option>
                     </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-indigo-700">Giờ tăng ca (OT)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        max="16"
+                        placeholder="Số giờ (VD: 2.0)"
+                        value={attFormData.ot_hours || ''}
+                        onChange={e => setAttFormData({ ...attFormData, ot_hours: e.target.value })}
+                        className="w-full border border-indigo-200 rounded-lg p-2 text-sm mt-1 outline-none font-bold text-indigo-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-rose-700">Giờ cắt / Trừ giờ</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        max="8"
+                        placeholder="Số giờ (VD: 1.0)"
+                        value={attFormData.cut_hours || ''}
+                        onChange={e => setAttFormData({ ...attFormData, cut_hours: e.target.value })}
+                        className="w-full border border-rose-200 rounded-lg p-2 text-sm mt-1 outline-none font-bold text-rose-900 focus:border-rose-600 focus:ring-1 focus:ring-rose-500"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-500">Ghi chú</label>
