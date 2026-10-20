@@ -226,28 +226,33 @@ export const isTrucXinhAdmin = (user, employee) => {
 // Lấy danh sách ID phòng ban mà người chấm công phụ trách
 export const getTimekeeperDeptIds = (user, employee) => {
   if (!user) return [];
-  // Huỳnh Thị Trúc Xinh quản lý toàn bộ
-  if (isTrucXinhAdmin(user, employee)) return null;
+  // Admin hoặc Huỳnh Thị Trúc Xinh quản lý toàn bộ
+  if (user.roleName === 'ADMIN' || user.role_id === 1 || isTrucXinhAdmin(user, employee)) return null;
 
   const empCode = (employee?.code || user.employeeCode || '').toLowerCase().trim();
   const empName = (employee?.fullname || user.fullname || '').toLowerCase().trim();
   const username = (user.username || '').toLowerCase().trim();
 
   const depts = [];
-  // Kho Mỹ Tho (11) & Xưởng sản xuất gối (14): Nguyễn Thị Thanh Tú
-  if (username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu')) {
+  // Kho Mỹ Tho (11): Nguyễn Thị Thanh Tú (người chấm) + Dương Thị Tuyết Hường (quản lý kho)
+  // Xưởng sản xuất gối (14): Nguyễn Thị Thanh Tú (người chấm) + Nguyễn Thái Cần (quản lý xưởng)
+  if (username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu') ||
+      username === 'vieta015' || empCode.includes('015') || empName.includes('tuyết hường') || empName.includes('tuyet huong') ||
+      username === 'vieta046' || empCode.includes('046') || empName.includes('thái cần') || empName.includes('thai can')) {
     depts.push(11, 14);
   }
-  // Kho Cần Thơ (8): Nguyễn Thị Thu Tâm
+  // Kho Cần Thơ (8): Nguyễn Thị Thu Tâm (quản lý kiêm người chấm công)
   if (username === 'vieta003' || empCode.includes('003') || empName.includes('thu tâm') || empName.includes('thu tam')) {
     depts.push(8);
   }
-  // Phòng kinh doanh (12): Nguyễn Thị Kim Hoàng
-  if (username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang')) {
+  // Phòng kinh doanh (12): Nguyễn Thị Kim Hoàng (người chấm) + Phạm Tấn Hưng (trưởng phòng)
+  if (username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang') ||
+      username === 'vieta036' || empCode.includes('036') || empName.includes('tấn hưng') || empName.includes('tan hung')) {
     depts.push(12);
   }
-  // Xưởng sản xuất nệm (10): Võ Huỳnh Đông Nghi
-  if (username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi')) {
+  // Xưởng sản xuất nệm (10): Võ Huỳnh Đông Nghi (người chấm) + Trần Minh Lý (quản đốc xưởng)
+  if (username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi') ||
+      username === 'vieta050' || empCode.includes('050') || empName.includes('minh lý') || empName.includes('minh ly')) {
     depts.push(10);
   }
 
@@ -257,36 +262,47 @@ export const getTimekeeperDeptIds = (user, employee) => {
 export const canUserEditSheet = (user, employee, sheetKey) => {
   if (!user) return false;
 
-  // Huỳnh Thị Trúc Xinh là Admin phụ trách chấm công cao nhất, có toàn quyền trên mọi sheet
-  if (isTrucXinhAdmin(user, employee)) return true;
+  // 1. Quản trị viên (Cấp 1 - ADMIN) hoặc Admin Huỳnh Thị Trúc Xinh có toàn quyền trên mọi sheet
+  if (user.roleName === 'ADMIN' || user.role_id === 1 || isTrucXinhAdmin(user, employee)) return true;
 
   const empCode = (employee?.code || user.employeeCode || '').toLowerCase().trim();
   const empName = (employee?.fullname || user.fullname || '').toLowerCase().trim();
   const username = (user.username || '').toLowerCase().trim();
 
-  // 1. Kho Mỹ Tho & Xưởng sản xuất gối: Nguyễn Thị Thanh Tú
-  if (sheetKey === 'my_tho' || sheetKey === 'kho_goi') {
-    return username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu');
+  // 1. Kho Mỹ Tho: Nguyễn Thị Thanh Tú (người chấm) & Dương Thị Tuyết Hường (quản lý kho)
+  if (sheetKey === 'my_tho') {
+    return username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu') ||
+           username === 'vieta015' || empCode.includes('015') || empName.includes('tuyết hường') || empName.includes('tuyet huong');
   }
 
-  // 2. Kho Cần Thơ: Nguyễn Thị Thu Tâm
+  // 2. Xưởng sản xuất gối: Nguyễn Thị Thanh Tú (người chấm) & Nguyễn Thái Cần (quản lý xưởng)
+  if (sheetKey === 'kho_goi') {
+    return username === 'vieta029' || empCode.includes('029') || empName.includes('thanh tú') || empName.includes('thanh tu') ||
+           username === 'vieta046' || empCode.includes('046') || empName.includes('thái cần') || empName.includes('thai can');
+  }
+
+  // 3. Kho Cần Thơ: Nguyễn Thị Thu Tâm (quản lý kho kiêm người chấm công)
   if (sheetKey === 'can_tho') {
     return username === 'vieta003' || empCode.includes('003') || empName.includes('thu tâm') || empName.includes('thu tam');
   }
 
-  // 3. Phòng kinh doanh: Nguyễn Thị Kim Hoàng
+  // 4. Phòng kinh doanh: Nguyễn Thị Kim Hoàng (người chấm) & Phạm Tấn Hưng (trưởng phòng)
   if (sheetKey === 'kinh_doanh') {
-    return username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang');
+    return username === 'vieta037' || empCode.includes('037') || empName.includes('kim hoàng') || empName.includes('kim hoang') ||
+           username === 'vieta036' || empCode.includes('036') || empName.includes('tấn hưng') || empName.includes('tan hung');
   }
 
-  // 4. Marketing, ban giám đốc, văn phòng: Huỳnh Thị Trúc Xinh
+  // 5. Marketing, ban giám đốc, văn phòng: Huỳnh Thị Trúc Xinh & các quản lý văn phòng
   if (sheetKey === 'van_phong' || sheetKey === 'marketing') {
-    return username === 'vieta032' || empCode.includes('032') || empName.includes('trúc xinh') || empName.includes('truc xinh');
+    return username === 'vieta032' || empCode.includes('032') || empName.includes('trúc xinh') || empName.includes('truc xinh') ||
+           username === 'vieta031' || empCode.includes('031') || empName.includes('quốc hùng') || empName.includes('quoc hung') ||
+           username === 'vieta035' || empCode.includes('035') || empName.includes('huy hoàng') || empName.includes('huy hoang');
   }
 
-  // 5. Xưởng sản xuất nệm: Võ Huỳnh Đông Nghi
+  // 6. Xưởng sản xuất nệm: Võ Huỳnh Đông Nghi (người chấm) & Trần Minh Lý (quản đốc xưởng)
   if (sheetKey === 'xuong_sx') {
-    return username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi');
+    return username === 'vieta012' || empCode.includes('012') || empName.includes('đông nghi') || empName.includes('dong nghi') ||
+           username === 'vieta050' || empCode.includes('050') || empName.includes('minh lý') || empName.includes('minh ly');
   }
 
   return false;

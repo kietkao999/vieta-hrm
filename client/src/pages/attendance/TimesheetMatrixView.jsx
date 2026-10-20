@@ -533,8 +533,8 @@ export default function TimesheetMatrixView({
       days.forEach(d => {
         if (!d.isSunday) {
           const baseCell = row.computedDays[d.day] || {};
-          // Nếu ô đã bị khóa (đã chấm công) và không phải Trúc Xinh -> bỏ qua không ghi đè
-          if (baseCell.isLocked && !isTrucXinh) {
+          // Nếu ô đã bị khóa và không có quyền sửa -> bỏ qua không ghi đè
+          if (baseCell.isLocked && !isTrucXinh && !canEdit) {
             return;
           }
 
