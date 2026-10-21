@@ -545,7 +545,7 @@ const WorkflowCreateModal = ({
                             <input
                               type="number"
                               min="0"
-                              step="1000"
+                              step="any"
                               required
                               value={it.amount}
                               onChange={(e) => handleItemChange(idx, 'amount', e.target.value)}
@@ -672,8 +672,8 @@ const WorkflowCreateModal = ({
                   <div className="relative">
                     <input
                       type="number"
-                      min="1000"
-                      step="1000"
+                      min="0"
+                      step="any"
                       required
                       value={totalAmount}
                       onChange={(e) => setTotalAmount(e.target.value)}

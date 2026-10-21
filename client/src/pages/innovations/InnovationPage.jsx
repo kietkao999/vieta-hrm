@@ -775,7 +775,8 @@ const InnovationPage = () => {
                 <label className="block text-xs font-bold text-slate-700 mb-1">Tiền thưởng nếu là sáng kiến xuất sắc (VNĐ):</label>
                 <input
                   type="number"
-                  step="50000"
+                  step="any"
+                  min="0"
                   placeholder="0"
                   value={evalData.reward_amount}
                   onChange={(e) => setEvalData({ ...evalData, reward_amount: e.target.value })}

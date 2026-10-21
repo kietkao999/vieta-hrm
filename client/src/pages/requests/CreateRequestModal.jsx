@@ -398,7 +398,7 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess }) => {
                           <input
                             type="number"
                             min="0"
-                            step="1000"
+                            step="any"
                             required
                             value={item.amount}
                             onChange={(e) => handleItemChange(idx, 'amount', e.target.value)}
@@ -449,8 +449,8 @@ const CreateRequestModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="relative">
                     <input
                       type="number"
-                      min="1000"
-                      step="1000"
+                      min="0"
+                      step="any"
                       required
                       value={directAmount}
                       onChange={(e) => setDirectAmount(e.target.value)}

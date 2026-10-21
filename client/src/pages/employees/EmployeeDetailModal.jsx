@@ -859,7 +859,8 @@ const EmployeeDetailModal = ({ employee, onClose, onEdit }) => {
                         </label>
                         <input
                           type="number"
-                          step="50000"
+                          step="any"
+                          min="0"
                           value={quickFormData.value}
                           onChange={e => setQuickFormData({ ...quickFormData, value: e.target.value })}
                           className="w-full border rounded-xl p-2.5 bg-white font-black"

@@ -466,7 +466,7 @@ const RewardPage = () => {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Số tiền thưởng (VNĐ)</label>
-                      <input type="number" step="50000" value={rewardForm.value} onChange={e => setRewardForm({...rewardForm, value: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none" />
+                      <input type="number" step="any" min="0" value={rewardForm.value} onChange={e => setRewardForm({...rewardForm, value: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none" />
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2 pt-4">
@@ -614,7 +614,7 @@ const RewardPage = () => {
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-slate-500">Mức phạt tiền (VNĐ)</label>
-                      <input type="number" step="50000" value={discForm.value} onChange={e => setDiscForm({...discForm, value: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none" placeholder="0" />
+                      <input type="number" step="any" min="0" value={discForm.value} onChange={e => setDiscForm({...discForm, value: e.target.value})} className="w-full border rounded-lg p-2 text-sm mt-1 outline-none" placeholder="0" />
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2 pt-4">
